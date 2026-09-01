@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.pid.lock
+
+# Dependency directories
+jspm_packages/
+
+# Build output
+coverage/
+dist/
+build/
+
+# Caches
+.npm/
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.next/
+.nuxt/
+.svelte-kit/
+.vite/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Local tooling and OS files
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

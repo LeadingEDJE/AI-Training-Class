@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Connect Claude to LiteLLM - Leading EDJE</title>
+<link rel="icon" href="/brand/favicon-le.png" />
+
+<style>
+/* ---------------------------------------------------------------------------
+   Standalone setup guide. Self-contained by design - it must render even if
+   the Blazor app fails to boot, so it does not depend on app.css. Fonts and
+   brand assets are the site's own files.
+   --------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: 'League Spartan';
+  src: url('/fonts/LeagueSpartan-VariableFont_wght.ttf') format('truetype-variations'),
+       url('/fonts/LeagueSpartan-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face { font-family: 'Avenir Next LT Pro'; src: url('/fonts/AvenirNextLTPro-Regular.otf') format('opentype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Avenir Next LT Pro'; src: url('/fonts/AvenirNextLTPro-Medium.otf')  format('opentype'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Avenir Next LT Pro'; src: url('/fonts/AvenirNextLTPro-Demi.otf')    format('opentype'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Avenir Next LT Pro'; src: url('/fonts/AvenirNextLTPro-Bold.otf')    format('opentype'); font-weight: 700; font-style: normal; font-display: swap; }
+
+:root {
+  --le-green:       #98C93D;
+  --le-green-700:   #6D9924;
+  --le-green-100:   #E6F2CA;
+  --le-charcoal:    #4C4D4F;
+  --le-charcoal-900:#1F2022;
+  --le-white:       #FFFFFF;
+  --le-gray-50:     #F7F8F9;
+  --le-gray-100:    #EEF0F2;
+  --le-gray-200:    #DDE1E5;
+  --le-gray-400:    #9AA1A8;
+  --le-gray-500:    #6F757C;
+  --color-warning:      #F2A93B;
+  --color-warning-tint: #FCEACA;
+
+  --font-display: 'League Spartan', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-body:    'Avenir Next LT Pro', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-code:    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --header-h: 3.5rem;
+  --radius-lg:  12px;
+  --radius-xl:  18px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(28,30,33,.06), 0 1px 3px rgba(28,30,33,.04);
+  --shadow-lg: 0 12px 24px rgba(28,30,33,.08), 0 4px 8px rgba(28,30,33,.05);
+  --shadow-focus: 0 0 0 3px rgba(92,149,255,.35);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 220ms;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--le-charcoal);
+  background: var(--le-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+::selection { background: var(--le-green); color: var(--le-charcoal-900); }
+:focus-visible { outline: none; box-shadow: var(--shadow-focus); border-radius: 4px; }
+
+/* -- Topbar, mirroring MainLayout.razor -- */
+.app-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: var(--header-h);
+  padding: 0 1rem;
+  background: var(--le-white);
+  border-bottom: 1px solid var(--le-gray-200);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+.app-brand-logo { height: 1.625rem; width: auto; flex: 0 0 auto; }
+.app-brand-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  color: var(--le-charcoal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--le-gray-200);
+}
+.topbar-back {
+  margin-left: auto;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--le-green-700);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.topbar-back:hover { text-decoration: underline; }
+
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 24px 88px; }
+
+/* -- Hero -- */
+.hero { padding: 48px 0 36px; }
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--le-green-700);
+  margin: 0 0 14px;
+}
+h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.1rem, 5.5vw, 3rem);
+  line-height: 1.03;
+  letter-spacing: -0.028em;
+  margin: 0 0 18px;
+  text-wrap: balance;
+}
+.lead {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--le-gray-500);
+  margin: 0;
+  max-width: 58ch;
+  text-wrap: pretty;
+}
+
+h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.625rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0 0 6px;
+  text-wrap: balance;
+}
+.section { padding-top: 44px; }
+.section-note { color: var(--le-gray-500); margin: 0 0 22px; max-width: 62ch; }
+
+.card {
+  background: var(--le-white);
+  border: 1px solid var(--le-gray-200);
+  border-radius: var(--radius-xl);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+}
+.card p { margin: 0 0 14px; color: var(--le-gray-500); }
+.card p:last-child { margin-bottom: 0; }
+
+/* -- Platform switcher -- */
+.switcher {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--le-gray-50);
+  border: 1px solid var(--le-gray-200);
+  border-radius: var(--radius-pill);
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.tab {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  padding: 9px 20px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--le-gray-500);
+  transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+.tab:hover { color: var(--le-charcoal); }
+.tab[aria-selected="true"] { background: var(--le-green); color: var(--le-charcoal-900); }
+
+/* -- Steps -- */
+.steps { display: flex; flex-direction: column; gap: 20px; }
+.step { display: grid; grid-template-columns: 34px 1fr; gap: 16px; align-items: start; }
+.step-num {
+  width: 34px; height: 34px;
+  border-radius: var(--radius-pill);
+  background: var(--le-green-100);
+  color: var(--le-green-700);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.9375rem;
+  display: grid; place-items: center;
+  font-variant-numeric: tabular-nums;
+}
+.step-body { min-width: 0; }
+.step-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+  margin: 5px 0 8px;
+}
+.step-body > p { margin: 0 0 12px; color: var(--le-gray-500); }
+.step-body > p:last-child { margin-bottom: 0; }
+.step-body a { color: var(--le-green-700); font-weight: 600; text-decoration: none; }
+.step-body a:hover { text-decoration: underline; }
+.shot {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--le-gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin: 4px 0 12px;
+}
+
+/* -- Code -- */
+.code {
+  position: relative;
+  background: var(--le-charcoal-900);
+  border-radius: var(--radius-lg);
+  margin: 0 0 12px;
+  overflow: hidden;
+}
+.code:last-child { margin-bottom: 0; }
+.code pre {
+  margin: 0;
+  padding: 18px 20px;
+  padding-right: 84px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--font-code);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: #E7EAEC;
+  tab-size: 2;
+}
+.code code { font-family: inherit; background: none; padding: 0; color: inherit; }
+.tok-str { color: #9FD9EC; }
+.copy {
+  position: absolute;
+  top: 10px; right: 10px;
+  appearance: none;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06);
+  color: #D7DBDE;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+}
+.copy:hover, .copy.done {
+  background: var(--le-green);
+  color: var(--le-charcoal-900);
+  border-color: var(--le-green);
+}
+
+code.inline {
+  font-family: var(--font-code);
+  font-size: 0.86em;
+  background: var(--le-gray-50);
+  border: 1px solid var(--le-gray-200);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* -- Callout -- */
+.callout {
+  display: grid;
+  grid-template-columns: 3px 1fr;
+  gap: 16px;
+  background: var(--color-warning-tint);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-top: 20px;
+}
+.callout-edge { background: var(--color-warning); }
+.callout-body { padding: 16px 18px 16px 0; }
+.callout-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  margin: 0 0 4px;
+}
+.callout p { margin: 0; font-size: 0.9375rem; }
+
+/* -- FAQ -- */
+.faq { display: flex; flex-direction: column; gap: 12px; }
+.faq details {
+  background: var(--le-white);
+  border: 1px solid var(--le-gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+.faq details:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.faq summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 15px 18px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: "";
+  width: 8px; height: 8px;
+  border-right: 2px solid var(--le-green-700);
+  border-bottom: 2px solid var(--le-green-700);
+  transform: rotate(45deg);
+  flex: none;
+  transition: transform var(--dur) var(--ease-out);
+}
+.faq details[open] summary::after { transform: rotate(-135deg); }
+.faq .answer { padding: 0 18px 16px; color: var(--le-gray-500); font-size: 0.9375rem; }
+.faq .answer p { margin: 0 0 10px; }
+.faq .answer p:last-child { margin-bottom: 0; }
+
+.footer {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--le-gray-100);
+  color: var(--le-gray-400);
+  font-size: 0.875rem;
+}
+.footer strong { color: var(--le-gray-500); font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+  .faq details:hover { transform: none; }
+}
+@media (max-width: 560px) {
+  .hero { padding: 36px 0 28px; }
+  .step { grid-template-columns: 28px 1fr; gap: 12px; }
+  .step-num { width: 28px; height: 28px; font-size: 0.8125rem; }
+  .code pre { padding-right: 20px; padding-top: 44px; }
+  .app-brand-title { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="app-topbar">
+  <a class="app-brand" href="/">
+    <img class="app-brand-logo" src="/brand/logo-leading-edje-wordmark.png" alt="Leading EDJE" />
+    <span class="app-brand-title">LiteLLM Training Dashboard</span>
+  </a>
+  <a class="topbar-back" href="/">Back to dashboard</a>
+</header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <p class="eyebrow">Claude setup</p>
+    <h1>Run Claude on your LiteLLM key</h1>
+    <p class="lead">Set up all three &mdash; your terminal, the VS Code extension, and Claude Desktop. A few minutes each, once per machine.</p>
+  </section>
+
+  <section class="section">
+    <h2>Before you start</h2>
+    <p class="section-note">You need Claude Code installed and a LiteLLM key from your instructor. Your key starts with <code class="inline">sk-</code>.</p>
+    <div class="card">
+      <p>Requires Node.js 18 or newer. Skip this if <code class="inline">claude</code> already runs.</p>
+      <div class="code">
+        <button class="copy" type="button">Copy</button>
+        <pre><code>npm install -g @anthropic-ai/claude-code</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Set up your terminal</h2>
+    <p class="section-note">Your platform is selected below.</p>
+
+    <div class="switcher" role="tablist" aria-label="Choose your platform">
+      <button class="tab" type="button" role="tab" id="tab-mac" aria-controls="panel-mac" aria-selected="false" data-os="mac">macOS</button>
+      <button class="tab" type="button" role="tab" id="tab-win" aria-controls="panel-win" aria-selected="false" data-os="win">Windows</button>
+      <button class="tab" type="button" role="tab" id="tab-linux" aria-controls="panel-linux" aria-selected="false" data-os="linux">Linux</button>
+    </div>
+
+    <!-- macOS -->
+    <div class="panel" id="panel-mac" role="tabpanel" aria-labelledby="tab-mac" hidden>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <p class="step-title">Open your shell config</p>
+            <div class="code">
+              <button class="copy" type="button">Copy</button>
+              <pre><code>open -e ~/.zshrc</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <p class="step-title">Paste this at the bottom, then save</p>
+            <p>Put your own key on the second line.</p>
+            <div class="code">
+              <button class="copy" type="button">Copy</button>
+<pre><code>export ANTHROPIC_BASE_URL=https://litellm.leadingedje.com
+export ANTHROPIC_API_KEY=<span class="tok-str">sk-PASTE-YOUR-KEY-HERE</span>
+export ANTHROPIC_DEFAULT_OPUS_MODEL=bedrock/us.anthropic.claude-opus-5
+export ANTHROPIC_DEFAULT_SONNET_MODEL=bedrock/us.anthropic.claude-sonnet-5
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0
+export ANTHROPIC_SMALL_FAST_MODEL=bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <p class="step-title">Reload and run it</p>
+            <div class="code">
+              <button class="copy" type="button">Copy</button>
+<pre><code>source ~/.zshrc
+claude</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Windows -->
+    <div class="panel" id="panel-win" role="tabpanel" aria-labelledby="tab-win" hidden>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <p class="step-title">Open your PowerShell profile</p>
+            <p>The first line creates it if you don't have one yet.</p>
+            <div class="code">
+              <button class="copy" type="button">Copy</button>
+<pre><code>if (!(Test-Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force }
+notepad $PROFILE</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <p class="step-title">Paste this at the bottom, then save</p>
+            <p>Put your own key on the second line.</p>
+            <div class="code">
+              <button class="copy" type="button">Copy</button>
+<pre><code>$env:ANTHROPIC_BASE_URL             = <span class="tok-str">"https://litellm.leadingedje.com"</span>
+$env:ANTHROPIC_API_KEY              = <span class="tok-str">"sk-PASTE-YOUR-KEY-HERE"</span>
+$env:ANTHROPIC_DEFAULT_OPUS_MODEL   = <span class="tok-str">"bedrock/us.anthropic.claude-opus-5"</span>
+$env:ANTHROPIC_DEFAULT_SONNET_MODEL = <span class="tok-str">"bedrock/us.anthropic.claude-sonnet-5"</span>
+$env:ANTHROPIC_DEFAULT_HAIKU_MODEL  = <span class="tok-str">"bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0"</span>
+$env:ANTHROPIC_SMALL_FAST_MODEL     = <span class="tok-str">"bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0"</span></code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <p class="step-title">Reload and run it</p>
+            <div class="code">
+              <button class="copy" type="button">Copy</button>
+<pre><code>. $PROFILE
+claude</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <div class="callout-edge"></div>
+        <div class="callout-body">
+          <p class="callout-title">If PowerShell blocks your profile</p>
+          <p>You'll see a script-execution error on step 3. Run <code class="inline">Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</code>, answer yes, then try again.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Linux -->
+    <div class="panel" id="panel-linux" role="tabpanel" aria-labelledby="tab-linux" hidden>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <p class="step-title">Open your shell config</p>
+            <p>If you use zsh instead of bash, edit <code class="inline">~/.zshrc</code>.</p>
+            <div class="code">
+              <button class="copy" type="button">Copy</button>
+              <pre><code>nano ~/.bashrc</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <p class="step-title">Paste this at the bottom, then save</p>
+            <p>Put your own key on the second line.</p>
+            <div class="code">
+              <button class="copy" type="button">Copy</button>
+<pre><code>export ANTHROPIC_BASE_URL=https://litellm.leadingedje.com
+export ANTHROPIC_API_KEY=<span class="tok-str">sk-PASTE-YOUR-KEY-HERE</span>
+export ANTHROPIC_DEFAULT_OPUS_MODEL=bedrock/us.anthropic.claude-opus-5
+export ANTHROPIC_DEFAULT_SONNET_MODEL=bedrock/us.anthropic.claude-sonnet-5
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0
+export ANTHROPIC_SMALL_FAST_MODEL=bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <p class="step-title">Reload and run it</p>
+            <div class="code">
+              <button class="copy" type="button">Copy</button>
+<pre><code>source ~/.bashrc
+claude</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Set up the VS Code extension</h2>
+    <p class="section-note">The Claude Code extension doesn't read your shell config, so give it the same settings inside VS Code. Same steps on every platform.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <p class="step-title">Open your VS Code settings file</p>
+          <p>Press <code class="inline">Ctrl+Shift+P</code> (<code class="inline">Cmd+Shift+P</code> on Mac) and run <strong>Preferences: Open User Settings (JSON)</strong>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <p class="step-title">Paste this inside the outermost braces, then save</p>
+          <p>Put your own key on the second line. If there's a setting above it, end that line with a comma.</p>
+          <div class="code">
+            <button class="copy" type="button">Copy</button>
+<pre><code>"claudeCode.environmentVariables": [
+  { "name": "ANTHROPIC_BASE_URL", "value": <span class="tok-str">"https://litellm.leadingedje.com"</span> },
+  { "name": "ANTHROPIC_AUTH_TOKEN", "value": <span class="tok-str">"sk-PASTE-YOUR-KEY-HERE"</span> },
+  { "name": "ANTHROPIC_DEFAULT_OPUS_MODEL", "value": <span class="tok-str">"bedrock/us.anthropic.claude-opus-5"</span> },
+  { "name": "ANTHROPIC_DEFAULT_SONNET_MODEL", "value": <span class="tok-str">"bedrock/us.anthropic.claude-sonnet-5"</span> },
+  { "name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": <span class="tok-str">"bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0"</span> },
+  { "name": "ANTHROPIC_SMALL_FAST_MODEL", "value": <span class="tok-str">"bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0"</span> }
+]</code></pre>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <p class="step-title">Restart VS Code and open Claude</p>
+          <p>Click the Claude icon in the sidebar and send a message. No sign-in needed — your key is the login.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Set up Claude Desktop</h2>
+    <p class="section-note">Claude Desktop (macOS and Windows) runs entirely on your training key — no Claude account needed. Don't sign in; configure the gateway instead.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <p class="step-title">Install it and turn on Developer Mode</p>
+          <p>Get Claude Desktop from <a href="https://claude.ai/download">claude.ai/download</a>. Open it but <strong>don't sign in</strong>. From the menu choose <strong>Help &rarr; Troubleshooting &rarr; Enable Developer Mode</strong>. The app restarts with a Developer menu.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <p class="step-title">Configure the connection</p>
+          <p>Open <strong>Developer &rarr; Configure Third-Party Inference</strong>. In the Connection section, choose <strong>Gateway</strong> and fill in the credentials so it matches this:</p>
+          <img class="shot" src="setup/desktop-gateway-connection.png" width="767" height="698" alt="Claude Desktop Connection section: provider Gateway, credential kind Static API key, gateway base URL https://litellm.leadingedje.com, gateway API key filled in, auth scheme bearer" />
+          <div class="code">
+            <button class="copy" type="button">Copy</button>
+<pre><code>Credential kind:     Static API key
+Gateway base URL:    https://litellm.leadingedje.com
+Gateway API key:     <span class="tok-str">sk-PASTE-YOUR-KEY-HERE</span>
+Gateway auth scheme: bearer</code></pre>
+          </div>
+          <p>Leave the other fields empty, then click <strong>Test connection</strong> to confirm your key works.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <p class="step-title">Add the three models</p>
+          <p>In the Models section, use <strong>+ Add</strong> once per model. The <strong>Model ID</strong> is the part that matters &mdash; add these three, in this order (the first is the default):</p>
+          <div class="code">
+            <button class="copy" type="button">Copy</button>
+<pre><code>bedrock/us.anthropic.claude-opus-5
+bedrock/us.anthropic.claude-sonnet-5
+bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0</code></pre>
+          </div>
+          <p>For each one, pick the matching tier alias (opus, sonnet, haiku) and a display name if you like. On Opus and Sonnet you can also turn on <strong>Offer 1M-context variant</strong> &mdash; leave it off for Haiku, which tops out at 200K.</p>
+          <img class="shot" src="setup/desktop-gateway-models.png" width="774" height="1760" alt="Claude Desktop Models section: three model entries with bedrock model IDs, display names Opus 5, Sonnet 5, Haiku 4.5, 1M-context variant enabled for Opus and Sonnet, tier aliases set" />
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <p class="step-title">Relaunch and start working</p>
+          <p>Apply the configuration locally. When the app restarts, choose the third-party option on the start screen instead of signing in. Pick a model and go.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>If something looks wrong</h2>
+    <div class="faq">
+      <details>
+        <summary>I get a 400 error mentioning output_config.effort</summary>
+        <div class="answer">
+          <p>The model names were changed. Keep the <code class="inline">bedrock/...</code> names exactly as written above.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Claude Code still isn't using the key</summary>
+        <div class="answer">
+          <p>Your shell hasn't picked up the change. Close the terminal, open a fresh one, and try again.</p>
+          <p>Still stuck? You probably edited a file your shell doesn't read. On macOS confirm it's <code class="inline">~/.zshrc</code>; on Linux, <code class="inline">~/.bashrc</code>.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="callout">
+      <div class="callout-edge"></div>
+      <div class="callout-body">
+        <p class="callout-title">Treat your key like a password</p>
+        <p>It sits in plain text in your shell config. Don't commit it, don't paste it into a ticket or chat, and ask your instructor for a fresh one if it ever gets shared.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p><strong>Leading EDJE</strong> - training setup guide. Questions about your key go to your instructor.</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var panels = {
+    mac: document.getElementById('panel-mac'),
+    win: document.getElementById('panel-win'),
+    linux: document.getElementById('panel-linux')
+  };
+
+  function select(os) {
+    tabs.forEach(function (t) {
+      t.setAttribute('aria-selected', t.dataset.os === os ? 'true' : 'false');
+    });
+    Object.keys(panels).forEach(function (k) { panels[k].hidden = (k !== os); });
+  }
+
+  function detect() {
+    var p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+    var s = (p + ' ' + (navigator.userAgent || '')).toLowerCase();
+    if (s.indexOf('win') !== -1) return 'win';
+    if (s.indexOf('mac') !== -1) return 'mac';
+    if (s.indexOf('linux') !== -1 || s.indexOf('x11') !== -1) return 'linux';
+    return 'mac';
+  }
+
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () { select(t.dataset.os); });
+  });
+  select(detect());
+
+  var isMac = /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent || '');
+
+  function flash(btn, label, ms) {
+    btn.textContent = label;
+    btn.classList.add('done');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(function () {
+      btn.textContent = 'Copy';
+      btn.classList.remove('done');
+    }, ms || 1600);
+  }
+
+  // execCommand path - still works where the async Clipboard API is blocked
+  // by permissions policy (e.g. sandboxed iframes).
+  function execCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '0';
+    ta.style.left = '0';
+    ta.style.width = '1px';
+    ta.style.height = '1px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    var ok = false;
+    try {
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      ok = document.execCommand('copy');
+    } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  // Last resort: select the block so the keyboard shortcut works.
+  function selectForUser(btn, codeEl) {
+    try {
+      var r = document.createRange();
+      r.selectNodeContents(codeEl);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+    } catch (e) {}
+    flash(btn, isMac ? 'Press Cmd+C' : 'Press Ctrl+C', 3000);
+  }
+
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var codeEl = btn.parentElement.querySelector('code');
+      if (!codeEl) return;
+      var text = codeEl.textContent;
+
+      var fallback = function () {
+        if (execCopy(text)) flash(btn, 'Copied');
+        else selectForUser(btn, codeEl);
+      };
+
+      try { window.focus(); } catch (e) {}
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          navigator.clipboard.writeText(text).then(function () { flash(btn, 'Copied'); }, fallback);
+        } catch (e) { fallback(); }
+      } else {
+        fallback();
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
