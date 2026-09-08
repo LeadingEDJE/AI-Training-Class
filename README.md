@@ -54,6 +54,7 @@ Please interrupt us at any point to get assistance or ask additional questions.
 - Demo 3 - Context and Quality
   - Context engineering
   - CLAUDE.md / AGENTS.md
+  - Text search and embeddings
   - Skills, code review skills, and skill generation
   - Model Context Protocol (MCP)
 
