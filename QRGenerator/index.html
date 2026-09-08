@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QR Code Generator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="card">
+      <header class="card__header">
+        <h1>QR Code Generator</h1>
+        <p class="subtitle">Type a URL. The code updates as you go.</p>
+      </header>
+
+      <div class="field">
+        <label for="text">URL or text</label>
+        <input
+          id="text"
+          type="text"
+          inputmode="url"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder="https://example.com"
+          value="https://example.com"
+        />
+      </div>
+
+      <div class="preview">
+        <canvas id="canvas" width="0" height="0" aria-label="Generated QR code"></canvas>
+        <p id="placeholder" class="placeholder" hidden>Enter a URL to generate a code</p>
+        <p id="error" class="error" role="alert" hidden></p>
+      </div>
+
+      <p id="meta" class="meta" aria-live="polite"></p>
+      <p id="warning" class="warning" role="status" hidden></p>
+
+      <div class="controls">
+        <div class="field">
+          <label for="ec">Error correction</label>
+          <select id="ec">
+            <option value="L">L &mdash; 7% recoverable</option>
+            <option value="M" selected>M &mdash; 15% recoverable</option>
+            <option value="Q">Q &mdash; 25% recoverable</option>
+            <option value="H">H &mdash; 30% recoverable</option>
+          </select>
+          <small>Higher levels survive more damage but need a denser code.</small>
+        </div>
+
+        <div class="field">
+          <label for="size">Size <span id="sizeValue" class="value">320px</span></label>
+          <input id="size" type="range" min="160" max="800" step="40" value="320" />
+          <small>Applies to the preview and the downloaded image.</small>
+        </div>
+
+        <div class="field field--colors">
+          <div>
+            <label for="fg">Foreground</label>
+            <input id="fg" type="color" value="#000000" />
+          </div>
+          <div>
+            <label for="bg">Background</label>
+            <input id="bg" type="color" value="#ffffff" />
+          </div>
+          <button id="swap" type="button" class="btn btn--ghost">Swap</button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="download" type="button" class="btn btn--primary">Download PNG</button>
+        <button id="reset" type="button" class="btn btn--ghost">Reset</button>
+      </div>
+
+      <footer class="card__footer">
+        <p>
+          The QR encoder in <code>qr-encoder.js</code> is written from scratch &mdash; byte mode,
+          Reed&ndash;Solomon error correction, and mask selection, with no libraries.
+        </p>
+      </footer>
+    </main>
+
+    <script src="qr-encoder.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
