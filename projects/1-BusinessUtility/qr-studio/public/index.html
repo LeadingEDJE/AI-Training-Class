@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QR Studio</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="page-header">
+    <h1>QR Studio</h1>
+    <p>Generate a QR code for any URL, look at it, then download it or keep it in your library.</p>
+  </header>
+
+  <main>
+    <section class="panel" aria-labelledby="create-heading">
+      <h2 id="create-heading">Create a code</h2>
+
+      <form id="qr-form" novalidate>
+        <div class="field">
+          <label for="url">URL</label>
+          <input id="url" name="url" type="text" inputmode="url" autocomplete="url"
+                 placeholder="leadingedje.com/careers" spellcheck="false" required>
+          <p class="hint">A bare host like <code>example.com</code> becomes <code>https://example.com</code>.</p>
+        </div>
+
+        <div class="field">
+          <label for="label">Name <span class="optional">(optional)</span></label>
+          <input id="label" name="label" type="text" placeholder="careers-flyer" spellcheck="false">
+          <p class="hint">Used for the filename. Defaults to a name based on the URL.</p>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="size">Size</label>
+            <select id="size" name="size">
+              <option value="256">256 px</option>
+              <option value="512" selected>512 px</option>
+              <option value="1024">1024 px — print</option>
+              <option value="2048">2048 px — poster</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="ecc">Error correction</label>
+            <select id="ecc" name="ecc">
+              <option value="L">L — smallest code</option>
+              <option value="M" selected>M — balanced</option>
+              <option value="Q">Q — sturdier</option>
+              <option value="H">H — survives damage</option>
+            </select>
+          </div>
+        </div>
+
+        <p id="form-error" class="error" role="alert" hidden></p>
+      </form>
+    </section>
+
+    <section class="panel preview-panel" aria-labelledby="preview-heading">
+      <h2 id="preview-heading">Preview</h2>
+
+      <div id="preview" class="preview" data-state="empty">
+        <p class="placeholder">Type a URL to see its QR code.</p>
+      </div>
+
+      <p id="preview-url" class="preview-url"></p>
+
+      <div class="actions">
+        <button type="button" id="save-btn" disabled>Save to library</button>
+        <a id="png-btn" class="button secondary" href="#" hidden>Download PNG</a>
+        <a id="svg-btn" class="button secondary" href="#" hidden>Download SVG</a>
+      </div>
+    </section>
+
+    <section class="panel library-panel" aria-labelledby="library-heading">
+      <div class="library-header">
+        <h2 id="library-heading">Library</h2>
+        <p id="library-count" class="library-count"></p>
+      </div>
+      <p id="library-empty" class="placeholder">Nothing saved yet. Saved codes are written to the
+        <code>library/</code> folder so you can grab them again any time.</p>
+      <ul id="library-list" class="library-list"></ul>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
