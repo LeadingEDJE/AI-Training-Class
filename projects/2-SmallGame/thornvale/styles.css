@@ -1,0 +1,47 @@
+/* The canvas is scaled by an integer factor in JS, so all this has to do is
+   center it and refuse to smooth the result. */
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #101010;
+  color: #c8c8c8;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+main {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px;
+}
+
+canvas {
+  display: block;
+  background: #000;
+  image-rendering: pixelated;
+}
+
+.controls {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.controls strong {
+  color: #f8f8f8;
+  font-weight: 600;
+}
