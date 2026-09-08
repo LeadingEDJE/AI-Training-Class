@@ -1,12 +1,18 @@
 # Project 1 - Business Utility Application
 
+This project involves building a small useful project from a pre--provided prompt and shows the importance of various parts of the prompt experience.
+
+## Prompts
+
+All projects should be created as subfolders within the 1-BusinessUtility folder
+
 ### Prompt 1 - Minimal Prompt
 
-Build a utility that can create a QR code from a URL the user provides and store the result in this project folder.
+Build a utility that can create a QR code from a URL the user provides and store the result in a subfolder within this project folder.
 
 ### Prompt 2 - More Context
 
-I want to build a QR code generator that lets me generate, **view, and save QR codes** for URLs the user provides **so I can use this to generate QR codes to share whenever I need to.** Store the result in this project folder.
+I want to build a QR code generator that lets me generate, **view, and save QR codes** for URLs the user provides **so I can use this to generate QR codes to share whenever I need to.** Store the result in a subfolder within this project folder.
 
 ### Prompt 3 - Technology Specified
 
@@ -14,7 +20,7 @@ I want to build a QR code generator that lets me generate, view, and save QR cod
 
 **Please build this using vanilla HTML, CSS, and JavaScript. You may reference external JS resources as script includes or download them locally to include.**
 
-Store the result in this project folder.
+Store the result in a subfolder within this project folder.
 
 ### Prompt 4 - Process Specified
 
@@ -22,6 +28,6 @@ I want to build a QR code generator that lets me generate, view, and save QR cod
 
 Please build this using vanilla HTML, CSS, and JavaScript. You may reference external JS resources as script includes or download them locally to include.
 
-Store the result in this project folder.
+Store the result in a subfolder within this project folder.
 
 **Please optimize for a simple and maintainable solution and ask me questions when major decisions are needed or anything is uncertain.**
