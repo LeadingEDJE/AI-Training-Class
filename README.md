@@ -14,11 +14,15 @@ Ben is a DevOps Specialist and strategic architect in cloud modernization and De
 
 See [setup.html](setup.html) for installation / getting started instructions.
 
+Clone [https://github.com/LeadingEDJE/AI-Training-Class](https://github.com/LeadingEDJE/AI-Training-Class) for sample prompts and resources.
+
+If you haven't already, start thinking about a real-world project you'd like to try these techniques on in the back half of this workshop as well as recent or upcoming tickets related to it.
+
 Please interrupt us at any point to get assistance or ask additional questions.
 
 ## Agenda
 
-- Introduction & Setup (Matt & Ben)
+- Introduction & Setup
   - [Environment setup](setup.html)
   - Clone [https://github.com/LeadingEDJE/AI-Training-Class](https://github.com/LeadingEDJE/AI-Training-Class)
   - How to get the most out of this workshop
@@ -48,14 +52,16 @@ Please interrupt us at any point to get assistance or ask additional questions.
   - Practice expanding your idea, fixing bugs, adding features
 
 - Demo 3 - Context and Quality
-  - Context engineering and project context files
+  - Context engineering
+  - CLAUDE.md / AGENTS.md
   - Skills, code review skills, and skill generation
-  - Permissions and MCP concepts
+  - Model Context Protocol (MCP)
 
-- Project 3 - Maintaining a Brownfield Repository (Ben, Choose your own tools)
+- Project 3 - Maintaining a Brownfield Repository
   - **Bring your own repository** or use the provided open-source project
   - Add context, plan a feature or bug fix, and identify where AI is getting things right or wrong
   - Try different prompts and insights, or build your own skills
+  - Look at a recent ticket, have AI try it, and compare the results
 
 - Conclusion and additional learning opportunities
 
