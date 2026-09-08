@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QR Code Maker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="app__header">
+      <h1>QR Code Maker</h1>
+      <p class="subtitle">Turn a link into a QR code you can view, save, and share.</p>
+    </header>
+
+    <form id="qr-form" class="form" novalidate>
+      <label class="label" for="url">Link to encode</label>
+      <div class="field">
+        <input
+          id="url"
+          class="input"
+          type="text"
+          inputmode="url"
+          autocomplete="url"
+          spellcheck="false"
+          placeholder="leadingedje.com"
+          required>
+        <button class="button button--primary" type="submit">Generate</button>
+      </div>
+      <p id="message" class="message" role="status" aria-live="polite"></p>
+    </form>
+
+    <section id="result" class="result" aria-label="Generated QR code" hidden>
+      <div class="qr-frame">
+        <canvas id="qr-canvas" class="qr-canvas"></canvas>
+      </div>
+      <p class="encoded">
+        <a id="encoded-link" class="encoded__link" href="#" target="_blank" rel="noopener noreferrer"></a>
+      </p>
+      <button id="download" class="button" type="button">Download PNG</button>
+    </section>
+  </main>
+
+  <!-- QR rendering comes from node-qrcode's browser bundle, pinned by version and SRI hash. -->
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"
+    integrity="sha384-kgapoJ184YmO0XnbSIH1J6dSp5rSYForqfjCgDat5yiSr8gjCnuTdRRCJXcVZ+pi"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

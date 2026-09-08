@@ -1,0 +1,21 @@
+{
+  "name": "qr-studio",
+  "version": "1.0.0",
+  "description": "Local web app to generate, view, and save QR codes for URLs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "private": true,
+  "devDependencies": {
+    "jsqr": "^1.4.0",
+    "pngjs": "^7.0.0"
+  }
+}

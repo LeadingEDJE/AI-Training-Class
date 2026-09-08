@@ -1,0 +1,21 @@
+{
+  "name": "qr-generator",
+  "version": "1.0.0",
+  "description": "Command-line QR code generator for URLs",
+  "main": "qr-gen.js",
+  "scripts": {
+    "start": "node qr-gen.js",
+    "test": "node --test"
+  },
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "jsqr": "^1.4.0",
+    "pngjs": "^7.0.0"
+  },
+  "private": true
+}

@@ -1,0 +1,175 @@
+/* QR Code Maker — a single-column card layout that adapts to light and dark themes. */
+
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --border: #d8dbe0;
+  --text: #1c2024;
+  --text-muted: #5c6470;
+  --accent: #2f6feb;
+  --accent-text: #ffffff;
+  --error: #b3261e;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 8px 24px rgba(16, 24, 40, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181c;
+    --surface: #1f2227;
+    --border: #33383f;
+    --text: #eceef1;
+    --text-muted: #a2aab5;
+    --accent: #5b8cf5;
+    --accent-text: #10131a;
+    --error: #f2857c;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* The hidden attribute has to win over the display rules further down. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  padding: 2.5rem 1.25rem;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.app {
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: 1.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.app__header {
+  margin-bottom: 1.5rem;
+}
+
+h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* Form */
+
+.label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.input:focus-visible,
+.button:focus-visible,
+.encoded__link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.button {
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: var(--accent);
+}
+
+.button--primary {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.message {
+  min-height: 1.5rem;
+  margin: 0.6rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.message--error {
+  color: var(--error);
+}
+
+/* Result */
+
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+/* The QR code always sits on white so it stays scannable in dark mode. */
+.qr-frame {
+  padding: 0.75rem;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.qr-canvas {
+  display: block;
+  width: 16rem;
+  max-width: 100%;
+  height: auto;
+}
+
+.encoded {
+  margin: 0;
+  font-size: 0.875rem;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.encoded__link {
+  color: var(--accent);
+}

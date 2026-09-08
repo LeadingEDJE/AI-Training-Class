@@ -1,0 +1,3 @@
+# Generated QR codes and their index
+library/*
+!library/.gitkeep

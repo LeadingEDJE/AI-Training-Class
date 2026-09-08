@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QR Code Generator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="masthead">
+    <h1>QR Code Generator</h1>
+    <p>Turn any URL into a QR code you can view, download, and share.</p>
+  </header>
+
+  <main class="layout">
+    <!-- ---------- Controls ---------- -->
+    <section class="panel" aria-labelledby="controls-heading">
+      <h2 id="controls-heading">Details</h2>
+
+      <form id="qr-form" novalidate>
+        <div class="field">
+          <label for="url">URL or text</label>
+          <input
+            type="text"
+            id="url"
+            name="url"
+            placeholder="example.com/my-page"
+            autocomplete="url"
+            spellcheck="false"
+            aria-describedby="url-help url-error">
+          <p class="help" id="url-help">If you leave off <code>https://</code> we'll add it for you.</p>
+          <p class="error" id="url-error" role="alert" hidden></p>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="size">Image size</label>
+            <select id="size">
+              <option value="256">256 &times; 256 &mdash; small</option>
+              <option value="512" selected>512 &times; 512 &mdash; web</option>
+              <option value="1024">1024 &times; 1024 &mdash; slides</option>
+              <option value="2048">2048 &times; 2048 &mdash; print</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="ecc">Error correction</label>
+            <select id="ecc">
+              <option value="L">L &mdash; smallest code</option>
+              <option value="M" selected>M &mdash; balanced</option>
+              <option value="Q">Q &mdash; sturdy</option>
+              <option value="H">H &mdash; most durable</option>
+            </select>
+            <p class="help">Higher levels stay scannable even if the code gets scuffed or partly covered.</p>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="dark">Code color</label>
+            <input type="color" id="dark" value="#111827">
+          </div>
+          <div class="field">
+            <label for="light">Background</label>
+            <input type="color" id="light" value="#ffffff">
+          </div>
+          <div class="field">
+            <label for="margin">Quiet zone: <output id="margin-out">4</output> modules</label>
+            <input type="range" id="margin" min="0" max="8" step="1" value="4">
+            <p class="help">Blank border around the code. Scanners need at least 2.</p>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Generate</button>
+          <button type="reset" class="btn">Reset</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ---------- Preview ---------- -->
+    <section class="panel" aria-labelledby="preview-heading">
+      <h2 id="preview-heading">Preview</h2>
+
+      <div class="preview">
+        <div class="preview-stage" id="stage">
+          <canvas id="canvas" width="512" height="512" role="img" aria-label="Generated QR code" hidden></canvas>
+          <p class="placeholder" id="placeholder">Enter a URL to see your QR code here.</p>
+        </div>
+
+        <dl class="meta" id="meta" hidden>
+          <dt>Encodes</dt><dd id="meta-url"></dd>
+          <dt>Version</dt><dd id="meta-version"></dd>
+          <dt>Modules</dt><dd id="meta-modules"></dd>
+        </dl>
+
+        <div class="actions">
+          <button type="button" class="btn btn-primary" id="save-png" disabled>Save PNG</button>
+          <button type="button" class="btn" id="save-svg" disabled>Save SVG</button>
+          <button type="button" class="btn" id="copy" disabled>Copy image</button>
+        </div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- ---------- History ---------- -->
+    <section class="panel panel-wide" aria-labelledby="history-heading">
+      <div class="panel-head">
+        <h2 id="history-heading">Recent codes</h2>
+        <button type="button" class="btn btn-quiet" id="clear-history" hidden>Clear all</button>
+      </div>
+      <p class="help" id="history-empty">Codes you generate are saved in this browser so you can grab them again later.</p>
+      <ul class="history" id="history"></ul>
+    </section>
+  </main>
+
+  <script src="vendor/qrcode-generator.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
