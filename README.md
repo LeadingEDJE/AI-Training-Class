@@ -57,6 +57,7 @@ Please interrupt us at any point to get assistance or ask additional questions.
   - Text search and embeddings
   - Skills, code review skills, and skill generation
   - Model Context Protocol (MCP)
+  - Plugins
 
 - Project 3 - Maintaining a Brownfield Repository
   - **Bring your own repository** or use the provided open-source project
