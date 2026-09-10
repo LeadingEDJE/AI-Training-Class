@@ -12,7 +12,7 @@ Ben is a DevOps Specialist and strategic architect in cloud modernization and De
 
 ## Setup and Troubleshooting
 
-See [setup.html](setup.html) for installation / getting started instructions.
+See [setup.html](https://leadingedje.github.io/AI-Training-Class/setup.html) for installation / getting started instructions.
 
 Clone [https://github.com/LeadingEDJE/AI-Training-Class](https://github.com/LeadingEDJE/AI-Training-Class) for sample prompts and resources.
 
@@ -23,7 +23,7 @@ Please interrupt us at any point to get assistance or ask additional questions.
 ## Agenda
 
 - Introduction & Setup
-  - [Environment setup](setup.html)
+  - [Environment setup](https://leadingedje.github.io/AI-Training-Class/setup.html)
   - Clone [https://github.com/LeadingEDJE/AI-Training-Class](https://github.com/LeadingEDJE/AI-Training-Class)
   - How to get the most out of this workshop
 

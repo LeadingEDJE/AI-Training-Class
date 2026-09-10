@@ -4,27 +4,16 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Connect Claude to LiteLLM - Leading EDJE</title>
-<link rel="icon" href="/brand/favicon-le.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400..700&display=swap" rel="stylesheet">
 
 <style>
 /* ---------------------------------------------------------------------------
    Standalone setup guide. Self-contained by design - it must render even if
-   the Blazor app fails to boot, so it does not depend on app.css. Fonts and
-   brand assets are the site's own files.
+   the Blazor app fails to boot, so it does not depend on app.css. League
+   Spartan loads from Google Fonts; brand assets are the site's own files.
    --------------------------------------------------------------------------- */
-
-@font-face {
-  font-family: 'League Spartan';
-  src: url('/fonts/LeagueSpartan-VariableFont_wght.ttf') format('truetype-variations'),
-       url('/fonts/LeagueSpartan-VariableFont_wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face { font-family: 'Avenir Next LT Pro'; src: url('/fonts/AvenirNextLTPro-Regular.otf') format('opentype'); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Avenir Next LT Pro'; src: url('/fonts/AvenirNextLTPro-Medium.otf')  format('opentype'); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Avenir Next LT Pro'; src: url('/fonts/AvenirNextLTPro-Demi.otf')    format('opentype'); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Avenir Next LT Pro'; src: url('/fonts/AvenirNextLTPro-Bold.otf')    format('opentype'); font-weight: 700; font-style: normal; font-display: swap; }
 
 :root {
   --le-green:       #98C93D;
@@ -368,11 +357,11 @@ code.inline {
 <body>
 
 <header class="app-topbar">
-  <a class="app-brand" href="/">
+  <a class="app-brand" href="https://github.com/LeadingEDJE/AI-Training-Class">
     <img class="app-brand-logo" src="./brand/logo-leading-edje-wordmark.png" alt="Leading EDJE" />
     <span class="app-brand-title">LiteLLM Training Dashboard</span>
   </a>
-  <a class="topbar-back" href="/">Back to dashboard</a>
+  <a class="topbar-back" href="https://github.com/LeadingEDJE/AI-Training-Class">Back to repository</a>
 </header>
 
 <div class="wrap">
