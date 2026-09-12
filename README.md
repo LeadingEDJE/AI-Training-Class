@@ -60,7 +60,7 @@ Please interrupt us at any point to get assistance or ask additional questions.
   - Plugins
 
 - Project 3 - Maintaining a Brownfield Repository
-  - **Bring your own repository** or use the provided open-source project
+  - **Bring your own repository** or use one of the two provided fallback repos (.NET or Node) — see [Project3.md](projects/3-Brownfield/Project3.md)
   - Add context, plan a feature or bug fix, and identify where AI is getting things right or wrong
   - Try different prompts and insights, or build your own skills
   - Look at a recent ticket, have AI try it, and compare the results
