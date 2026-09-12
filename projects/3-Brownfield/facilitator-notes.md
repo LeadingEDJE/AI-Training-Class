@@ -2,6 +2,8 @@
 
 Run-of-show, what to watch for at each step, and talking points for the long waits. The slide deck is one cue card per step; these notes are what you say while it's up.
 
+Slides: https://claude.ai/code/artifact/e2ffa4c9-96e4-4039-abf6-b6cea56fde34 (private; export PDF from the toolbar for the room).
+
 ## The one idea
 
 **The AI is only as good as the context you give it, and you control the context.** Say it before Part 1, say it when they stash the wrong-way attempt, say it at the end. Every step in Part 2 is a kind of context: a map, working commands, specialized agents, a retrospective, a plan.
