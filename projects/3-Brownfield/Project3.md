@@ -120,6 +120,8 @@ Microsoft's reference e-commerce sample. ASP.NET Core 8, Razor Pages web app plu
 
 **Prerequisite:** the .NET 8 SDK. A newer SDK can sit alongside it, but the app targets .NET 8 and returns errors on the .NET 10 runtime, so .NET 8 itself must be installed. If your browser complains about the HTTPS certificate, run `dotnet dev-certs https --trust` once.
 
+Run `claude` from inside the `eShopOnWeb` folder so `/init` and any skills you create scope to it, not to the workshop repo.
+
 ```
 cd projects/3-Brownfield/eShopOnWeb
 dotnet build eShopOnWeb.sln
@@ -155,14 +157,16 @@ A static-site generator written in TypeScript, about 22k lines, with a real open
 
 **Prerequisite:** Node.js 20.19 or newer.
 
+Run `claude` from inside the `hexo` folder so `/init` and any skills you create scope to it, not to the workshop repo.
+
 ```
 cd projects/3-Brownfield/hexo
-npm ci --ignore-scripts
+npm ci
 npm run build
 npm test
 ```
 
-Use `--ignore-scripts` here. The project's install hook tries to register git hooks, and this folder isn't its own git repo. Five tests fail out of about 1,300. That is the upstream state of the project, not your mistake. Four are order-dependent in one file. That's a ticket if you want it.
+Five tests fail out of about 1,300. That is the upstream state of the project, not your mistake. Four are order-dependent in one file. That's a ticket if you want it.
 
 The site needs the `npm run build` above to have finished first. It loads hexo from the compiled `dist` folder.
 

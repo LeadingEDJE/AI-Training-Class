@@ -56,6 +56,7 @@ Real problems that exist in the vendored copies, useful when someone asks "what 
 - Distributed cache TODOs in the logout and token revocation paths. `IMemoryCache` breaks with more than one host. Good architecture discussion.
 - Three `xUnit2013` analyzer warnings. Five-minute ticket for someone who finishes early.
 - The obsolete `SerializationInfo` constructor on the basket exception. Framework-drift ticket.
+- It builds under the .NET 10 SDK but the PublicApi returns 500s when rolled forward to the .NET 10 runtime, and 12 integration tests fail. Verified. Good "builds fine, fails at runtime, why?" investigation for someone strong.
 
 ### hexo
 
