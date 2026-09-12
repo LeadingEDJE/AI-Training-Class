@@ -2,7 +2,7 @@
 
 Run-of-show, what to watch for at each step, and talking points for the long waits. The slide deck is one cue card per step; these notes are what you say while it's up.
 
-Slides: https://claude.ai/code/artifact/e2ffa4c9-96e4-4039-abf6-b6cea56fde34 (private; export PDF from the toolbar for the room).
+Slides: open `slides/Project3-Slides.html` in a browser. Arrow keys advance, F toggles fullscreen. `slides/Project3-Slides.pdf` is the same deck for projectors that only take a PDF.
 
 ## The one idea
 
@@ -14,17 +14,18 @@ Times assume 90 minutes. Cuts for 60 are at the bottom.
 
 | Clock | Slide | Step | Attendees | You |
 |---|---|---|---|---|
-| 0:00 | 1 | Intro | Pick repo, make a branch | 3 min. The one idea. "Tonight you'll do this on your own repo, today you learn the moves." |
-| 0:03 | 2 | Part 1 - wrong way | Prompt 1, default model, no plan mode. Hands off for 10 min | Walk the room. Don't help. Note who gets a build error, who gets a confident "done" that isn't |
-| 0:13 | 3 | Stash and reset | `git stash push` | 2 min. Ask 3 people: did it build? did you see it? The answer is almost always no. Then the one idea |
-| 0:15 | 4 | Step 1 - Map | Prompt 2 → `ARCHITECTURE.md` | Mention `cartographer`. Ask someone to read one paragraph of their overview aloud and say whether it's right |
-| 0:25 | 5 | Step 2 - Build and run | Prompt 3, real output | Own-repo people who stall here stay here. That's the lab for them. Move between them |
-| 0:40 | 6 | Step 3 - Agents | Prompt 4 → `.claude/agents/`, `CLAUDE.md` | Have someone read their front-end agent aloud. Ask which sentence could describe any project. Delete it live |
-| 0:50 | 7 | Step 4 - Retro | Prompt 5, then `/clear` | 5 min. "This is the cheapest context you'll ever collect." |
-| 0:55 | 8 | Step 5 - Plan | Opus, plan mode, Prompt 6 | Check three things over shoulders: did they state their background, did it ask questions, is there a handoff prompt at the top of the plan file |
-| 1:10 | 9 | Step 6 - Execute | Prompt 7 | The long wait. Talking points below. Watch the orchestrator delegate |
-| 1:35 | 10 | Step 7 - Show and tell | Open the feature, compare with the stash | Pick 3 or 4 people. Same request, what was different? |
-| 1:47 | 11 | Close | | The one idea. HumanLayer reading. Cartographer tonight |
+| 0:00 | 1 | Intro | Listen | 2 min. The one idea. "Tonight you'll do this on your own repo, today you learn the moves." |
+| 0:02 | 2 | Before you start | Pick repo, cut `brownfield-lab` branch, push if it's theirs | 5 min. Confirm everyone's agent is started inside the repo folder, not the workshop root |
+| 0:07 | 3 | Part 1 - wrong way | Prompt 1, default model, no plan mode. Hands off for 10 min | Walk the room. Don't help. Note who gets a build error, who gets a confident "done" that isn't |
+| 0:17 | 4 | Stash and reset | `git stash push` | 2 min. Ask 3 people: did it build? did you see it? The answer is almost always no. Then the one idea |
+| 0:19 | 5 | Step 1 - Map | Prompt 2 → `ARCHITECTURE.md` | Mention `cartographer`. Ask someone to read one paragraph of their overview aloud and say whether it's right |
+| 0:29 | 6 | Step 2 - Build and run | Prompt 3, real output | Own-repo people who stall here stay here. That's the lab for them. Move between them |
+| 0:44 | 7 | Step 3 - Agents | Prompt 4 → `.claude/agents/`, `CLAUDE.md` | Have someone read their front-end agent aloud. Ask which sentence could describe any project. Delete it live |
+| 0:54 | 8 | Step 4 - Retro | Prompt 5, then `/clear` | 4 min. "This is the cheapest context you'll ever collect." |
+| 0:58 | 9 | Step 5 - Plan | Opus, plan mode, Prompt 6 | Check three things over shoulders: did they state their background, did it ask questions, is there a handoff prompt at the top of the plan file |
+| 1:12 | 10 | Step 6 - Execute | Prompt 7 | The long wait. Talking points below. Watch the orchestrator delegate |
+| 1:37 | 11 | Step 7 - Show and tell | Open the feature, compare with the stash | Pick 3 or 4 people. Same request, what was different? |
+| 1:48 | 12 | Close | | The one idea. HumanLayer reading. Cartographer tonight |
 
 ## What to watch for
 

@@ -8,6 +8,25 @@ Use **your own repository** if you brought one. Otherwise use one of the two pro
 
 Every prompt below is a starting point. Edit the bracketed parts. Paste the rest.
 
+## Before you start (5 minutes)
+
+1. Pick your repo: the one you brought, or a fallback from the bottom of this page. Open a terminal **inside that folder**. Your agent should start there, not at the workshop root.
+2. Cut a branch:
+
+   ```
+   git checkout -b brownfield-lab
+   ```
+
+3. If it's your own repo, push the branch so your work survives the day:
+
+   ```
+   git push -u origin brownfield-lab
+   ```
+
+   If you're on a fallback repo, keep the branch local. You don't have push rights to the workshop repo. Fork it first if you want to keep your work.
+
+4. Fallback prerequisites: the .NET 8 SDK for eShopOnWeb, or Node.js 20.19 or newer for hexo. Check with `dotnet --list-sdks` or `node --version`.
+
 ## Part 1 - The wrong way (10 minutes)
 
 Open a terminal **inside the repo folder**, start your agent, and ask for a feature. No planning, no context, default model.
