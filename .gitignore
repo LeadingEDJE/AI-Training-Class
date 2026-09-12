@@ -45,3 +45,16 @@ build/
 Thumbs.db
 .vscode/
 .idea/
+
+# --- projects/3-Brownfield/eShopOnWeb: .NET build output (scoped, not global bin/ because hexo ships a tracked bin/hexo entrypoint) ---
+projects/3-Brownfield/eShopOnWeb/**/bin/
+projects/3-Brownfield/eShopOnWeb/**/obj/
+projects/3-Brownfield/eShopOnWeb/**/.vs/
+projects/3-Brownfield/eShopOnWeb/**/TestResults/
+
+# eShopOnWeb .vscode/launch.json gives attendees F5 debugging - track it despite the global .vscode/ ignore above
+!projects/3-Brownfield/eShopOnWeb/.vscode/
+
+# --- projects/3-Brownfield/hexo-site: generated site output, never source ---
+projects/3-Brownfield/hexo-site/public/
+projects/3-Brownfield/hexo-site/db.json
