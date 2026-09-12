@@ -69,6 +69,12 @@
     pointer-events: none;
   }
   .slide.active { opacity: 1; visibility: visible; pointer-events: auto; }
+  .nav { position: fixed; right: 20px; bottom: 56px; display: flex; gap: 8px; z-index: 10; }
+  .nav-btn { width: 44px; height: 44px; border-radius: 999px; border: 0; cursor: pointer;
+    background: rgba(255,255,255,0.14); color: #fff; display: flex; align-items: center; justify-content: center; }
+  .nav-btn:hover { background: rgba(255,255,255,0.28); }
+  .viewport:focus { outline: none; }
+  @media print { .nav { display: none; } }
   .slide.charcoal { background: var(--le-charcoal); color: #fff; }
 
   .logo { position: absolute; top: 64px; left: var(--pad); height: 36px; display: block; }
@@ -423,6 +429,10 @@
   </div>
 </div>
 <div class="counter" id="counter">1 / 12</div>
+<div class="nav" id="nav" aria-label="Slide navigation">
+  <button type="button" class="nav-btn" id="prev" aria-label="Previous slide"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <button type="button" class="nav-btn" id="next" aria-label="Next slide"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+</div>
 
 <script>
 (function () {
@@ -453,7 +463,8 @@
     index = clamp(n);
     render();
     if (updateHash !== false) {
-      history.replaceState(null, '', '#' + (index + 1));
+      try { history.replaceState(null, '', '#' + (index + 1)); }
+      catch (err) { try { location.hash = String(index + 1); } catch (err2) { /* navigation still works without a hash */ } }
     }
   }
 
@@ -495,6 +506,11 @@
     if (e.target.closest('a')) return;
     advance(1);
   });
+
+  document.getElementById('prev').addEventListener('click', function (e) { e.stopPropagation(); advance(-1); });
+  document.getElementById('next').addEventListener('click', function (e) { e.stopPropagation(); advance(1); });
+  viewport.setAttribute('tabindex', '0');
+  viewport.focus();
 
   window.addEventListener('resize', fit);
   window.addEventListener('hashchange', function () {
