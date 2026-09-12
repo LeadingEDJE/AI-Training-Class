@@ -61,9 +61,10 @@ Please interrupt us at any point to get assistance or ask additional questions.
 
 - Project 3 - Maintaining a Brownfield Repository
   - **Bring your own repository** or use one of the two provided fallback repos (.NET or Node) — see [Project3.md](projects/3-Brownfield/Project3.md)
-  - Add context, plan a feature or bug fix, and identify where AI is getting things right or wrong
-  - Try different prompts and insights, or build your own skills
-  - Look at a recent ticket, have AI try it, and compare the results
+  - First the wrong way: ask for a feature with no context and watch what happens
+  - Then the right way: map the codebase, get it running, create specialized agents, run a retrospective
+  - Plan a larger feature in plan mode with a strong model, then execute it with an orchestrator and subagents
+  - Show what you built and compare it with the first attempt
 
 - Conclusion and additional learning opportunities
 

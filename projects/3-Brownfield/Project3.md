@@ -1,126 +1,143 @@
 # Project 3 - Maintaining a Brownfield Repository
 
-Projects 1 and 2 were greenfield: the AI knew everything about the code because it wrote it. Real work is not like that. In this project you point Claude Code at a codebase it has never seen, watch where it is right and where it is wrong, and learn that the lever you control is **context**.
+> **The AI is only as good as the context you give it, and you control the context.**
 
-Use **your own repository** if you can run it and its tests on your laptop within the first 10 minutes. If you can't, switch to one of the two provided fallback repos in the [Optional](#optional-provided-fallback-repositories) section at the bottom. Don't burn the hour fighting a build.
+Projects 1 and 2 were greenfield. The AI knew everything about the code because it wrote it. Real work is not like that. In this lab you point an agent at a codebase it has never seen, watch it fail, then do the work that makes it succeed.
 
-Work on a throwaway branch. Never push AI-generated changes to a shared branch during this lab.
+Use **your own repository** if you brought one. Otherwise use one of the two provided fallback repos in the [Optional](#optional-provided-fallback-repositories) section at the bottom. Work on a throwaway branch either way. Never push AI-generated changes to a shared branch during this lab.
 
-## Core lab (60 minutes)
+Every prompt below is a starting point. Edit the bracketed parts. Paste the rest.
 
-### Step 1 - Pick and run (10 min)
+## Part 1 - The wrong way (10 minutes)
 
-1. Open a terminal in the repo you're using and start `claude`.
-2. Confirm you can build, run, and execute the test suite yourself. Write down the exact commands.
-3. If you're not building and testing by minute 10, switch to a fallback repo.
+Open a terminal **inside the repo folder**, start your agent, and ask for a feature. No planning, no context, default model.
 
-### Step 2 - Orient (10 min)
+### Prompt 1 - Just build it
 
-Do not read the code yourself yet. Start a **fresh conversation** and paste:
+> Add [the feature, one or two sentences. Use a suggested feature from the fallback card if you're on a provided repo].
 
-#### Prompt 1 - Orientation
+Set a 10-minute timer and let it run. Answer its questions if it asks any. When time is up, don't fix anything. Answer these in the worksheet:
 
-> Explore this repository. Tell me: what it does, how to build, run, and test it, where the main entry points are, and how the code is organized. List anything you are unsure about or could not verify. Cite the files you actually read.
+- Did it build? Did it run? Did you see the feature work?
+- What did it assume about the codebase that you know is wrong?
+- What questions should it have asked you first?
 
-Check its answer against what you learned in Step 1. Note anything it got wrong or guessed.
+Then put the attempt aside so we can compare later:
 
-### Step 3 - Add context (10 min)
+```
+git add -A
+git stash push -m "wrong-way attempt"
+```
 
-1. Run `/init` to generate a `CLAUDE.md`.
-2. Read it. It's usually too long and half of it is filler. Then paste:
+## Part 2 - The right way
 
-#### Prompt 2 - Critique the context file
+### Step 1 - Map the codebase (10 minutes)
 
-> Review CLAUDE.md against the actual code and configuration in this repo. Remove anything that is generic, wrong, or restates what a developer can see in the code. Add the exact build, run, and test commands, the conventions a new contributor would be corrected on in code review, and the two or three places in the codebase that are surprising or easy to get wrong. Keep it under 60 lines.
+The thorough version of this is a tool like the `cartographer` plugin, which fans out subagents and produces a full codebase map. It's worth running on your real repo tonight. It takes too long for this room, so use the short version. Start a **fresh session** in the repo folder.
 
-Read the result again. Delete anything you don't agree with. This file is yours, not the AI's.
+### Prompt 2 - Overview
 
-### Step 4 - Plan a change (15 min)
+> Give me a high-level overview of this repository, starting at the top level. Identify what it is meant to do and how it does it. Identify the primary components, services, and layers, what each is responsible for, and the common patterns used across the repo. Then dig into each component you identified and describe its key files, its entry points, and how it talks to the others. Skip build output and dependency folders. Save the result as ARCHITECTURE.md in the repo root, with a consistent structure for every component and a simple ASCII tree of the folder layout with a one-line purpose for each folder. Tell me anything you could not determine or are guessing about.
 
-Pick a small real change: a bug from your tracker, a feature request, a recent ticket, or one of the suggested tickets in the fallback repo cards below. Aim for something a colleague would finish in an hour or two.
+Skim the file while it's writing. Correct anything you know is wrong before moving on. That correction is context.
 
-Enter **plan mode** (`Shift+Tab` twice, or start the prompt with the request to plan only) and paste:
+### Step 2 - Get it building and running (10 to 20 minutes)
 
-#### Prompt 3 - Plan only
+Same session.
 
-> Here is a ticket: [paste the ticket text or describe the change]. Investigate the codebase and propose an implementation plan. Do not write code yet. The plan must name the specific files and functions you would change, list the existing tests that cover this area, describe how you would verify the change, and call out any assumptions or open questions you have for me.
+### Prompt 3 - Build, run, test
 
-Push back on the plan at least once. Ask "why that file and not this one?" or "what breaks if you're wrong about X?" Watch whether it defends the plan with evidence or just agrees with you.
+> Using ARCHITECTURE.md, figure out how to build this project, run it locally, and execute its test suite. Actually run each command and show me the real output. If something fails because of my environment, diagnose it and tell me what to install or change, then retry. When everything works, add a "Running locally" section to ARCHITECTURE.md with the exact commands that succeeded, the URLs or entry points to open, and any gotchas you hit.
 
-### Step 5 - Execute and critique (15 min)
+**If you brought your own repo and this step eats the whole session, that is fine.** Getting a legacy project to build on a fresh machine with an agent's help is the lab. Flag us down and we'll work through it with you.
 
-Accept the plan and let it implement.
+### Step 3 - Create specialized agents (10 minutes)
 
-#### Prompt 4 - Implement and verify
+Start a **fresh session** in the repo folder.
 
-> Implement the plan. Run the build and the relevant tests, and show me the actual output. If anything fails, fix it and re-run. Then summarize what you changed and what you could not verify.
+### Prompt 4 - Build the team
 
-Now open a **new conversation** (fresh context) and paste:
+> Read ARCHITECTURE.md, including the Running locally section. Then create a set of specialized subagents for this codebase in .claude/agents/, one file each. At minimum create a front-end agent and a back-end agent. Add others only where this codebase genuinely has a distinct area, such as data access and migrations, tests, build and tooling, or infrastructure. For each agent write: a one-paragraph description of when to use it, the folders and layers it owns, the conventions and patterns it must follow with real examples from this repo, the exact commands it must run to verify its work, and the things it must not touch. Then create or update CLAUDE.md so it points at ARCHITECTURE.md and the agents, states the build, run, and test commands, and lists the two or three things about this repo that are most likely to trip up a new contributor. Keep CLAUDE.md under 60 lines. Show me the list of files you created.
 
-#### Prompt 5 - Skeptical review
+Open the agents. Delete anything generic that could describe any project. What's left is the context.
 
-> Review the uncommitted changes in this repository as a skeptical senior engineer who knows this codebase well. Look for logic errors, missed edge cases, changes that don't match the existing conventions, and anything that was claimed as tested but isn't. Be specific and cite lines. Don't fix anything.
+### Step 4 - The retrospective habit (5 minutes)
 
-Before moving on, write two lines in the worksheet below: one thing the AI got right that you would not have expected, and one thing it got wrong that better context would have prevented.
+Before you close a session, ask what it learned. Do it now in the session from Step 3.
 
-## Stretch (if we have 90 minutes)
+### Prompt 5 - What did we learn
 
-### Step 6 - Compare and refine (15 min)
+> Before I end this session: what did we learn about this codebase that isn't written down yet? What did you get wrong or have to discover the hard way? For each item, tell me where it belongs: CLAUDE.md, ARCHITECTURE.md, one of the agents, a new skill, or nowhere. Make the edits you recommend and show me the diff.
 
-**If you're on your own repo** and picked a ticket that has already been fixed, compare the AI's version to the real one:
+Make this a habit. It is the cheapest context you will ever collect.
 
-#### Prompt 6 - Compare against the real fix
+Then clear your context. `/clear` or start a new session.
 
-> This change was already implemented in commit [hash or PR number]. Compare my uncommitted implementation to that commit. Classify each difference as cosmetic, a style or convention mismatch, or a behavior difference. For each behavior difference, say which version is correct and why.
+### Step 5 - Plan a larger feature (15 minutes)
 
-**If you're on a fallback repo** there is no known answer. Instead, compare the Step 5 review to your own reading of the diff. Which findings were real, which were noise?
+Switch to a powerful model for this. `/model` and pick Opus or the strongest model your tool offers. Enter **plan mode**. Then paste, after filling in the brackets:
 
-Then, in either case:
+### Prompt 6 - Plan with me
 
-#### Prompt 7 - Extract the missing context
+> I am a [your role and experience level, such as "senior .NET developer who has never touched this codebase" or "junior developer, comfortable with JavaScript, new to TypeScript"]. Ask me questions at the level that fits that background. I want to add this feature: [describe it in two to four sentences. Use one of the suggested features from the fallback card if you're on a provided repo].
+>
+> Before planning, read CLAUDE.md, ARCHITECTURE.md, and the agents in .claude/agents/. Ask me any questions you need answered before you can plan well, then produce a plan. The plan must name the specific files to change or create, the order of work, the tests to add or update, and how we'll verify the feature works end to end, including how I will see it running locally.
+>
+> When the plan is executed, you will act as the orchestrator and delegate the work to the subagents in .claude/agents/. Use Sonnet for implementation and test-writing tasks. Use Opus only for research or design decisions. Structure the plan so the work can be delegated that way.
+>
+> Write the finished plan to docs/plans/[feature-name].md. Put a handoff prompt at the top of that file: the exact message I should paste into a fresh session to execute this plan, including the orchestration and verification instructions above.
 
-> Based on the differences and review findings above, what information about this codebase would have gotten you closer to the correct implementation on the first try? Focus on implicit conventions, architectural boundaries, and examples to follow. Don't include the answer itself. Propose additions to CLAUDE.md.
+Answer its questions honestly. Push back on the plan at least once. Read the handoff prompt it wrote. If it doesn't say "you are not done until it runs locally," add that yourself.
 
-Apply the additions you agree with. Re-run Steps 4 and 5 on a second ticket if time allows, and see whether the plan improves.
+### Step 6 - Execute the plan (20 to 30 minutes)
 
-### Step 7 - Build a skill (15 min)
+Clear your context. `/clear` or start a new session. Stay on the powerful model as orchestrator. Paste the handoff prompt from the top of your plan file. If you wrote your own, make sure it includes this:
 
-Take the review prompt from Step 5, or whatever prompt you found yourself repeating, and turn it into a reusable skill.
+### Prompt 7 - Execute
 
-#### Prompt 8 - Create a skill
+> Read docs/plans/[feature-name].md and execute it. You are the orchestrator. Delegate implementation to the subagents in .claude/agents/ per the plan, using Sonnet for implementation and Opus for research. You are not done until the project builds, the tests pass, the application is running locally, and you have told me exactly what to open or run so I can see the feature working with my own eyes. Show me the real build and test output, not a summary. If you get stuck on my environment, stop and ask.
 
-> Create a skill in .claude/skills/ called review-change that reviews the uncommitted diff the way a senior engineer on this project would. Include the specific conventions and pitfalls we captured in CLAUDE.md, require that it cite file and line for every finding, and forbid it from making edits. Then run it on the current diff.
+This is the long wait. Watch how it delegates. Notice when a subagent's report and the orchestrator's summary disagree. When it says done, go look.
+
+### Step 7 - Show and tell
+
+Open the feature and show your neighbors. Then pull up the wrong-way attempt:
+
+```
+git stash show -p stash@{0} | head -100
+```
+
+Same request. What was different?
 
 ## Worksheet
 
-Fill this in as you go. We'll compare notes as a group.
-
-| | What happened | What context would have changed it |
+| | Part 1 (wrong way) | Part 2 (right way) |
 |---|---|---|
-| Got right, unexpectedly | | |
-| Got wrong | | |
-| Claimed but didn't verify | | |
-| Question it should have asked me | | |
+| Did it build and run? | | |
+| Did I see the feature work? | | |
+| Wrong assumptions it made | | |
+| Questions it should have asked | | |
+| What context would have prevented the miss | | |
 
 ## Tips
 
-- Fresh conversation per step. Long conversations drift and cost more. Make each step produce an artifact (`CLAUDE.md`, a plan file, a diff) and start the next step from that.
-- Use a heavier model and higher effort for Steps 2 to 4, a cheaper one for Step 5's implementation. See [resources/model-selection.md](../../resources/model-selection.md).
+- Fresh session per step. The steps produce artifacts (`ARCHITECTURE.md`, agents, `CLAUDE.md`, the plan) so each session can start cold and still know everything.
+- Heavy model for mapping and planning, cheaper models for doing. See [resources/model-selection.md](../../resources/model-selection.md).
 - "Show me the actual output" is not optional. The most common failure is a confident claim that tests pass when they were never run.
-- When it asks you a question, answer it. When it doesn't ask and should have, note that in the worksheet. That's a context gap.
-- Recommended reading after the lab: [Writing a good CLAUDE.md](https://www.humanlayer.dev/blog/writing-a-good-claude-md). Their root file is under 60 lines.
+- If it didn't ask you a question and should have, that's a context gap. Write it down.
+- Reading for later: [Writing a good CLAUDE.md](https://www.humanlayer.dev/blog/writing-a-good-claude-md). Their root file is under 60 lines.
 
 ## Optional: provided fallback repositories
 
 Both were copied into this folder from public open-source projects with their CI, deploy, and AI-helper files removed. Licenses are preserved in each folder. Neither has a `CLAUDE.md`, on purpose.
+
+Start your agent **inside the repo folder**, not the workshop root, so `/init`, `ARCHITECTURE.md`, and `.claude/agents/` scope to the project.
 
 ### eShopOnWeb (.NET)
 
 Microsoft's reference e-commerce sample. ASP.NET Core 8, Razor Pages web app plus a public API, clean-architecture layout. Upstream was archived in January 2025, so its dependencies are already stale. Configured here to use an in-memory database, so no SQL Server is needed.
 
 **Prerequisite:** the .NET 8 SDK. A newer SDK can sit alongside it, but the app targets .NET 8 and returns errors on the .NET 10 runtime, so .NET 8 itself must be installed. If your browser complains about the HTTPS certificate, run `dotnet dev-certs https --trust` once.
-
-Run `claude` from inside the `eShopOnWeb` folder so `/init` and any skills you create scope to it, not to the workshop repo.
 
 ```
 cd projects/3-Brownfield/eShopOnWeb
@@ -144,20 +161,17 @@ dotnet run --launch-profile Web
 
 Open `https://localhost:5001`. Admin area is at `/admin`. Log in with `demouser@microsoft.com` / `Pass@word1`.
 
-Suggested tickets (these are real issues in the code, not invented):
+Suggested features (use the same one for Part 1 and Part 2 so you can compare):
 
-- The build prints a high-severity security advisory for `System.Text.Json`. Upgrade the affected packages without breaking the tests.
-- `EmailSender` is a stub that never sends anything. Implement it behind an interface with a fake for tests, and wire it into the order confirmation flow.
-- The default password is hardcoded in `AuthorizationConstants` with a TODO. Move it to configuration and make the seeder read it.
-- Three xUnit analyzer warnings complain about `Assert.Equal` being used to check collection sizes. Fix them properly.
+- Let a signed-in customer rate a catalog item 1 to 5 stars and leave a short review. Show the average rating on the item card and the reviews on the item page.
+- Add a wishlist. A customer can save items to it from the catalog, view it, and move an item from the wishlist into the basket.
+- Add order history. A signed-in customer can see past orders with status, and an admin can change an order's status from the admin area.
 
 ### hexo (Node)
 
 A static-site generator written in TypeScript, about 22k lines, with a real open issue backlog. `hexo-site` is a small pre-scaffolded blog that points at the local `hexo` source, so your edits to `hexo/lib` show up when you regenerate the site.
 
 **Prerequisite:** Node.js 20.19 or newer.
-
-Run `claude` from inside the `hexo` folder so `/init` and any skills you create scope to it, not to the workshop repo.
 
 ```
 cd projects/3-Brownfield/hexo
@@ -166,7 +180,7 @@ npm run build
 npm test
 ```
 
-Five tests fail out of about 1,300. That is the upstream state of the project, not your mistake. Four are order-dependent in one file. That's a ticket if you want it.
+Five tests fail out of about 1,300. That is the upstream state of the project, not your mistake. Four are order-dependent in one file.
 
 The site needs the `npm run build` above to have finished first. It loads hexo from the compiled `dist` folder.
 
@@ -179,9 +193,8 @@ npx hexo server -p 4111
 
 Open `http://localhost:4111`. Port 4000 is hexo's default but is often taken by something else on developer laptops.
 
-Suggested tickets from the upstream tracker:
+Suggested features (use the same one for Part 1 and Part 2 so you can compare):
 
-- [hexojs/hexo#5747](https://github.com/hexojs/hexo/issues/5747) - watch mode warns about recreating files it created during the previous run.
-- [hexojs/hexo#5479](https://github.com/hexojs/hexo/issues/5479) - a `.j2` file in `code_dir` causes a rendering error.
-- [hexojs/hexo#5635](https://github.com/hexojs/hexo/issues/5635) - Markdown gets escaped when two tag plugins share a prefix.
-- The four order-dependent failures in `test/scripts/processors/asset.ts`. Make them pass in any order.
+- Add a `reading_time` helper that templates can call to show estimated minutes for a post, configurable words-per-minute, and use it in `hexo-site`'s theme.
+- Add a `hexo stats` console command that prints post count, total words, posts per tag and per category, and the five longest posts.
+- Add a `related_posts` helper that returns the N posts sharing the most tags with the current one, and render them under each post in `hexo-site`.
