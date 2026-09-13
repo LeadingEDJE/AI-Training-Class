@@ -15,13 +15,25 @@ section 3 must be done first.
 
 ## 2. Prerequisites
 
-Node.js 20.19 or newer.
+Tested on Node 22, 24, and 25 — `npm test` reaches the same 1287 passing /
+5 pending / 5 failing result on all three (Node 20.19+ also satisfies the
+`engines` field but wasn't re-verified in this pass).
 
 ```
 node --version
 ```
 
 Should print `v20.19.0` or higher. If it doesn't, install a newer Node first.
+
+### Installing Node.js
+
+No Node.js and no version manager? Pick your platform:
+
+- **macOS:** `brew install node@22` then `brew link --overwrite node@22` (if `brew` is missing, the installer at https://nodejs.org is the shortest path).
+- **Windows:** `winget install OpenJS.NodeJS.LTS` (or the `.msi` from https://nodejs.org). Open a new terminal afterward.
+- **Linux (Debian/Ubuntu):** `apt`'s Node is often too old — `curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -` then `sudo apt-get install -y nodejs`. Fedora: `sudo dnf install nodejs22`.
+
+Then check: `node --version` and `npm --version`.
 
 ## 3. Build and test the hexo source
 

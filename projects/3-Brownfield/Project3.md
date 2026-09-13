@@ -192,7 +192,7 @@ Your instructor will hand you a feature at Part 1. Use the same feature in Step 
 
 A static-site generator written in TypeScript, about 22k lines, with a real open issue backlog. hexo is a library and a command-line tool, not a website, so `hexo/example-site` is a small starter blog wired to the local hexo source. Your edits to `hexo/lib` show up when you regenerate the site. Treat `hexo` as the one repo for this lab. Start your agent there.
 
-**Prerequisite:** Node.js 20.19 or newer.
+**Prerequisite:** Node.js 22 or newer. Tested on 22, 24, and 25. Install commands per platform are in `hexo/RUNNING.md`.
 
 ```
 cd projects/3-Brownfield/hexo
