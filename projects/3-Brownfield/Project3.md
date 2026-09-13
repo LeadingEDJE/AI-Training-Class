@@ -90,7 +90,7 @@ Before you close a session, ask what it learned. Do it now in the session from S
 
 ### Prompt 5 - What did we learn
 
-> Before I end this session: what did we learn about this codebase that isn't written down yet? What did you get wrong or have to discover the hard way? For each item, tell me where it belongs: CLAUDE.md, ARCHITECTURE.md, one of the agents, a new skill, or nowhere. Make the edits you recommend and show me the diff.
+> Have we learned anything this session worth preserving in the codebase in some way?
 
 Make this a habit. It is the cheapest context you will ever collect.
 
