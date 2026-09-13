@@ -39,7 +39,7 @@ Before you paste the prompt, switch to **auto mode** so it doesn't stop to ask p
 
 > Add [the feature your instructor gave you, in one or two sentences]. Make assumptions and just get it done.
 
-Set a 10-minute timer and let it run. Answer its questions if it asks any. When time is up, don't fix anything. Answer these in the worksheet:
+Set a 10-minute timer and let it run. Answer its questions if it asks any. When time is up, don't fix anything. Lets talk through the results and why some will be better than other.
 
 - Did it build? Did it run? Did you see the feature work?
 - What did it assume about the codebase that you know is wrong?
