@@ -188,7 +188,7 @@ Suggested features (use the same one for Part 1 and Part 2 so you can compare):
 
 ### hexo (Node)
 
-A static-site generator written in TypeScript, about 22k lines, with a real open issue backlog. `hexo-site` is a small pre-scaffolded blog that points at the local `hexo` source, so your edits to `hexo/lib` show up when you regenerate the site.
+A static-site generator written in TypeScript, about 22k lines, with a real open issue backlog. hexo is a library and a command-line tool, not a website, so `hexo/example-site` is a small starter blog wired to the local hexo source. Your edits to `hexo/lib` show up when you regenerate the site. Treat `hexo` as the one repo for this lab. Start your agent there.
 
 **Prerequisite:** Node.js 20.19 or newer.
 
@@ -201,10 +201,10 @@ npm test
 
 Five tests fail out of about 1,300. That is the upstream state of the project, not your mistake. Four are order-dependent in one file.
 
-The site needs the `npm run build` above to have finished first. It loads hexo from the compiled `dist` folder.
+The example site needs the `npm run build` above to have finished first. It loads hexo from the compiled `dist` folder.
 
 ```
-cd ../hexo-site
+cd example-site
 npm install
 npx hexo generate
 npx hexo server -p 4111
@@ -214,6 +214,6 @@ Open `http://localhost:4111`. Port 4000 is hexo's default but is often taken by 
 
 Suggested features (use the same one for Part 1 and Part 2 so you can compare):
 
-- Add a `reading_time` helper that templates can call to show estimated minutes for a post, configurable words-per-minute, and use it in `hexo-site`'s theme.
+- Add a `reading_time` helper that templates can call to show estimated minutes for a post, configurable words-per-minute, and use it in the example site's theme.
 - Add a `hexo stats` console command that prints post count, total words, posts per tag and per category, and the five longest posts.
-- Add a `related_posts` helper that returns the N posts sharing the most tags with the current one, and render them under each post in `hexo-site`.
+- Add a `related_posts` helper that returns the N posts sharing the most tags with the current one, and render them under each post in the example site.

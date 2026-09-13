@@ -55,6 +55,6 @@ projects/3-Brownfield/eShopOnWeb/**/TestResults/
 # eShopOnWeb .vscode/launch.json gives attendees F5 debugging - track it despite the global .vscode/ ignore above
 !projects/3-Brownfield/eShopOnWeb/.vscode/
 
-# --- projects/3-Brownfield/hexo-site: generated site output, never source ---
-projects/3-Brownfield/hexo-site/public/
-projects/3-Brownfield/hexo-site/db.json
+# --- projects/3-Brownfield/hexo/example-site: generated site output, never source ---
+projects/3-Brownfield/hexo/example-site/public/
+projects/3-Brownfield/hexo/example-site/db.json
