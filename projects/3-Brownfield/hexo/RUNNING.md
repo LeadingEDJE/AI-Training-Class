@@ -88,23 +88,7 @@ The running server picks up new/edited **posts** immediately, but a
 Clean up before you start building your own feature: delete any test posts
 you added, revert `_config.yml` if you changed it, and run `npx hexo clean`.
 
-## 6. Where things live (in the hexo source, not example-site)
-
-- `lib/hexo/` — the `Hexo` class: load/process/generate/exit lifecycle.
-- `lib/plugins/helper/` — template helpers (`url_for`, `date`) themes call.
-- `lib/plugins/tag/` — post-body tags (`{% blockquote %}`, `{% code %}`).
-- `lib/plugins/filter/` — pipeline hooks (before/after post render, etc).
-- `lib/plugins/generator/` — turns loaded posts/pages into output routes.
-- `lib/plugins/processor/` — decides how a source file gets loaded.
-- `lib/plugins/console/` — implements `hexo new`, `hexo generate`, etc.
-- `lib/plugins/renderer/` — hands off to markdown/ejs/stylus renderers.
-- `lib/extend/` — registries the plugin types above register into.
-- `lib/models/` — Warehouse (in-memory DB) schemas for posts, pages, etc.
-- `lib/theme/` — theme/view loading and resolution.
-- `test/scripts/` — mocha tests, mirroring the `lib/` layout above.
-- `bin/hexo` — thin shim handing off to the separate `hexo-cli` package.
-
-## 7. Common problems
+## 6. Common problems
 
 - **Port 4000 already in use.** That's Hexo's default; we use `4111` here to
   dodge collisions. Pass any free port with `-p`.

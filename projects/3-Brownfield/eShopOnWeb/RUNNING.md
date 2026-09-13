@@ -82,20 +82,7 @@ commands with forward slashes. Stop either with Ctrl+C.
    an edit here will not appear on the storefront pages in step 1/2. That's a
    quirk of running two processes each with `UseInMemoryDatabase`, not a bug.
 
-## 6. Where things live
-
-- `src/ApplicationCore` — domain entities, interfaces, business logic.
-- `src/Infrastructure` — EF Core (in-memory here), repositories, identity.
-- `src/Web` — the storefront: Razor Pages, basket/checkout, order history.
-- `src/PublicApi` — REST API + Swagger, own copy of the in-memory data.
-- `src/BlazorAdmin` — the Blazor WASM admin app served from `/admin`.
-- `src/BlazorShared` — DTOs/config shared between BlazorAdmin and PublicApi.
-- `tests/UnitTests`, `IntegrationTests`, `FunctionalTests`,
-  `PublicApiIntegrationTests` — one suite per layer above.
-- Data is in-memory in both Web and PublicApi and is reseeded from scratch
-  every time you restart either process — nothing you do persists.
-
-## 7. Common problems
+## 6. Common problems
 
 - **`dotnet build` fails with MSB1011** ("more than one project or solution
   file"): this folder has `eShopOnWeb.sln` and `Everything.sln`. Always pass
