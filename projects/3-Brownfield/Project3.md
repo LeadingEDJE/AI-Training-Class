@@ -29,7 +29,7 @@ Every prompt below is a starting point. Edit the bracketed parts. Paste the rest
 
 ## Part 1 - The wrong way (10 minutes)
 
-Open a terminal **inside the repo folder**, start your agent, and ask for a feature. No planning, no context, default model.
+Open a terminal **inside the repo folder**, start your agent, and ask for a feature. No planning, no context, default model. No plugins, extra skills, or MCP servers either. If you have any installed, turn them off for this part. They are context too, and the point is to see what happens without it.
 
 Before you paste the prompt, switch to **auto mode** so it doesn't stop to ask permission for every edit and command. In Claude Code, press `Shift+Tab` until the mode indicator shows auto, or start with `claude --permission-mode auto`. We want to see what it does when nobody is steering.
 
