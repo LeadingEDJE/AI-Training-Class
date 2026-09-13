@@ -29,6 +29,8 @@ Every prompt below is a starting point. Edit the bracketed parts. Paste the rest
 
 ## Part 1 - The wrong way (10 minutes)
 
+*NOTE:  We may skip this depending on time.*
+
 Open a terminal **inside the repo folder**, start your agent, and ask for a feature. No planning, no context, default model. No plugins, extra skills, or MCP servers either. If you have any installed, turn them off for this part. They are context too, and the point is to see what happens without it.
 
 Before you paste the prompt, switch to **auto mode** so it doesn't stop to ask permission for every edit and command. In Claude Code, press `Shift+Tab` until the mode indicator shows auto, or start with `claude --permission-mode auto`. We want to see what it does when nobody is steering.
@@ -120,11 +122,13 @@ Clear your context. `/clear` or start a new session. Stay on the powerful model 
 
 > Read docs/plans/[feature-name].md and execute it. You are the orchestrator. Delegate implementation to the subagents in .claude/agents/ per the plan, using Sonnet for implementation and Opus for research. You are not done until the project builds, the tests pass, the application is running locally, and you have told me exactly what to open or run so I can see the feature working with my own eyes. Show me the real build and test output, not a summary. If you get stuck on my environment, stop and ask.
 
-This is the long wait. Watch how it delegates. Notice when a subagent's report and the orchestrator's summary disagree. When it says done, go look.
+This is the long wait. Watch how it delegates. Notice when a subagent's report and the orchestrator's summary disagree. When it says done, go look.  
+
+*NOTE:  I usually ask the orchestrator to show me and/or prove it here.  For example: If you've got the playwright or browser tools available (and it's a web app), It's a good habit to ask the agent to drive the running feature end to end walk through it together one step at a time.  You'll learn a lot this way and eventually can make it a rule never to tell you its done until it proves it end to end itself.*
 
 ### Step 7 - Show and tell
 
-Open the feature and show your neighbors. Then pull up the wrong-way attempt:
+Need some volunteers here.  As your stuff finishes - raise your hand and lets talk through your results
 
 ```
 git stash show -p stash@{0} | head -100
