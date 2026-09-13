@@ -52,11 +52,13 @@ git stash push -m "wrong-way attempt"
 
 ### Step 1 - Map the codebase (10 minutes)
 
-The thorough version of this is a tool like the `cartographer` plugin, which fans out subagents and produces a full codebase map. It's worth running on your real repo tonight. It takes too long for this room, so use the short version. Start a **fresh session** in the repo folder.
+The thorough version of this is a tool like the `cartographer` plugin, which fans out subagents and produces a full codebase map. It's worth running on your real repo tonight. It takes too long for this room, so use the short version. Start a **fresh session** in the repo folder.  Use Auto, Manual or Accept Edits mode for this.
 
 ### Prompt 2 - Overview
 
-> Give me a high-level overview of this repository, starting at the top level. Identify what it is meant to do and how it does it. Identify the primary components, services, and layers, what each is responsible for, and the common patterns used across the repo. Then dig into each component you identified and describe its key files, its entry points, and how it talks to the others. Skip build output and dependency folders. Save the result as ARCHITECTURE.md in the repo root, with a consistent structure for every component and a simple ASCII tree of the folder layout with a one-line purpose for each folder. Tell me anything you could not determine or are guessing about.
+Use auto mode for this.
+
+> Give me a high-level overview of this repository, starting at the top level. Identify what it is meant to do and how it does it. Identify the primary components, services, and layers, what each is responsible for, and the common patterns used across the repo. Then dig into each component you identified and describe its key files, its entry points, and how it talks to the others. Skip build output and dependency folders. Save the result as ARCHITECTURE.md in the repo root, with a consistent structure for every component and a simple ASCII tree of the folder layout with a one-line purpose for each folder. Tell me anything you could not determine or are guessing about.  Use Sonnet sub-agents to scout the codebase after you get the high level so you can avoid bloating your own context.
 
 Skim the file while it's writing. Correct anything you know is wrong before moving on. That correction is context.
 
