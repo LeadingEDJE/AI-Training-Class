@@ -25,7 +25,7 @@ Every prompt below is a starting point. Edit the bracketed parts. Paste the rest
 
    If you're on a fallback repo, keep the branch local. You don't have push rights to the workshop repo. Fork it first if you want to keep your work.
 
-4. Fallback prerequisites: the .NET 8 SDK for eShopOnWeb, or Node.js 20.19 or newer for hexo. Check with `dotnet --list-sdks` or `node --version`.
+4. Fallback prerequisites: the .NET 8 SDK for eShopOnWeb, or Node.js 22 for hexo. Check with `dotnet --list-sdks` or `node --version`. Per-platform install commands are in each repo's `RUNNING.md`.
 
 ## Part 1 - The wrong way (10 minutes)
 

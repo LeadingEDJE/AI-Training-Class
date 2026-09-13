@@ -12,8 +12,15 @@ January 2025, so this copy is frozen and self-contained (no upstream updates).
 ## 2. Prerequisites
 
 - **.NET 8 SDK** — required. The app targets `net8.0` and fails at runtime on
-  a machine with only the .NET 10 runtime. Install from
-  https://dotnet.microsoft.com/download/dotnet/8.0
+  a machine with only the .NET 10 runtime. It installs side by side with any
+  newer SDK you already have.
+  - Windows: `winget install Microsoft.DotNet.SDK.8`, then open a new terminal.
+  - macOS: `brew install --cask dotnet-sdk@8`, or the installer from
+    https://dotnet.microsoft.com/download/dotnet/8.0 (pick the SDK, not the runtime).
+  - Linux (Debian/Ubuntu): `sudo apt-get install -y dotnet-sdk-8.0`. Fedora:
+    `sudo dnf install dotnet-sdk-8.0`. If your distro's package is missing,
+    use the install script at https://learn.microsoft.com/dotnet/core/install/linux-scripted-manual
+    with `--channel 8.0`.
   - Check: `dotnet --list-sdks` must show an `8.0.x` line.
   - Also check: `dotnet --list-runtimes` must show `Microsoft.AspNetCore.App 8.0.x`.
 - A trusted local dev cert (both apps run HTTPS):
