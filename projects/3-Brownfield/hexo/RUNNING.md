@@ -80,25 +80,33 @@ The running server picks up new/edited **posts** immediately, but a
 
 ## 5. A tour
 
-1. With the server running, visit http://localhost:4111 and open the default
-   "Hello World" post.
-2. Create a post: `npx hexo new "My first post"`. This creates
+The example site is seeded as "Northwind Engineering," a fictional
+company's internal blog: 12 posts spread from 2023 to 2026, 3 categories,
+and 5 tags, so pagination, tag pages, archives, and reading time all have
+real data to show.
+
+1. With the server running, visit http://localhost:4111 — the front page
+   is paginated (`per_page: 5`), so open page 2 to see the rest.
+2. Open the archives (`http://localhost:4111/archives/`) and a tag page
+   (e.g. `http://localhost:4111/tags/postgres/`) — several posts share
+   tags, which is what related-posts/tag-cloud features key off of.
+3. Create a post: `npm run new -- "My first post"`. This creates
    `source/_posts/My-first-post.md`. Edit it, add some text, and refresh the
    site — the running server watches `source/`, so no regenerate is needed;
    your post appears on the home page.
-3. Add a tag: put `tags: [workshop]` in the post's front matter, save, and
+4. Add a tag: put `tags: [workshop]` in the post's front matter, save, and
    visit `http://localhost:4111/tags/workshop/` — your post is listed there.
-4. Run `npx hexo clean` — deletes `public/` and `db.json` (generated output
-   and cache). Run `hexo generate` again before the site works.
-5. Open `_config.yml` and change the `title:` field, then `hexo generate`
+5. Run `npm run clean` — deletes `public/` and `db.json` (generated output
+   and cache). Run `npm run generate` again before the site works.
+6. Open `_config.yml` and change the `title:` field, then `npm run generate`
    and restart the server — the page `<title>` and header change.
-6. The active theme lives in `example-site/themes/landscape/`. A post's
+7. The active theme lives in `example-site/themes/landscape/`. A post's
    HTML is rendered by `themes/landscape/layout/post.ejs`, and the
    partials it uses are in `themes/landscape/layout/_partial/`. Edit a
    template there and the running server picks it up.
 
 Clean up before you start building your own feature: delete any test posts
-you added, revert `_config.yml` if you changed it, and run `npx hexo clean`.
+you added, revert `_config.yml` if you changed it, and run `npm run clean`.
 
 ## 6. Common problems
 
