@@ -52,6 +52,10 @@ You have 20 to 30 minutes. Pick from these.
 7. **The retrospective habit.** Two minutes at the end of every session. Ask what it learned. Put it where it belongs. Six weeks later your repo has a context layer no one had to schedule time to write.
 8. **Cartographer and friends.** What they did by hand in Step 1 exists as plugins and skills. The point of doing it by hand once is knowing what the tool is producing and whether it's right.
 
+## Handing out features
+
+One feature per attendee at Part 1, reused in Step 5. The list with hand-out text, why each is hard, and what done looks like is in `leader/FEATURE-CHEATSHEET.md`. That folder is gitignored so attendees never see it. Copy it to any machine you present from.
+
 ## Fallback repo hooks
 
 Real problems in the vendored copies, if anyone asks "what should I pick?" or finishes early.
@@ -64,6 +68,9 @@ Real problems in the vendored copies, if anyone asks "what should I pick?" or fi
 - `AuthorizationConstants` hardcodes the default password with its own "don't use in production" TODO.
 - Distributed cache TODOs in logout and token revocation. `IMemoryCache` breaks with more than one host.
 - Three `xUnit2013` analyzer warnings. Five-minute fix.
+- Web and PublicApi each hold their own in-memory database. An admin edit through the API never shows on the storefront. Excellent "why doesn't my change appear?" trap, and Prompt 2 should surface it.
+- `/admin` returns 200 for everyone because the Blazor shell checks authorization client-side. `demouser` is not an admin. `admin@microsoft.com` with the same password is.
+- Two solution files, `eShopOnWeb.sln` and `Everything.sln`. A bare `dotnet build` fails until you name one.
 - It builds under the .NET 10 SDK but the PublicApi returns 500s when rolled forward to the .NET 10 runtime, and 12 integration tests fail. Verified. Good "builds fine, fails at runtime, why?" investigation for someone strong.
 
 ### hexo

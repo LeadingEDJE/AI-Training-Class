@@ -1,3 +1,5 @@
+> Workshop attendees: see [RUNNING.md](RUNNING.md) for local setup. The rest of this README is the upstream project's.
+
 <img src="https://raw.githubusercontent.com/hexojs/logo/master/hexo-logo-avatar.png" alt="Hexo logo" width="100" height="100" align="right" />
 
 # Hexo

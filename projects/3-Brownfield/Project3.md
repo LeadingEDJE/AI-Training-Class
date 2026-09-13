@@ -33,7 +33,7 @@ Open a terminal **inside the repo folder**, start your agent, and ask for a feat
 
 ### Prompt 1 - Just build it
 
-> Add [the feature, one or two sentences. Use a suggested feature from the fallback card if you're on a provided repo].
+> Add [the feature your instructor gave you, in one or two sentences].
 
 Set a 10-minute timer and let it run. Answer its questions if it asks any. When time is up, don't fix anything. Answer these in the worksheet:
 
@@ -98,7 +98,7 @@ Switch to a powerful model for this. `/model` and pick Opus or the strongest mod
 
 ### Prompt 6 - Plan with me
 
-> I am a [your role and experience level, such as "senior .NET developer who has never touched this codebase" or "junior developer, comfortable with JavaScript, new to TypeScript"]. Ask me questions at the level that fits that background. I want to add this feature: [describe it in two to four sentences. Use one of the suggested features from the fallback card if you're on a provided repo].
+> I am a [your role and experience level, such as "senior .NET developer who has never touched this codebase" or "junior developer, comfortable with JavaScript, new to TypeScript"]. Ask me questions at the level that fits that background. I want to add this feature: [the same feature you used in Part 1, described in two to four sentences].
 >
 > Before planning, read CLAUDE.md, ARCHITECTURE.md, and the agents in .claude/agents/. Ask me any questions you need answered before you can plan well, then produce a plan. The plan must name the specific files to change or create, the order of work, the tests to add or update, and how we'll verify the feature works end to end, including how I will see it running locally.
 >
@@ -180,11 +180,9 @@ dotnet run --launch-profile Web
 
 Open `https://localhost:5001`. Admin area is at `/admin`. Log in with `demouser@microsoft.com` / `Pass@word1`.
 
-Suggested features (use the same one for Part 1 and Part 2 so you can compare):
+Full setup, a click-through tour of the app, and a map of the source: [eShopOnWeb/RUNNING.md](eShopOnWeb/RUNNING.md).
 
-- Let a signed-in customer rate a catalog item 1 to 5 stars and leave a short review. Show the average rating on the item card and the reviews on the item page.
-- Add a wishlist. A customer can save items to it from the catalog, view it, and move an item from the wishlist into the basket.
-- Add order history. A signed-in customer can see past orders with status, and an admin can change an order's status from the admin area.
+Your instructor will hand you a feature at Part 1. Use the same feature in Step 5 so you can compare the two attempts.
 
 ### hexo (Node)
 
@@ -212,8 +210,6 @@ npx hexo server -p 4111
 
 Open `http://localhost:4111`. Port 4000 is hexo's default but is often taken by something else on developer laptops.
 
-Suggested features (use the same one for Part 1 and Part 2 so you can compare):
+Full setup, a tour, and a map of the source: [hexo/RUNNING.md](hexo/RUNNING.md).
 
-- Add a `reading_time` helper that templates can call to show estimated minutes for a post, configurable words-per-minute, and use it in the example site's theme.
-- Add a `hexo stats` console command that prints post count, total words, posts per tag and per category, and the five longest posts.
-- Add a `related_posts` helper that returns the N posts sharing the most tags with the current one, and render them under each post in the example site.
+Your instructor will hand you a feature at Part 1. Use the same feature in Step 5 so you can compare the two attempts.

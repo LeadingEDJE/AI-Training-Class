@@ -58,3 +58,6 @@ projects/3-Brownfield/eShopOnWeb/**/TestResults/
 # --- projects/3-Brownfield/hexo/example-site: generated site output, never source ---
 projects/3-Brownfield/hexo/example-site/public/
 projects/3-Brownfield/hexo/example-site/db.json
+
+# --- projects/3-Brownfield/leader: instructor-only material, never committed ---
+projects/3-Brownfield/leader/
