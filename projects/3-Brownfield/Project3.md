@@ -180,7 +180,7 @@ dotnet run --launch-profile Web
 
 Open `https://localhost:5001`. Admin area is at `/admin`. Log in with `demouser@microsoft.com` / `Pass@word1`.
 
-Full setup, a click-through tour of the app, and a map of the source: [eShopOnWeb/RUNNING.md](eShopOnWeb/RUNNING.md).
+Full setup and a click-through tour of the app: [eShopOnWeb/RUNNING.md](eShopOnWeb/RUNNING.md).
 
 Your instructor will hand you a feature at Part 1. Use the same feature in Step 5 so you can compare the two attempts.
 
@@ -210,6 +210,6 @@ npx hexo server -p 4111
 
 Open `http://localhost:4111`. Port 4000 is hexo's default but is often taken by something else on developer laptops.
 
-Full setup, a tour, and a map of the source: [hexo/RUNNING.md](hexo/RUNNING.md).
+Full setup and a tour: [hexo/RUNNING.md](hexo/RUNNING.md).
 
 Your instructor will hand you a feature at Part 1. Use the same feature in Step 5 so you can compare the two attempts.
