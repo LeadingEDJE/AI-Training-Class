@@ -31,9 +31,11 @@ Every prompt below is a starting point. Edit the bracketed parts. Paste the rest
 
 Open a terminal **inside the repo folder**, start your agent, and ask for a feature. No planning, no context, default model.
 
+Before you paste the prompt, switch to **auto mode** so it doesn't stop to ask permission for every edit and command. In Claude Code, press `Shift+Tab` until the mode indicator shows auto, or start with `claude --permission-mode auto`. We want to see what it does when nobody is steering.
+
 ### Prompt 1 - Just build it
 
-> Add [the feature your instructor gave you, in one or two sentences].
+> Add [the feature your instructor gave you, in one or two sentences]. Make assumptions and just get it done.
 
 Set a 10-minute timer and let it run. Answer its questions if it asks any. When time is up, don't fix anything. Answer these in the worksheet:
 
