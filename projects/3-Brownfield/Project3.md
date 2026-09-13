@@ -76,11 +76,11 @@ Same session.
 
 ### Step 3 - Create specialized agents (10 minutes)
 
-Start a **fresh session** in the repo folder.
+Start a **fresh session** in the repo folder (`/clear`). We've documented what is necessary for this task already.  This is a good habit for not bloating context.
 
 ### Prompt 4 - Build the team
 
-> Read ARCHITECTURE.md, including the Running locally section. Then create a set of specialized subagents for this codebase in .claude/agents/, one file each. At minimum create a front-end agent and a back-end agent. Add others only where this codebase genuinely has a distinct area, such as data access and migrations, tests, build and tooling, or infrastructure. For each agent write: a one-paragraph description of when to use it, the folders and layers it owns, the conventions and patterns it must follow with real examples from this repo, the exact commands it must run to verify its work, and the things it must not touch. Then create or update CLAUDE.md so it points at ARCHITECTURE.md and the agents, states the build, run, and test commands, and lists the two or three things about this repo that are most likely to trip up a new contributor. Keep CLAUDE.md under 60 lines. Show me the list of files you created.
+> Read ARCHITECTURE.md, including the Running locally section. Then create a set of specialized subagents for this codebase in .claude/agents/, one file each. At minimum create a front-end agent and a back-end agent. Add others only where this codebase genuinely has a distinct area, such as data access and migrations, tests, build and tooling, or infrastructure. For each agent write: a one-paragraph description of when to use it, the folders and layers it owns, the conventions and patterns it must follow with real examples from this repo, the exact commands it must run to verify its work, and the things it must not touch. Then create or update CLAUDE.md so it points at ARCHITECTURE.md and the agents, states the build, run, and test commands, and lists the two or three things about this repo that are most likely to trip up a new contributor. Keep CLAUDE.md under 60 lines. Show me the list of files you created.  Also create any skills that may be of value to these agents or you as the orchestrator of the codebase.  Don't add things for the sake of adding them, but if things will genuinely add value, add them.  Specify higher level models (Opus) for "thinking" tasks like research and planning, lower level (sonnet) for "doing" things like actually writing code.  Ask me if you're not sure what model to specify.
 
 Open the agents. Delete anything generic that could describe any project. What's left is the context.
 
