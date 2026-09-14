@@ -114,6 +114,13 @@ you added, revert `_config.yml` if you changed it, and run `npm run clean`.
   dodge collisions. Pass any free port with `-p`.
 - **`node --version` is below 20.19.** Install a newer Node. An `EBADENGINE`
   warning alone is harmless (see section 3) — only a failed install matters.
+- **`npm test` dies instantly with `ReferenceError: require is not defined in
+  ES module scope`** pointing at `node_modules/mocha/node_modules/yargs`. Your
+  `node_modules` is stale: it still holds an old nested `yargs@16`, which newer
+  Node refuses to load. Run `npm ci` in the `hexo` folder — it wipes
+  `node_modules` and reinstalls from the lockfile, which already pins a
+  compatible yargs. Plain `npm install` may not clear it. This is **not** a Node
+  version problem, so don't downgrade Node to chase it.
 - **You edited `lib/` and nothing changed.** Run `npm run build` in the
   `hexo` folder, then re-run `hexo generate` in `example-site`.
 - **`npm install` was run in the wrong folder.** `hexo` and `example-site`
