@@ -1,0 +1,105 @@
+### Compass lookup administration — employee types and invoice frequency types
+###
+### Every route requires the Compass Super Admin policy. A "Compass Admin" principal is refused with
+### 403 on ALL of these, reads included (FR-009) — that role is read-only in Compass however
+### administrative the name sounds (AC-44).
+###
+### Locally, `make dev-all` runs DevBypass, so requests are already authenticated. Confirm you actually
+### hold the role before blaming a 403:
+###   curl -s http://localhost:5009/api/me | jq '.privileges'
+### If "Compass Super Admin" is missing, fix the bypass principal's groups. Do NOT relax a policy to
+### make a request work.
+###
+### There is deliberately NO DELETE. A lookup is retired by PUTting isActive false, which leaves every
+### record already classified by it untouched (FR-007). These writes are also deliberately NOT audited
+### (FR-008, AC-NFR-3) — the one Compass configuration surface outside the audit trail.
+
+@baseUrl = http://localhost:5009
+
+### Employee types — all of them (what the admin screen requests)
+GET {{baseUrl}}/api/compass/v1/admin/employee-types
+Accept: application/json
+
+### Employee types — active only (what the EDJEr configuration form requests, AC-25)
+GET {{baseUrl}}/api/compass/v1/admin/employee-types?activeOnly=true
+Accept: application/json
+
+### Add an employee type — created ACTIVE
+POST {{baseUrl}}/api/compass/v1/admin/employee-types
+Content-Type: application/json
+
+{
+  "typeName": "Contract"
+}
+
+### Add a duplicate — expect 409 (FR-004). Case and surrounding whitespace do not make it distinct.
+POST {{baseUrl}}/api/compass/v1/admin/employee-types
+Content-Type: application/json
+
+{
+  "typeName": "  contract  "
+}
+
+### Add a blank name — expect 400, not 409. Malformed is not the same as colliding.
+POST {{baseUrl}}/api/compass/v1/admin/employee-types
+Content-Type: application/json
+
+{
+  "typeName": "   "
+}
+
+### Rename an employee type (replace 1 with a real id)
+PUT {{baseUrl}}/api/compass/v1/admin/employee-types/1
+Content-Type: application/json
+
+{
+  "typeName": "Contractor",
+  "isActive": true
+}
+
+### Retire an employee type — the same route, isActive false. Records already using it are unchanged.
+PUT {{baseUrl}}/api/compass/v1/admin/employee-types/1
+Content-Type: application/json
+
+{
+  "typeName": "Contractor",
+  "isActive": false
+}
+
+### Unknown id — expect 404
+PUT {{baseUrl}}/api/compass/v1/admin/employee-types/424242
+Content-Type: application/json
+
+{
+  "typeName": "Nowhere",
+  "isActive": true
+}
+
+### No DELETE exists — expect 405
+DELETE {{baseUrl}}/api/compass/v1/admin/employee-types/1
+
+### Invoice frequency types — all of them
+GET {{baseUrl}}/api/compass/v1/admin/invoice-frequency-types
+Accept: application/json
+
+### Invoice frequency types — active only (the client form's invoicing default, AC-26)
+GET {{baseUrl}}/api/compass/v1/admin/invoice-frequency-types?activeOnly=true
+Accept: application/json
+
+### Add an invoice frequency type. The two lookups are independent name spaces — a name already used
+### as an employee type is accepted here (FR-006).
+POST {{baseUrl}}/api/compass/v1/admin/invoice-frequency-types
+Content-Type: application/json
+
+{
+  "typeName": "Fortnightly"
+}
+
+### Rename / retire an invoice frequency type (replace 1 with a real id)
+PUT {{baseUrl}}/api/compass/v1/admin/invoice-frequency-types/1
+Content-Type: application/json
+
+{
+  "typeName": "Fortnightly",
+  "isActive": false
+}

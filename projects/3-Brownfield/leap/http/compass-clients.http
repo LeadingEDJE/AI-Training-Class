@@ -1,0 +1,173 @@
+### Compass client configuration — AC-21, AC-22, AC-23
+###
+### Every route requires the Compass Super Admin policy. A "Compass Admin" principal is refused with
+### 403 on ALL of these, reads included — that role is read-only in Compass however administrative the
+### name sounds (AC-44, FR-028).
+###
+### Locally, `make dev-all` runs DevBypass, so requests are already authenticated. Confirm you actually
+### hold the role before blaming a 403:
+###   curl -s http://localhost:5009/api/me | jq '.privileges'
+### If "Compass Super Admin" is missing, fix the bypass principal's groups. Do NOT relax a policy to
+### make a request work.
+###
+### ⚠️ THERE IS NO CLIENT STATUS, IN EITHER DIRECTION.
+### A client's Active/Inactive is DERIVED from its assignments (FR-021, FR-035) — never stored, never
+### settable, and absent from every payload below. A request carrying one is REJECTED with 400 rather
+### than ignored: the request records opt into JsonUnmappedMemberHandling.Disallow, because silently
+### discarding "isActive": false would answer 201 to someone who believes they just deactivated a
+### client. See the deliberate-400 request at the bottom of this file.
+###
+### There is deliberately NO DELETE, for clients or categories. A category is retired by PUTting
+### isActive false (AC-23); a client is never retired at all, because its status is derived.
+###
+### Every write here IS audited, and the audited scope INCLUDES the billable time categories and the
+### invoice-frequency default (AC-NFR-3, verbatim). Category changes are attributed to the CLIENT's
+### record, so one query answers "what changed about this client":
+###   curl -s "http://localhost:5009/api/audit-logs?entityType=CompassClient" | jq '.[0]'
+
+@baseUrl = http://localhost:5009
+@clients = {{baseUrl}}/api/compass/v1/admin/clients
+
+### Every client, ordered by name. The invoice-frequency default is resolved to its NAME here (the
+### list renders it); the full record below carries the id instead, because the form populates its own
+### select from the active-only lookup list.
+GET {{clients}}
+
+### One client's full record, including every billable time category — active AND inactive. Inactive
+### ones are included on purpose: an administrator who cannot see a retired category cannot reactivate
+### one.
+GET {{clients}}/1
+
+### Add a client. Note what is NOT here: any status member.
+### The invoice-frequency default is optional; when supplied it must name an ACTIVE type, which the
+### server enforces even though the selection list omits inactive ones (FR-023, FR-041).
+POST {{clients}}
+Content-Type: application/json
+
+{
+  "clientName": "Contoso",
+  "msaSignedDate": "2024-03-01",
+  "ndaSignedDate": "2024-02-14",
+  "isInternal": false,
+  "invoiceFrequencyTypeId": 1
+}
+
+### A client with no contract dates and no cadence. All three are optional — this is an ordinary
+### client, not an incomplete one, and it is immediately available for assignment at zero assignments
+### (FR-022).
+POST {{clients}}
+Content-Type: application/json
+
+{
+  "clientName": "Fabrikam",
+  "msaSignedDate": null,
+  "ndaSignedDate": null,
+  "isInternal": false,
+  "invoiceFrequencyTypeId": null
+}
+
+### An internal EDJE client. The "beach" flag — an assignment to a client with this set is what the
+### dashboard's "on the beach" tile counts.
+POST {{clients}}
+Content-Type: application/json
+
+{
+  "clientName": "Leading EDJE — Internal",
+  "msaSignedDate": null,
+  "ndaSignedDate": null,
+  "isInternal": true,
+  "invoiceFrequencyTypeId": null
+}
+
+### 409 — the client name is already in use. The pre-check names the field; the real guard is
+### ux_client_client_name, so a caller who LOSES a concurrent race gets this same 409 rather than a 500.
+POST {{clients}}
+Content-Type: application/json
+
+{
+  "clientName": "Contoso",
+  "msaSignedDate": null,
+  "ndaSignedDate": null,
+  "isInternal": false,
+  "invoiceFrequencyTypeId": null
+}
+
+### 400 — the invoice frequency is unknown OR retired. One question, not two: the answer is the same
+### either way. Retire a cadence via PUT /api/compass/v1/admin/invoice-frequency-types/{id} and retry.
+POST {{clients}}
+Content-Type: application/json
+
+{
+  "clientName": "Northwind",
+  "msaSignedDate": null,
+  "ndaSignedDate": null,
+  "isInternal": false,
+  "invoiceFrequencyTypeId": 999999
+}
+
+### Update a client. An edit that LEAVES an already-set but since-retired cadence alone is accepted
+### (FR-007: retiring a lookup value must not rewrite records already using it); MOVING to a different
+### retired one is refused.
+PUT {{clients}}/1
+Content-Type: application/json
+
+{
+  "clientName": "Contoso",
+  "msaSignedDate": "2024-03-01",
+  "ndaSignedDate": "2024-02-14",
+  "isInternal": true,
+  "invoiceFrequencyTypeId": 1
+}
+
+### Add a billable time category. Names are unique PER CLIENT, not globally — two clients may both
+### offer "Development", and that is the ordinary case rather than the exceptional one (FR-025, FR-006).
+POST {{clients}}/1/billable-time-categories
+Content-Type: application/json
+
+{
+  "categoryName": "Development"
+}
+
+### 409 — this client already offers that name. Try the same request against a DIFFERENT client id and
+### it succeeds; that difference is the whole rule.
+POST {{clients}}/1/billable-time-categories
+Content-Type: application/json
+
+{
+  "categoryName": "Development"
+}
+
+### Retire a category. This is the ONLY retirement path — there is no DELETE (AC-23, Principle VIII).
+### The row stays, keeps its name, and keeps its client; timesheet records referencing it are untouched.
+PUT {{clients}}/1/billable-time-categories/1
+Content-Type: application/json
+
+{
+  "categoryName": "Development",
+  "isActive": false
+}
+
+### 404 — the category exists but belongs to a DIFFERENT client. The client id is part of the lookup,
+### not a hint, so guessing an id cannot reach someone else's configuration.
+PUT {{clients}}/2/billable-time-categories/1
+Content-Type: application/json
+
+{
+  "categoryName": "Renamed",
+  "isActive": true
+}
+
+### 400 — DELIBERATE. This is FR-021's inbound half, and the thing most worth trying by hand: a request
+### that tries to set a client's status is REFUSED, not silently ignored. Change "isActive" to any
+### unmapped member and the answer is the same 400.
+POST {{clients}}
+Content-Type: application/json
+
+{
+  "clientName": "Statusful Corp",
+  "msaSignedDate": null,
+  "ndaSignedDate": null,
+  "isInternal": false,
+  "invoiceFrequencyTypeId": null,
+  "isActive": false
+}

@@ -1,0 +1,134 @@
+# EDJE Compass — application read surface (ADR-008)
+#
+# NOT the published Directory boundary. These routes carry no /v1 prefix because they are the Compass
+# SPA's own surface: session-authenticated, projected per viewer tier, and versioned with the SPA
+# rather than as a stable contract for out-of-monolith consumers.
+#
+# Authentication only — no Compass role required (AC-5, AC-12, FR-001). What a baseline viewer sees is
+# scoped per FIELD by the projection, not all-or-nothing by the gate.
+#
+# Locally, X-Dev-Roles overrides the DevBypass identity's roles. DevBypass carries the nine timesheet
+# roles, which resolve to tier Baseline in Compass — Compass inherits nothing.
+
+@baseUrl = http://localhost:5009
+
+### Team Directory — default view (active EDJErs, hire-date order)
+GET {{baseUrl}}/api/compass/team-directory
+
+### Search by partial last name (case-insensitive)
+GET {{baseUrl}}/api/compass/team-directory?search=smi
+
+### Filter by employee type
+GET {{baseUrl}}/api/compass/team-directory?employeeType=Full Time
+
+### Filter by state
+GET {{baseUrl}}/api/compass/team-directory?state=OH
+
+### Filter to one coach's team, by the coach's own id (issue #655)
+GET {{baseUrl}}/api/compass/team-directory?coachId=9
+
+### Both filters together (conjunctive)
+GET {{baseUrl}}/api/compass/team-directory?employeeType=Full Time&state=OH
+
+### Sort by a column, descending
+GET {{baseUrl}}/api/compass/team-directory?sort=lastName&desc=true
+
+### As an elevated role — inactive EDJErs become reachable
+GET {{baseUrl}}/api/compass/team-directory?status=all
+X-Dev-Roles: Compass Admin
+
+### As an elevated role — inactive only
+GET {{baseUrl}}/api/compass/team-directory?status=inactive
+X-Dev-Roles: Compass Admin
+
+### As a baseline viewer, forging the filter — MUST still return no inactive EDJEr (FR-011a)
+GET {{baseUrl}}/api/compass/team-directory?status=all
+
+### Empty result is a 200 with an empty list, never a 404 (FR-013)
+GET {{baseUrl}}/api/compass/team-directory?search=zzzznobody
+
+# ---------------------------------------------------------------------------------------------------
+# Sales Dashboard and reports (feature 007) — RolePolicy.CompassReporting: Compass Sales, Compass Ops
+# or Compass Super Admin. A Compass Admin holding no other Compass role gets 403 on every request
+# below, by design (FR-019) — the refusal is server-side, not a hidden nav link.
+# ---------------------------------------------------------------------------------------------------
+
+### Sales Dashboard — the four tile counts plus the as-of business date (AC-36)
+GET {{baseUrl}}/api/compass/dashboard
+
+### Tile drill-down — one route, four categories (AC-37)
+GET {{baseUrl}}/api/compass/dashboard/breakdown/expiring-sows
+
+### The other three categories
+GET {{baseUrl}}/api/compass/dashboard/breakdown/active-sows
+
+###
+GET {{baseUrl}}/api/compass/dashboard/breakdown/confirmed-rollouts
+
+###
+GET {{baseUrl}}/api/compass/dashboard/breakdown/beach
+
+### An unrecognised category is 404, never a silent fallback to one of the four
+GET {{baseUrl}}/api/compass/dashboard/breakdown/not-a-category
+
+### Availability Report — three sections: currently available, confirmed rollouts, unconfirmed SOWs (AC-38)
+GET {{baseUrl}}/api/compass/reports/availability
+
+### Client Assignment Duration — one row per EDJEr-client PAIR, longest tenure first (AC-39)
+# Excludes any pair whose only active assignment is at an internal ("beach") client (issue #335).
+GET {{baseUrl}}/api/compass/reports/assignment-duration
+
+### Assignment Start lookup — every assignment starting in the INCLUSIVE range (AC-40)
+GET {{baseUrl}}/api/compass/reports/assignment-start?from=2024-01-01&to=2026-12-31
+
+### from > to is a 400 with a message, never a silent swap and never an empty list
+GET {{baseUrl}}/api/compass/reports/assignment-start?from=2026-12-31&to=2024-01-01
+
+### SOW Extension Report — every extension SOW starting in the INCLUSIVE range (issue #534)
+GET {{baseUrl}}/api/compass/reports/sow-extension?from=2024-01-01&to=2026-12-31
+
+### from > to is a 400 with a message, never a silent swap and never an empty list
+GET {{baseUrl}}/api/compass/reports/sow-extension?from=2026-12-31&to=2024-01-01
+
+# ---------------------------------------------------------------------------------------------------
+# CSV export (issue #337). Same group, so the SAME RolePolicy.CompassReporting applies — an export
+# hands over the whole population in one request, so it must not be a more permissive second door.
+#
+# AC-NFR-6 still forbids PDF and print; the CSV ban was spec 007's own inference and was withdrawn
+# (spec Deviation 12). Every CSV carries a UTF-8 BOM so Excel decodes non-ASCII names.
+# ---------------------------------------------------------------------------------------------------
+
+### Availability Report — ALL THREE sections, zipped
+# A zip rather than one CSV because the three sections do not share a column set: merging them would
+# have to drop columns or invent them.
+GET {{baseUrl}}/api/compass/reports/availability/export
+
+### One section at a time: currently-available | confirmed-rollouts | unconfirmed-sows
+GET {{baseUrl}}/api/compass/reports/availability/export?section=currently-available
+
+###
+GET {{baseUrl}}/api/compass/reports/availability/export?section=confirmed-rollouts
+
+###
+GET {{baseUrl}}/api/compass/reports/availability/export?section=unconfirmed-sows
+
+### An unrecognised section is a 400, never an empty file
+# An empty CSV is indistinguishable from "that section has no rows" — a different and wrong answer.
+GET {{baseUrl}}/api/compass/reports/availability/export?section=not-a-section
+
+### Client Assignment Duration as CSV
+# Carries `Total Days` alongside the display string: "3 yrs 4 mos (1,238 days)" sorts lexically in a
+# spreadsheet, which puts "10 yrs" before "3 yrs".
+GET {{baseUrl}}/api/compass/reports/assignment-duration/export
+
+### Assignment Start lookup as CSV, for the same inclusive range
+GET {{baseUrl}}/api/compass/reports/assignment-start/export?from=2024-01-01&to=2026-12-31
+
+### The export repeats the screen's inverted-range guard rather than answering an empty file
+GET {{baseUrl}}/api/compass/reports/assignment-start/export?from=2026-12-31&to=2024-01-01
+
+### SOW Extension Report as CSV, for the same inclusive range (issue #534)
+GET {{baseUrl}}/api/compass/reports/sow-extension/export?from=2024-01-01&to=2026-12-31
+
+### The export repeats the screen's inverted-range guard rather than answering an empty file
+GET {{baseUrl}}/api/compass/reports/sow-extension/export?from=2026-12-31&to=2024-01-01

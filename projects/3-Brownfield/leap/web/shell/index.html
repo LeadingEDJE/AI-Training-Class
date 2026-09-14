@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LEAP — LeadingEDJE Platform</title>
+    <meta name="theme-color" content="#0E0F10" />
+    <meta
+      name="description"
+      content="LEAP — the LeadingEDJE platform launcher."
+    />
+
+    <!-- Top-level PWA surface (D-21): the shell owns the phone-shortcut entry point. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/icons/icon-192x192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="/icons/icon-512x512.png"
+    />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+
+    <link rel="stylesheet" href="/styles.css" />
+
+    <!--
+      config.js MUST load synchronously BEFORE shell.js: the ephemeral-preview badge
+      is decided from window.__IS_EPHEMERAL_PREVIEW__, which config.js sets. Deployed
+      envs never serve this file — nginx's exact-match `location = /config.js`
+      synthesizes runtime values and shadows it.
+    -->
+    <script src="/config.js"></script>
+    <script src="/shell.js" defer></script>
+  </head>
+  <body>
+    <noscript>
+      <p class="noscript">
+        LEAP requires JavaScript to sign you in and load your modules. Please
+        enable JavaScript and reload.
+      </p>
+    </noscript>
+
+    <!--
+          Top bar (issue #271): restyled after the Compass nav chrome (gray bar,
+          "leading EDJE" wordmark) — shows "LEAP" where Compass's nav shows
+          "Compass", carries no module nav links and no user role. The avatar
+          is populated by shell.js once /api/me resolves and stays hidden
+          until then.
+        -->
+    <header class="leap-topbar">
+      <span class="leap-logo" aria-label="Leading EDJE LEAP">
+        leading<span class="leap-logo-edje">EDJE</span>
+        <span class="leap-logo-divider">LEAP</span>
+      </span>
+      <span
+        id="leap-avatar"
+        class="leap-avatar"
+        role="img"
+        aria-label=""
+        hidden
+      ></span>
+    </header>
+
+    <main id="leap-shell" class="leap-shell">
+      <!--
+            Developer tools (2026-08-26). Hidden until BOTH the Konami code is entered AND the API
+            confirms the surface exists in this environment.
+
+            THIS IS THE ONE PLACE THE LAUNCHER RENDERS SOMETHING IDENTITY-DEPENDENT, and it is a
+            deliberate, owner-approved departure from LEAP FR-8 ("the launcher evaluates no
+            permissions"). It is confined to this block and to the devtools functions in shell.js.
+            The rest of the shell -- greeting, tiles, avatar -- still renders identically for every
+            signed-in user, and tests/e2e/shell/no-permission-surface.spec.ts still proves it.
+
+            Note what the shell does NOT do: it never reads a role string. It asks the API whether
+            this caller may use developer tools and renders the answer. 403 disables the button;
+            404 means the environment has no developer tools and nothing appears at all.
+          -->
+      <div id="devtools-bar" class="devtools-bar" hidden>
+        <button
+          type="button"
+          id="devtools-open"
+          class="devtools-open"
+          aria-haspopup="dialog"
+        >
+          Developer Tools
+        </button>
+      </div>
+
+      <!-- Preview badge (D-06): hidden until shell.js unhides it for ephemeral previews. -->
+      <div id="ephemeral-badge" class="ephemeral-badge" role="status" hidden>
+        <span id="ephemeral-badge-label" class="ephemeral-badge-label"></span>
+      </div>
+
+      <!-- Loading state: shown by default while the auth gate runs. -->
+      <section id="loading-view" class="loading-view" aria-live="polite">
+        <p class="loading-text">Loading your workspace…</p>
+      </section>
+
+      <!-- Error state: shown on network/other failure. Hidden by default. -->
+      <section id="error-view" class="error-view" hidden>
+        <p class="error-text">We couldn't reach the server.</p>
+        <a href="/" class="retry-link">Retry</a>
+      </section>
+
+      <!-- Authenticated view: greeting + module tiles. Hidden until /api/me 200. -->
+      <section id="authed-view" class="authed-view" hidden>
+        <h1 id="greeting" class="greeting"></h1>
+        <p class="greeting-sub">
+          One login, everything you need. Choose where you're headed — below you
+          will find our internal EDJE solutions that you have access to. Missing
+          something? Send a ticket to help@leadingedje.com
+        </p>
+        <ul id="tile-list" class="tile-list"></ul>
+      </section>
+    </main>
+
+    <!--
+          Developer Tools modal. Lives outside <main> because it is an overlay over the whole page,
+          and starts `hidden` so it is inert for every user who never enters the code.
+
+          The confirmation is a SECOND STEP INSIDE THIS DIALOG rather than a window.confirm(): a
+          native dialog cannot be styled, reads as a browser-level warning rather than an
+          application one, and is suppressible by the browser after repeated use -- which would
+          quietly remove the confirmation from the one action in this app that destroys data.
+        -->
+    <div
+      id="devtools-modal"
+      class="devtools-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="devtools-title"
+      hidden
+    >
+      <div class="devtools-dialog">
+        <div class="devtools-dialog-head">
+          <h2 id="devtools-title" class="devtools-title">Developer Tools</h2>
+          <button
+            type="button"
+            id="devtools-close"
+            class="devtools-close"
+            aria-label="Close Developer Tools"
+          >
+            &#10005;
+          </button>
+        </div>
+
+        <!-- Step 1: the tool list. -->
+        <div id="devtools-actions" class="devtools-actions">
+          <p class="devtools-hint">
+            These actions affect this environment only and cannot be undone.
+          </p>
+          <button
+            type="button"
+            id="devtools-clear-compass"
+            class="devtools-danger"
+          >
+            Clear Compass Data
+          </button>
+        </div>
+
+        <!-- Step 2: the confirmation. Hidden until the action above is clicked. -->
+        <div id="devtools-confirm" class="devtools-confirm" hidden>
+          <p id="devtools-confirm-text" class="devtools-confirm-text">
+            Are you sure you want to clear ALL Compass data?
+          </p>
+          <div class="devtools-confirm-buttons">
+            <button
+              type="button"
+              id="devtools-cancel"
+              class="devtools-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              id="devtools-confirm-clear"
+              class="devtools-danger"
+            >
+              Yes, clear it
+            </button>
+          </div>
+        </div>
+
+        <!-- role=status so the outcome is announced without stealing focus. -->
+        <p
+          id="devtools-status"
+          class="devtools-status"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></p>
+      </div>
+    </div>
+  </body>
+</html>

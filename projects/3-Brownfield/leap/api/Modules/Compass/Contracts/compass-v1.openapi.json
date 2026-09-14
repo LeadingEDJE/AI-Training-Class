@@ -1,0 +1,1394 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "LeadingEDJE.Leap.Api | compass-v1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/compass/v1/employees/{id}": {
+      "get": {
+        "tags": [
+          "Compass"
+        ],
+        "summary": "Returns one Compass employee (EDJEr) by id.",
+        "description": "Read family 1 of the Compass Directory boundary (FR-004). Returns 404 when id does not match an existing employee — including a caller who cannot see the record at all, which the route's own authorization policy already refuses with 403 before this handler runs (see the type-level remarks on identifier enumerability). `TimeTracking` is present only for a Compass Super Admin caller; every other authorized tier gets the field omitted, not null.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompassEmployeeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/employees/{id}/assignments": {
+      "get": {
+        "tags": [
+          "Compass"
+        ],
+        "summary": "Returns every assignment held by the given employee.",
+        "description": "Read family 3 (spec 009 Slice 5, FR-006). No not-found case: an unknown or assignment-less employee simply has zero assignments, matching the collection-GET shape of the invoice-frequencies (Slice 2) and billable-categories (Slice 4) reads rather than the single-resource GetById.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompassAssignmentDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/compass/v1/invoice-frequencies": {
+      "get": {
+        "tags": [
+          "Compass"
+        ],
+        "summary": "Returns every active invoice frequency type.",
+        "description": "Read family 7 (spec 009 Slice 2, FR-010). No id parameter and no not-found case — this is a flat lookup, always 200. Filters to active types server-side, so every row in the response is active by construction; see CompassInvoiceFrequencyDto's remarks for why there is no `IsActive` field to check instead.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompassInvoiceFrequencyDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/compass/v1/clients/{id}": {
+      "get": {
+        "tags": [
+          "Compass"
+        ],
+        "summary": "Returns one Compass client by id, with its status DERIVED at read time.",
+        "description": "Read family 2 of the Compass Directory boundary (spec 009 Slice 3, FR-005). Returns 404 when id does not match an existing client. `Status` is always \"Active\" or \"Inactive\", computed from the client's assignments — see CompassClientDto's own remarks for why there is no stored status column to read instead.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompassClientDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/clients/{id}/billable-categories": {
+      "get": {
+        "tags": [
+          "Compass"
+        ],
+        "summary": "Returns every billable time category configured for the given client.",
+        "description": "Read family 6 (spec 009 Slice 4, FR-009). Returns EVERY category, active and inactive alike — see CompassBillableCategoryDto's remarks for why. No not-found case: an unknown client id simply has no categories, so this always returns 200 with a (possibly empty) list, matching the shape of the invoice-frequencies collection read (Slice 2) rather than the single-resource GetById.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompassBillableCategoryDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/compass/v1/clients/{id}/assignments": {
+      "get": {
+        "tags": [
+          "Compass"
+        ],
+        "summary": "Returns every assignment at the given client.",
+        "description": "Read family 3 (spec 009 Slice 5, FR-006). No not-found case: an unknown or assignment-less client simply has zero assignments, matching the collection-GET shape above.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompassAssignmentDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/compass/v1/assignments/{id}": {
+      "get": {
+        "tags": [
+          "Compass"
+        ],
+        "summary": "Returns one client assignment by id.",
+        "description": "Read family 3 of the Compass Directory boundary (spec 009 Slice 5, FR-006). Returns 404 when id does not match an existing assignment. The SAME contract (CompassAssignmentDto) also backs the two owner-scoped collection reads — `employees/{id}/assignments` and `clients/{id}/assignments` — this route is the bare, single-resource lookup.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompassAssignmentDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/assignments/{id}/sows": {
+      "get": {
+        "tags": [
+          "Compass"
+        ],
+        "summary": "Returns every SOW (statement of work / contract period) under the given assignment.",
+        "description": "Read family 4 (spec 009 Slice 6, FR-007). No not-found case: an unknown or SOW-less assignment simply has zero SOWs, matching the collection reads elsewhere on this boundary. `RateIncrease`/`Note` are present only for an Elevated-tier-or-above caller; every other authorized tier gets them omitted, not null.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompassDirectorySowDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/employee-types": {
+      "get": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "parameters": [
+          {
+            "name": "activeOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCompassLookupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/employee-types/{id}": {
+      "put": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompassLookupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/invoice-frequency-types": {
+      "get": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "parameters": [
+          {
+            "name": "activeOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCompassLookupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/invoice-frequency-types/{id}": {
+      "put": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompassLookupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/edjers": {
+      "get": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompassEdjerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/edjers/{id}": {
+      "get": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompassEdjerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/clients": {
+      "get": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompassClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/clients/{id}": {
+      "get": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompassClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/clients/{clientId}/billable-time-categories": {
+      "post": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBillableTimeCategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/clients/{clientId}/billable-time-categories/{categoryId}": {
+      "put": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBillableTimeCategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/sows": {
+      "get": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompassSowRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/sows/{id}": {
+      "get": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/migration/provenance": {
+      "get": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "operationId": "GetCompassMigrationProvenance",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compass/v1/admin/migration/legacy-timezones": {
+      "get": {
+        "tags": [
+          "Compass Admin"
+        ],
+        "operationId": "GetCompassMigrationLegacyTimezones",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CompassAssignmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The assignment's identifier — `compass.client_assignment.client_assignment_id`.",
+            "format": "int32"
+          },
+          "employeeId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The assigned EDJEr's identifier — `compass.employee.employee_id`.",
+            "format": "int32"
+          },
+          "clientId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The client's identifier — `compass.client.client_id`.",
+            "format": "int32"
+          },
+          "clientName": {
+            "type": "string",
+            "description": "The client's name, resolved here so every consumer avoids a second round trip."
+          },
+          "startDate": {
+            "type": "string",
+            "description": "The engagement's start date.",
+            "format": "date"
+          },
+          "endDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The engagement's end date. `null` means open-ended.",
+            "format": "date"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Free-text note. Nullable."
+          },
+          "effectiveInvoiceFrequency": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The invoicing cadence name that actually applies to this engagement (FR-012): the assignment's\nown override where set, else the client's default, else `null`."
+          }
+        },
+        "description": "A published client assignment — read family 3 of the Compass Directory boundary (FR-006, FR-012)."
+      },
+      "CompassBillableCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The category's identifier -- `compass.billable_time_category.billable_time_category_id`.",
+            "format": "int32"
+          },
+          "clientId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The owning client's identifier -- `compass.client.client_id`.",
+            "format": "int32"
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "The category's display name. Unique per client, not globally."
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the category is currently offered. Retired categories are kept, never deleted, and are\nstill returned by this read -- see the asymmetry note above."
+          }
+        },
+        "description": "One client-scoped billable time category, published for a given client -- read family 6 of the\nCompass Directory boundary (FR-009)."
+      },
+      "CompassClientDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The client's identifier — `compass.client.client_id`.",
+            "format": "int32"
+          },
+          "clientName": {
+            "type": "string",
+            "description": "The unique client name."
+          },
+          "msaSignedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Master Service Agreement signed date. Optional.",
+            "format": "date"
+          },
+          "ndaSignedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Non-Disclosure Agreement signed date. Optional.",
+            "format": "date"
+          },
+          "isInternal": {
+            "type": "boolean",
+            "description": "The internal-EDJE (\"beach\") indicator — an assignment to a client with this set is what the\ndashboard's \"on the beach\" tile counts."
+          },
+          "invoiceFrequency": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The client's default invoicing cadence name, resolved through `InvoiceFrequencyTypeId`."
+          },
+          "status": {
+            "type": "string",
+            "description": "Derived per response from the client's assignments (BR-11); never stored, settable or null.\nA closed set of three: \"Former\" once every assignment has ended, \"Inactive\" if none ever did."
+          }
+        },
+        "description": "A published client, with a status derived at read time — read family 2 of the Compass Directory\nboundary (FR-005)."
+      },
+      "CompassClientRequest": {
+        "required": [
+          "clientName",
+          "msaSignedDate",
+          "ndaSignedDate",
+          "isInternal",
+          "invoiceFrequencyTypeId"
+        ],
+        "type": "object",
+        "properties": {
+          "clientName": {
+            "type": "string",
+            "description": "Required, and unique across clients."
+          },
+          "msaSignedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Master Service Agreement signed date. Optional.",
+            "format": "date"
+          },
+          "ndaSignedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Non-Disclosure Agreement signed date. Optional.",
+            "format": "date"
+          },
+          "isInternal": {
+            "type": "boolean",
+            "description": "The internal-EDJE (\"beach\") indicator."
+          },
+          "invoiceFrequencyTypeId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "The invoicing cadence default. Optional, and must name an active type — the server refuses an\ninactive one even though the selection list omits it (FR-023, FR-041).",
+            "format": "int32"
+          },
+          "legacyTpsId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The identifier this record carried in the legacy TPS directory. Only the migration principal\nmay supply it (CompassLegacyProvenance); any other caller sending a value is\nrefused rather than having it quietly dropped, on create and on update alike. Absent for\neverything a person creates. Immutable once set: an authorised caller may re-send it on an\nupdate, but it is not re-applied."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Adds or updates a client. Captures exactly AC-21 and AC-22's field set."
+      },
+      "CompassDirectorySowDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The SOW's identifier — `compass.sow.sow_id`.",
+            "format": "int32"
+          },
+          "clientAssignmentId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The owning assignment's identifier — `compass.client_assignment.client_assignment_id`.",
+            "format": "int32"
+          },
+          "sowType": {
+            "type": "string",
+            "description": "What this period represents, as the enum's name. An explicit `string`, so the published\ncontract's intent is unambiguous in the C# type itself."
+          },
+          "sowStartDate": {
+            "type": "string",
+            "description": "The period's start date.",
+            "format": "date"
+          },
+          "sowEndDate": {
+            "type": "string",
+            "description": "The period's end date.",
+            "format": "date"
+          },
+          "rateIncrease": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether this period carries a rate increase. Elevated-visibility only; absent otherwise."
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Free-text note. Absent when withheld by tier, OR when none was ever recorded — the DTO cannot\ndistinguish the two, matching `SowRowDto`'s own documented shape."
+          }
+        },
+        "description": "A published SOW (contract period) under a client assignment — read family 4 of the Compass\nDirectory boundary (FR-007)."
+      },
+      "CompassEdjerRequest": {
+        "required": [
+          "firstName",
+          "lastName",
+          "hireDate",
+          "email",
+          "employeeTypeId",
+          "coachEmployeeId",
+          "stateOfResidence",
+          "isActive",
+          "timesheetRequired",
+          "canSubmitUnder40",
+          "includeInPayroll"
+        ],
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "Given name. Required."
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Family name. Required."
+          },
+          "hireDate": {
+            "type": "string",
+            "description": "Date of hire. Required.",
+            "format": "date"
+          },
+          "email": {
+            "type": "string",
+            "description": "Required, and unique across every EDJEr, active or inactive, compared case-insensitively and trimmed\n(BR-9, spec A-2)."
+          },
+          "employeeTypeId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The employment classification. Must name an active employee type — the server refuses an\ninactive one even though the selection list omits it (FR-005).",
+            "format": "int32"
+          },
+          "coachEmployeeId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "Another EDJEr who coaches this one. Optional (AC-17). The mockup marks it required; the\nacceptance criterion wins.",
+            "format": "int32"
+          },
+          "stateOfResidence": {
+            "type": "string",
+            "description": "A USPS code from the 50 states plus DC (FR-014)."
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the EDJEr is with Leading EDJE. Turning this off is refused while they hold an assignment\nwith no end date (FR-019, BR-10)."
+          },
+          "timesheetRequired": {
+            "type": "boolean",
+            "description": "Time-tracking setting, Super-Admin-only (BR-1)."
+          },
+          "canSubmitUnder40": {
+            "type": "boolean",
+            "description": "Time-tracking setting, Super-Admin-only (BR-1)."
+          },
+          "includeInPayroll": {
+            "type": "boolean",
+            "description": "Time-tracking setting, Super-Admin-only (BR-1)."
+          },
+          "timezone": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The EDJEr's IANA timezone — one of string[] UsTimeZones.All (FR-8.1). Required of the\nscreen; optional on the wire, and that is not an oversight. `/api/compass/v1` is\nadditive-only (FR-082, ADR-004), and `oasdiff` classifies a NEW REQUIRED request property as\na breaking change — so a required parameter here would have to be `v2`. Absent is therefore\naccepted and means \"say nothing about the timezone\": a create falls back to\nstring UsTimeZones.Default (the same value the column defaults to) and an update leaves the\nstored zone alone. Present-but-blank is a rejection, not a fallback — that is what a form\nsends when the administrator picked nothing, and silently filing them under Eastern is exactly\nwhat FR-8.1 asks the screen to stop doing."
+          },
+          "legacyTpsId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The identifier this record carried in the legacy TPS directory. Only the migration principal\nmay supply it (CompassLegacyProvenance); any other caller sending a value is\nrefused rather than having it quietly dropped, on create and on update alike. Absent for\neverything a person creates. Immutable once set: an authorised caller may re-send it on an\nupdate, but it is not re-applied."
+          },
+          "isDeliveryTeam": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether the EDJEr is on the delivery team (issue #502). Nullable and trailing, both deliberately.\nA non-nullable `bool` binds `false` for a client that says nothing, which is the one\nvalue that must never be inferred; and `/api/compass/v1` is additive-only (FR-082, ADR-004),\nso a new required request property would be breaking and force a `v2`. Absent therefore\nmeans \"say nothing about it\": a create falls back to `true`, the value the column itself\ndefaults to, and an update leaves the stored flag alone, so a hand-made correction survives a\nsave by a client older than this field. It goes after LegacyTpsId because the\nETL passes the leading arguments positionally."
+          }
+        },
+        "description": "Adds or updates an EDJEr. Captures exactly AC-17's field set."
+      },
+      "CompassEmployeeCoachDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The coach's identifier.",
+            "format": "int32"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The coach's display name."
+          }
+        },
+        "description": "An employee's coach — id and display name only, never a nested profile (FR-008), so the recursion\ncannot follow the coach's coach indefinitely."
+      },
+      "CompassEmployeeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The Compass employee's identifier — `compass.employee.employee_id`.",
+            "format": "int32"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The employee's display name, assembled from the given and family names."
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the employee record is active."
+          },
+          "email": {
+            "type": "string",
+            "description": "The employee's email address — unique across active and inactive EDJErs alike (BR-9)."
+          },
+          "hireDate": {
+            "type": "string",
+            "description": "The employee's hire date.",
+            "format": "date"
+          },
+          "employeeType": {
+            "type": "string",
+            "description": "The employee type's name, resolved through `EmployeeTypeId`."
+          },
+          "stateOfResidence": {
+            "type": "string",
+            "description": "The employee's state of residence."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "The employee's timezone, as an IANA identifier (FR-8.4, FR-8.6)."
+          },
+          "isDeliveryTeam": {
+            "type": "boolean",
+            "description": "Whether the EDJEr is on the delivery team."
+          },
+          "coach": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The employee's coach, or `null` when they have none.",
+                "$ref": "#/components/schemas/CompassEmployeeCoachDto"
+              }
+            ]
+          },
+          "timeTracking": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The three time-tracking flags — Compass Super Admin only (BR-1). Absent, not null, for\nevery other tier — a caller who cannot see this must not be able to infer it exists.",
+                "$ref": "#/components/schemas/CompassEmployeeTimeTrackingDto"
+              }
+            ]
+          }
+        },
+        "description": "The one contract the Compass directory boundary returns — from both transports."
+      },
+      "CompassEmployeeTimeTrackingDto": {
+        "type": "object",
+        "properties": {
+          "timesheetRequired": {
+            "type": "boolean",
+            "description": "Whether the employee must submit timesheets."
+          },
+          "canSubmitUnder40": {
+            "type": "boolean",
+            "description": "Whether they may submit under 40 hours."
+          },
+          "includeInPayroll": {
+            "type": "boolean",
+            "description": "Whether they are included in payroll."
+          }
+        },
+        "description": "The three time-tracking flags (BR-1, Super Admin only)."
+      },
+      "CompassInvoiceFrequencyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The invoice frequency type's identifier — `compass.invoice_frequency_type.invoice_frequency_type_id`.",
+            "format": "int32"
+          },
+          "typeName": {
+            "type": "string",
+            "description": "The frequency's name, e.g. \"Monthly\"."
+          }
+        },
+        "description": "A published invoice frequency type — read family 7 of the Compass Directory boundary (FR-010)."
+      },
+      "CompassSowRequest": {
+        "required": [
+          "clientAssignmentId",
+          "sowType",
+          "rateIncrease",
+          "sowStartDate",
+          "sowEndDate",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "clientAssignmentId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The owning assignment. Must exist, or the write is not-found.",
+            "format": "int32"
+          },
+          "sowType": {
+            "description": "What this period represents. `LegacyMigrated` is migration-principal only.",
+            "$ref": "#/components/schemas/SowType"
+          },
+          "rateIncrease": {
+            "type": "boolean",
+            "description": "Whether this period carries a rate increase. Permitted only on\n`SowExtension` — a database CHECK enforces the same, and `LegacyMigrated` does not\ninherit the permission because legacy TPS tracks no extensions at all. The rate itself is never\nstored (AC-NFR-6)."
+          },
+          "sowStartDate": {
+            "type": "string",
+            "description": "Required start date.",
+            "format": "date"
+          },
+          "sowEndDate": {
+            "type": "string",
+            "description": "Required end date, on or after SowStartDate — except for a\n`LegacyMigrated` period, which is admitted exactly as TPS recorded it.",
+            "format": "date"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional free-text note. Elevated-visibility only."
+          },
+          "legacyTpsId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The identifier this record carried in the legacy TPS directory. Only the migration principal\nmay supply it (CompassLegacyProvenance); any other caller sending a value is\nrefused rather than having it quietly dropped. Absent for everything a person creates."
+          }
+        },
+        "description": "Creates a contract period (SOW) under a client assignment."
+      },
+      "CreateBillableTimeCategoryRequest": {
+        "required": [
+          "categoryName"
+        ],
+        "type": "object",
+        "properties": {
+          "categoryName": {
+            "type": "string",
+            "description": "The display name, unique among this client's categories (FR-025)."
+          },
+          "legacyTpsId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The identifier this record carried in the legacy TPS directory. Only the migration principal\nmay supply it (CompassLegacyProvenance); any other caller sending a value is\nrefused rather than having it quietly dropped. Absent for everything a person creates."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Adds a billable time category to a client."
+      },
+      "CreateCompassLookupRequest": {
+        "required": [
+          "typeName"
+        ],
+        "type": "object",
+        "properties": {
+          "typeName": {
+            "type": "string",
+            "description": "The display name, which must not already be in use."
+          }
+        },
+        "description": "Adds a lookup value."
+      },
+      "SowType": {
+        "enum": [
+          "InitialContract",
+          "SowExtension",
+          "LegacyMigrated"
+        ],
+        "description": "What a Sow period represents. Persisted as the enum name (see\n`SowConfiguration`), matching the repository convention set by `TimesheetStatus`."
+      },
+      "UpdateBillableTimeCategoryRequest": {
+        "required": [
+          "categoryName",
+          "isActive"
+        ],
+        "type": "object",
+        "properties": {
+          "categoryName": {
+            "type": "string",
+            "description": "The display name, which must not collide with a sibling's."
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the category is offered."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Renames a billable time category and/or changes whether it is offered."
+      },
+      "UpdateCompassLookupRequest": {
+        "required": [
+          "typeName",
+          "isActive"
+        ],
+        "type": "object",
+        "properties": {
+          "typeName": {
+            "type": "string",
+            "description": "The display name, which must not collide with another value."
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the value is offered on new and edited records."
+          }
+        },
+        "description": "Renames a lookup value and/or changes whether it is selectable."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Compass"
+    },
+    {
+      "name": "Compass Admin"
+    }
+  ]
+}

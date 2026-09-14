@@ -1,0 +1,9 @@
+# Health Check Endpoint
+# Default port 5009 is for local `dotnet run` (launchSettings.json).
+# Docker Compose uses port 5000 — change @baseUrl if running via `make dev`.
+
+@baseUrl = http://localhost:5009
+
+### Health Check
+GET {{baseUrl}}/health
+Accept: application/json

@@ -1,0 +1,30 @@
+# Auth (Google SAML + cookie session) endpoints
+# Default port 5009 is for local `dotnet run` (launchSettings.json).
+# Docker Compose uses port 5000 -- change @baseUrl if running via `make dev`.
+#
+# In Development, use /auth/stub-login (below) to drive the full sign-in pipeline without a live
+# Google IdP -- real SAML needs the registered ACS hostname. Outside Development stub-login 404s.
+
+@baseUrl = http://localhost:5009
+
+### Session probe -- identity + privileges for the current cookie session (401 when signed out)
+GET {{baseUrl}}/api/me
+Accept: application/json
+
+### Initiate the Google SAML challenge (302 to Google; 503 when SAML not configured)
+GET {{baseUrl}}/auth/login?returnUrl=/timesheet/week
+
+### Development-only stub login -- drives the same CompleteSignIn pipeline (SuperAdmin)
+GET {{baseUrl}}/auth/stub-login?email=avery.quinn@example.com&groups=Timesheet-SuperAdmin-dev&name=Avery Quinn
+
+### Development-only stub login -- baseline user (EDJEr only, no mapped groups)
+GET {{baseUrl}}/auth/stub-login?email=alice@leadingedje.com
+
+### Log out -- clears the session cookie and lands on the signed-out page
+GET {{baseUrl}}/auth/logout
+
+### Signed-out landing page (anonymous, text/plain)
+GET {{baseUrl}}/auth/signed-out
+
+### Access-denied page (403 with reason)
+GET {{baseUrl}}/auth/access-denied?msg=No Matching Person Record

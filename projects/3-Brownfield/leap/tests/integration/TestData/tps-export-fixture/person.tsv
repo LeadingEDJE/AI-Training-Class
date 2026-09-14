@@ -1,0 +1,7 @@
+Id	EdjeId	Email	FirstName	LastName	Title	IsActive
+a1111111-1111-1111-1111-111111111101	e0000000-0000-0000-0000-000000000101	alex.coach@example.test	Alex	Coach	\N	1
+a1111111-1111-1111-1111-111111111102	e0000000-0000-0000-0000-000000000102	Blair.Dev@Example.Test	Blair	Dev	Software Engineer	1
+a1111111-1111-1111-1111-111111111103	e0000000-0000-0000-0000-000000000103	casey.dev@example.test	Casey	Dev	Operations Manager	1
+a1111111-1111-1111-1111-111111111105	e0000000-0000-0000-0000-000000000105	erin.ghost@example.test	Erin	Ghost	\N	0
+a1111111-1111-1111-1111-111111111107	\N	gwen.null@example.test	Gwen	Null	\N	1
+a1111111-1111-1111-1111-111111111109	\N	quinn.orphan@example.test	Quinn	Orphan	\N	1

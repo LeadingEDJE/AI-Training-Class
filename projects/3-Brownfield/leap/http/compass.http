@@ -1,0 +1,29 @@
+# Compass module endpoints (Phase 49 walking skeleton).
+# Default port 5009 is for local `dotnet run` (launchSettings.json).
+# Docker Compose uses port 5000 -- change @baseUrl if running via `make dev`.
+#
+# Auth: In Development mode, DevBypassMiddleware auto-authenticates as superadmin.
+# NOTE: the default dev profile holds the nine TIMESHEET privileges, which grant NOTHING in
+# Compass -- Compass inherits nothing, deliberately. Expect 403 unless you supply a Compass role.
+# Use X-Dev-Roles to hold a Compass role instead.
+#
+# The identifier is a Guid: the directory record's primary key is a preserved uuid, and the route
+# constraint is {id:guid}, so a non-Guid segment 404s at route binding.
+
+@baseUrl = http://localhost:5009
+
+### Read one employee through the Compass directory boundary (needs a Compass role)
+GET {{baseUrl}}/api/compass/v1/employees/00000000-0000-0000-0000-000000000000
+X-Dev-Roles: Compass Admin
+
+### Same request as a Compass root (the Compass-internal root satisfies the admin policy)
+GET {{baseUrl}}/api/compass/v1/employees/00000000-0000-0000-0000-000000000000
+X-Dev-Roles: Compass Super Admin
+
+### Expect 403 -- a timesheet SuperAdmin is NOT a Compass user
+GET {{baseUrl}}/api/compass/v1/employees/00000000-0000-0000-0000-000000000000
+X-Dev-Roles: SuperAdmin
+
+### Expect 404 -- non-Guid segment fails route binding before the handler
+GET {{baseUrl}}/api/compass/v1/employees/not-a-guid
+X-Dev-Roles: Compass Admin

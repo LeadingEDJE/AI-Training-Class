@@ -156,7 +156,7 @@ Same request. What was different?
 
 ## Optional: provided fallback repositories
 
-Both were copied into this folder from public open-source projects with their CI, deploy, and AI-helper files removed. Licenses are preserved in each folder. Neither has a `CLAUDE.md`, on purpose.
+eShopOnWeb and hexo were copied into this folder from public open-source projects with their CI, deploy, and AI-helper files removed; licenses are preserved in each folder. LEAP was trimmed from an internal-style app rather than an open-source one, so it never had those files to strip, but the same rule applies: no `CLAUDE.md`, on purpose.
 
 Start your agent **inside the repo folder**, not the workshop root, so `/init`, `ARCHITECTURE.md`, and `.claude/agents/` scope to the project.
 
@@ -219,5 +219,34 @@ npx hexo server -p 4111
 Open `http://localhost:4111`. Port 4000 is hexo's default but is often taken by something else on developer laptops.
 
 Full setup and a tour: [hexo/RUNNING.md](hexo/RUNNING.md).
+
+Your instructor will hand you a feature at Part 1. Use the same feature in Step 5 so you can compare the two attempts.
+
+### LEAP (Compass) (.NET + React)
+
+A trimmed copy of an internal-style employee/SOW directory app: .NET 10 minimal API, React 19 SPA, PostgreSQL 16. About 900 files — roughly twice either other fallback — and it needs Docker for Postgres.
+
+**Prerequisite:** the .NET 10 SDK, Node 22 and npm 10 (`.npmrc` rejects npm 11 on purpose), and Docker.
+
+```
+cd projects/3-Brownfield/leap
+dotnet build leap.slnx
+dotnet test --project tests/unit/LeadingEDJE.Leap.Api.Tests.csproj
+npm ci
+npm run build -w web/compass
+npm run test -w web/compass
+```
+
+Two unit tests fail out of the box, both in `CompassReportEndpointsTests` (and four more in the integration project). That's a real bug already in the app — a bad `DateOnly` query parameter is never validated, so the report answers 200 with a silently wrong date range instead of a clean 400 — and it's a good first thing to hunt down.
+
+```
+cp .env.example .env
+make setup
+make dev-all
+```
+
+Open `http://localhost:5176/compass/`. You're auto-signed-in (DevBypass); `SAML=1 make dev-all` runs a real SAML handshake against a mock identity provider instead, though the browser callback is a known 500 in this local setup.
+
+Full setup and a tour of the app: [leap/RUNNING.md](leap/RUNNING.md).
 
 Your instructor will hand you a feature at Part 1. Use the same feature in Step 5 so you can compare the two attempts.

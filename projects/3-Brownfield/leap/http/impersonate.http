@@ -1,0 +1,17 @@
+@baseUrl = http://localhost:5009
+
+### Start impersonating a target user (SuperAdmin only)
+# Cookie-session swap: the current session cookie is re-issued as the target identity with
+# provenance claims. No token is returned; the response is the /api/me-shaped payload.
+# Replace the {edjeId} path segment with a valid target GUID.
+POST {{baseUrl}}/api/impersonate/00000000-0000-0000-0000-000000000042
+
+### Start impersonating - non-existent target (should return 404)
+POST {{baseUrl}}/api/impersonate/99999999-9999-9999-9999-999999999999
+
+### Stop impersonating (restores the original identity from provenance claims)
+# Callable by the impersonated session itself; requires only an authenticated cookie.
+POST {{baseUrl}}/api/impersonate/stop
+
+### Session probe (reflects the impersonated identity + impersonator block while impersonating)
+GET {{baseUrl}}/api/me

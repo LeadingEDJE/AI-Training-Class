@@ -1,0 +1,7 @@
+@baseUrl = http://localhost:5009
+
+### Get audit logs by entity type and ID
+GET {{baseUrl}}/api/audit-logs?entityType=Person&entityId=42
+
+### Get audit logs - missing params (should return 400)
+GET {{baseUrl}}/api/audit-logs

@@ -1,0 +1,107 @@
+services:
+  # The LEAP application database (Phase 42 Postgres re-platform). Hosts the schema named by
+  # POSTGRES_DB in .env -- `leap_dev` since the additive Phase 51 rename -- applied via EF Core /
+  # Npgsql migrations. This is the primary datastore the API runs against. Health-gated via a
+  # readiness probe (see healthcheck). The old `timesheet_dev` database is renamed by nothing and
+  # dropped by nothing; rolling back is putting that name back in .env.
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # Mock Google SAML app (Phase 47, D-01). A SimpleSAMLphp container that impersonates the
+  # Google Workspace SAML app the deployed config points at, so the real Sustainsys.Saml2
+  # handshake is exercised end-to-end in a browser locally + in CI. It registers ONE SP from
+  # env vars (the Vite dev-server origin — Vite proxies /Saml2 + /auth to the API with Host
+  # preserved) and serves IdP metadata (signing cert embedded) at
+  # /simplesaml/saml2/idp/metadata.php. The pinned tag 1.19.9 is the only multi-arch
+  # (amd64+arm64) stable tag; older tags are amd64-only and fail on the aarch64 dev host.
+  #
+  # SECURITY: this image's signing key is PUBLIC (committed in the image repo), so its metadata
+  # must NEVER be trusted by a deployed environment — anyone could forge assertions against it.
+  # The SAML on-switch stays env-var-only via the Makefile / CI job; nothing here leaks into
+  # tracked appsettings, Helm, or Terraform. The host port 8090 binding is localhost/CI-only.
+  google-saml-mock:
+    image: kenchan0130/simplesamlphp:1.19.9   # pin: only 1.19.9/latest are arm64+amd64
+    ports:
+      - "8090:8080"
+    environment:
+      # SP origin is a VARIABLE with the plain-http default, because the SP origin must match the
+      # scheme the browser actually used. simplesamlphp validates the AuthnRequest's
+      # AssertionConsumerServiceURL against the value registered here, and Sustainsys derives that
+      # URL from Request.Scheme. Compass's vite dev server has no mkcert/https wiring (unlike the
+      # deleted timesheet SPA), so this stays plain http until that gap is closed — see the
+      # SAML=1 note in the Makefile's AUTH MODE block. `make dev-all SAML=1` exports
+      # SAML_SP_ORIGIN=http://localhost:5176; everything else gets the same value as the default.
+      SIMPLESAMLPHP_SP_ENTITY_ID: ${SAML_SP_ORIGIN:-http://localhost:5176}/Saml2
+      SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE: ${SAML_SP_ORIGIN:-http://localhost:5176}/Saml2/Acs
+      SIMPLESAMLPHP_IDP_BASE_URL: http://localhost:8090/simplesaml/   # trailing slash required; pins dynamic IdP URLs
+    volumes:
+      - ./docker/google-saml-mock/authsources.php:/var/www/simplesamlphp/config/authsources.php:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -o /dev/null http://localhost:8080/simplesaml/saml2/idp/metadata.php || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: dev
+      secrets:
+        - nuget_config
+    ports:
+      - "5009:5000"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5000
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./api:/app/api
+      - ./tests/unit:/app/tests/unit
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: dev
+    ports:
+      - "5176:5176"
+    environment:
+      VITE_API_TARGET: http://api:5000
+    volumes:
+      - ./web/compass/src:/app/web/compass/src
+      - ./web/compass/index.html:/app/web/compass/index.html
+      - ./web/compass/public:/app/web/compass/public
+      - ./packages/api-client:/app/packages/api-client
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
+    depends_on:
+      - api
+
+secrets:
+  nuget_config:
+    file: ~/.nuget/NuGet/NuGet.Config
+
+volumes:
+  postgres_data:

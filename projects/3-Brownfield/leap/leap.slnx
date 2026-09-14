@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="api/LeadingEDJE.Leap.Api.csproj" />
+  <Project Path="tests/unit/LeadingEDJE.Leap.Api.Tests.csproj" />
+  <Project Path="tests/integration/LeadingEDJE.Leap.Api.IntegrationTests.csproj" />
+</Solution>

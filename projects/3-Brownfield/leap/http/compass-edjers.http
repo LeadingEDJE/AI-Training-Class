@@ -1,0 +1,289 @@
+### Compass EDJEr configuration — AC-17, AC-18, AC-19, BR-9, BR-10
+###
+### Every route requires the Compass Super Admin policy. A "Compass Admin" principal is refused with
+### 403 on ALL of these, reads included — that role is read-only in Compass however administrative the
+### name sounds (AC-44). A Compass Admin reads EDJErs through the directory boundary instead
+### (GET /api/compass/v1/employees/{id}), which returns a DTO carrying no time-tracking flags: BR-1
+### makes Time Tracking Settings Super-Admin-only, and FR-016 requires them ABSENT from the payload for
+### a lesser role rather than merely hidden in a form.
+###
+### Locally, `make dev-all` runs DevBypass, so requests are already authenticated. Confirm you actually
+### hold the role before blaming a 403:
+###   curl -s http://localhost:5009/api/me | jq '.privileges'
+### If "Compass Super Admin" is missing, fix the bypass principal's groups. Do NOT relax a policy to
+### make a request work.
+###
+### There is deliberately NO DELETE. An EDJEr is deactivated by PUTting isActive false, and that
+### deactivation is GUARDED (see the 422 below). EDJErs are never removed — which is exactly why email
+### uniqueness spans inactive rows (BR-9).
+###
+### Unlike lookup administration, every write here IS audited, with the actor's effective roles
+### (FR-017). Check one:
+###   curl -s "http://localhost:5009/api/audit-logs?entityType=CompassEmployee" | jq '.[0]'
+
+@baseUrl = http://localhost:5009
+@edjers = {{baseUrl}}/api/compass/v1/admin/edjers
+
+### Every EDJEr — active and inactive. What the administration list renders.
+### Inactive ones are included on purpose: an administrator who cannot see a deactivated EDJEr cannot
+### reactivate one, and BR-1 gives every elevated role sight of both.
+GET {{edjers}}
+Accept: application/json
+
+### One EDJEr's full configuration record, including the three time-tracking flags.
+### Addressed by compass.employee's int identity key — the same identifier the directory boundary
+### publishes since feature 003. There is no surrogate id and none is wanted (Constitution 1.2.0).
+GET {{edjers}}/1
+Accept: application/json
+
+### An unknown id — expect 404
+GET {{edjers}}/999999
+Accept: application/json
+
+### Add an EDJEr — expect 201 with a Location header (AC-17)
+### Captures exactly AC-17's field set. No termination date and no billing rate: AC-NFR-6 omits both.
+POST {{edjers}}
+Content-Type: application/json
+
+{
+  "firstName": "Ada",
+  "lastName": "Lovelace",
+  "hireDate": "2020-01-06",
+  "email": "ada.lovelace@example.test",
+  "employeeTypeId": 1,
+  "coachEmployeeId": null,
+  "stateOfResidence": "OH",
+  "isActive": true,
+  "timesheetRequired": true,
+  "canSubmitUnder40": false,
+  "includeInPayroll": true
+}
+
+### Add an EDJEr with no coach — expect 201.
+### The coach is OPTIONAL (AC-17). The mockup marks it required with an asterisk; where a mockup and an
+### acceptance criterion disagree, the criterion wins.
+POST {{edjers}}
+Content-Type: application/json
+
+{
+  "firstName": "Grace",
+  "lastName": "Hopper",
+  "hireDate": "2019-07-01",
+  "email": "grace.hopper@example.test",
+  "employeeTypeId": 1,
+  "coachEmployeeId": null,
+  "stateOfResidence": "DC",
+  "isActive": true,
+  "timesheetRequired": true,
+  "canSubmitUnder40": true,
+  "includeInPayroll": true
+}
+
+### Duplicate email — expect 409 (AC-18, BR-9, FR-012)
+POST {{edjers}}
+Content-Type: application/json
+
+{
+  "firstName": "Augusta",
+  "lastName": "King",
+  "hireDate": "2021-03-01",
+  "email": "ada.lovelace@example.test",
+  "employeeTypeId": 1,
+  "coachEmployeeId": null,
+  "stateOfResidence": "OH",
+  "isActive": true,
+  "timesheetRequired": true,
+  "canSubmitUnder40": false,
+  "includeInPayroll": true
+}
+
+### The same address differing only by CASE and WHITESPACE — expect 409 as well (spec A-2, research D-5).
+### Enforced by ux_employee_email_ci, a UNIQUE index on lower(btrim(email)), not only by the service:
+### the service pre-check exists so the message can name the field, but a concurrent writer can commit
+### between that check and the write.
+POST {{edjers}}
+Content-Type: application/json
+
+{
+  "firstName": "Augusta",
+  "lastName": "King",
+  "hireDate": "2021-03-01",
+  "email": "  Ada.Lovelace@Example.test  ",
+  "employeeTypeId": 1,
+  "coachEmployeeId": null,
+  "stateOfResidence": "OH",
+  "isActive": true,
+  "timesheetRequired": true,
+  "canSubmitUnder40": false,
+  "includeInPayroll": true
+}
+
+### An address held by an INACTIVE EDJEr — expect 409 too.
+### This is BR-9's whole point and the case most often missed. Deactivate an EDJEr first (see below),
+### then run this with their address.
+POST {{edjers}}
+Content-Type: application/json
+
+{
+  "firstName": "Somebody",
+  "lastName": "New",
+  "hireDate": "2026-01-05",
+  "email": "the.departed@example.test",
+  "employeeTypeId": 1,
+  "coachEmployeeId": null,
+  "stateOfResidence": "OH",
+  "isActive": true,
+  "timesheetRequired": true,
+  "canSubmitUnder40": false,
+  "includeInPayroll": true
+}
+
+### A RETIRED employee type — expect 400 (FR-005).
+### Retire one first via PUT /api/compass/v1/admin/employee-types/{id} with isActive false. The
+### selection list omitting it is convenience; this is the enforcement.
+POST {{edjers}}
+Content-Type: application/json
+
+{
+  "firstName": "Ada",
+  "lastName": "Lovelace",
+  "hireDate": "2020-01-06",
+  "email": "retired.type@example.test",
+  "employeeTypeId": 2,
+  "coachEmployeeId": null,
+  "stateOfResidence": "OH",
+  "isActive": true,
+  "timesheetRequired": true,
+  "canSubmitUnder40": false,
+  "includeInPayroll": true
+}
+
+### A state outside the 50 plus DC — expect 400 (FR-014).
+### "PR" is chosen deliberately: US territories are excluded, not overlooked (AC-NFR-6). The database
+### CHECK and the service validate against the same list (UsStateCodes).
+POST {{edjers}}
+Content-Type: application/json
+
+{
+  "firstName": "Ada",
+  "lastName": "Lovelace",
+  "hireDate": "2020-01-06",
+  "email": "bad.state@example.test",
+  "employeeTypeId": 1,
+  "coachEmployeeId": null,
+  "stateOfResidence": "PR",
+  "isActive": true,
+  "timesheetRequired": true,
+  "canSubmitUnder40": false,
+  "includeInPayroll": true
+}
+
+### A coach who is not an EDJEr — expect 400, not a foreign-key 500
+POST {{edjers}}
+Content-Type: application/json
+
+{
+  "firstName": "Ada",
+  "lastName": "Lovelace",
+  "hireDate": "2020-01-06",
+  "email": "bad.coach@example.test",
+  "employeeTypeId": 1,
+  "coachEmployeeId": 999999,
+  "stateOfResidence": "OH",
+  "isActive": true,
+  "timesheetRequired": true,
+  "canSubmitUnder40": false,
+  "includeInPayroll": true
+}
+
+### Update an EDJEr — expect 200 (AC-19).
+### Changing a profile field and a time-tracking flag. The audit entry records only what actually
+### changed, with before and after.
+PUT {{edjers}}/1
+Content-Type: application/json
+
+{
+  "firstName": "Augusta",
+  "lastName": "Lovelace",
+  "hireDate": "2020-01-06",
+  "email": "ada.lovelace@example.test",
+  "employeeTypeId": 1,
+  "coachEmployeeId": null,
+  "stateOfResidence": "OH",
+  "isActive": true,
+  "timesheetRequired": false,
+  "canSubmitUnder40": false,
+  "includeInPayroll": true
+}
+
+### Deactivate an EDJEr who holds an assignment with NO end date — expect 422 (FR-019, BR-10, AC-19).
+###
+### 422 and not 400: the request is well formed and you are authorised. The state of the world forbids
+### it, and the response body LISTS the blocking assignments so the answer is actionable:
+###   { "message": "...", "blockingAssignments": [ { "assignmentId": 1, "clientId": 7,
+###     "clientName": "Buckeye Mutual", "startDate": "2024-04-01" } ] }
+###
+### No assignment is ever auto-ended — an assignment's true end date frequently differs from the date
+### the EDJEr is deactivated and must not be defaulted. Ending them yourself and retrying is the
+### recovery path, and it needs Stream 3's assignment surface (AC-45, spec A-4). It is NOT available
+### here, and that is expected rather than a gap.
+###
+### Against a seeded local database, EDJEr 8 holds two concurrent assignments and 9 is on the beach
+### open-ended — either will produce the 422.
+PUT {{edjers}}/8
+Content-Type: application/json
+
+{
+  "firstName": "Seeded",
+  "lastName": "Edjer",
+  "hireDate": "2020-01-06",
+  "email": "seeded.edjer8@example.test",
+  "employeeTypeId": 1,
+  "coachEmployeeId": null,
+  "stateOfResidence": "OH",
+  "isActive": false,
+  "timesheetRequired": true,
+  "canSubmitUnder40": false,
+  "includeInPayroll": true
+}
+
+### Deactivate an EDJEr whose assignments are ALL end-dated — expect 200 (US2 scenario 11).
+### The other half of the guard: an ended assignment must not block, and a query that is too broad
+### would break exactly this case.
+PUT {{edjers}}/2
+Content-Type: application/json
+
+{
+  "firstName": "Seeded",
+  "lastName": "Edjer",
+  "hireDate": "2020-01-06",
+  "email": "seeded.edjer2@example.test",
+  "employeeTypeId": 1,
+  "coachEmployeeId": null,
+  "stateOfResidence": "OH",
+  "isActive": false,
+  "timesheetRequired": true,
+  "canSubmitUnder40": false,
+  "includeInPayroll": true
+}
+
+### An unknown id — expect 404
+PUT {{edjers}}/999999
+Content-Type: application/json
+
+{
+  "firstName": "Nobody",
+  "lastName": "Here",
+  "hireDate": "2020-01-06",
+  "email": "nobody@example.test",
+  "employeeTypeId": 1,
+  "coachEmployeeId": null,
+  "stateOfResidence": "OH",
+  "isActive": true,
+  "timesheetRequired": true,
+  "canSubmitUnder40": false,
+  "includeInPayroll": true
+}
+
+### DELETE — expect 405. Its absence is the requirement, not an omission (Principle VIII).
+DELETE {{edjers}}/1

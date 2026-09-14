@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!--
+    A vector compass rose, not the emoji glyph the LEAP shell renders as DOM text on the
+    EDJE Compass tile (web/shell/shell.js, icon: "🧭"). An <svg><text> glyph depends on the
+    browser's SVG rasterizer finding a color-emoji font for the favicon-sized render; verified
+    against the deployed PR #581 preview that it does not: the tab icon painted as a blank or
+    broken-glyph box, not a compass, even on a system with a color emoji font installed. Real
+    vector paths (the same approach web/timesheet/public/favicon.svg uses for the LE logomark)
+    render identically everywhere. Colors match the Compass brand custom properties defined in
+    web/compass/src/index.css (color-brand-green #98c93d, color-brand-gray #4c4d4f,
+    color-brand-ink #1f2022). NOTE: this comment must never contain two consecutive hyphens.
+    An XML comment is not well-formed with one, so a browser loading this file as a standalone
+    document (as a favicon link does) fails to parse it and silently shows no icon at all. That
+    was the actual defect behind issue #580's "I don't see it in the preview environment"
+    report: curl and the HTTP layer show 200, only an XML parse confirms the breakage.
+  -->
+  <circle cx="50" cy="50" r="44" fill="#ffffff" stroke="#98c93d" stroke-width="8"/>
+  <polygon points="50,16 60,50 50,84 40,50" fill="#4c4d4f"/>
+  <polygon points="16,50 50,40 84,50 50,60" fill="#98c93d"/>
+  <circle cx="50" cy="50" r="5" fill="#1f2022"/>
+</svg>

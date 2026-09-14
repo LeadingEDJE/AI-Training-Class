@@ -1,0 +1,51 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <UseMSBuildTestInfrastructure>true</UseMSBuildTestInfrastructure>
+
+    <!-- Phase 39 D-04: emit XML documentation files so CS1591 (missing XML comment on
+         publicly visible type or member) is reported by the compiler.
+         TreatWarningsAsErrors=true above carries CS1591 to an error automatically —
+         do NOT add a separate <WarningsAsErrors>CS1591</WarningsAsErrors> (would be
+         redundant and misleading per RESEARCH.md Pitfall 2).
+         Scoped to non-test projects via the Condition so test assemblies aren't flooded
+         with CS1591 for their own public helpers (RESEARCH.md Pitfall 3).
+         NOTE: `Contains('Tests')` (no leading period) catches BOTH `.Tests` and
+         `.IntegrationTests` project suffixes — the project name
+         `LeadingEDJE.Leap.Api.IntegrationTests` does not contain the substring
+         `.Tests` (it has `.IntegrationTests`), so the leading-period variant leaked
+         XML-doc emission into the integration test project.
+         ⚠️ MSBuild's String.Contains is CASE-SENSITIVE (verified: 'mytests'.Contains('Tests')
+         is False, 'mytests'.Contains('tests') is True). Both test .csproj FILENAMES must
+         therefore keep the capital-T `Tests` substring — a lowercase or short project filename
+         such as tests/unit/unit.csproj would flip GenerateDocumentationFile ON for the test
+         assemblies and, with TreatWarningsAsErrors, fail their build with hundreds of CS1591
+         "missing XML comment" errors. That is the exact regression this Condition exists to
+         prevent, so do not rename those files to match their directories. -->
+    <GenerateDocumentationFile Condition="!$(MSBuildProjectName.Contains('Tests'))">true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!-- Phase 39 D-02 NOTE (2026-04-24 via Plan 39-G1): the `<Compile Update NoWarn="CS1591">` ItemGroup
+       previously here did NOT suppress the compiler's CS1591 emitter. Item-level NoWarn metadata on
+       <Compile> items only flows to analyzer warnings, not to the CS1591 XML-doc warning from the
+       Roslyn compiler itself (see 39-GAPS.md Gap 2). Suppression is now file-scoped via
+       `#pragma warning disable CS1591` at the top of each exclusion file. If you add a new
+       test double / design-time / seed-data / migration file, put the pragma at the top of that
+       file — do NOT attempt another ItemGroup-based NoWarn here. -->
+
+  <!-- Phase 39 D-04 ENFORCEMENT FLIP (Plan 39-03, 2026-04-25): the temporary project-wide
+       `<NoWarn>$(NoWarn);CS1591</NoWarn>` PropertyGroup added by Plan 39-01 has been REMOVED.
+       CS1591 (missing XML comment on publicly visible type or member) is now a fatal build
+       error for the API project via TreatWarningsAsErrors=true above. Wave-2 sweep plans
+       39-02a..f added /// <summary> docs to all 92 production files; Plan 39-G1 closed the
+       D-02 mechanism with file-scoped #pragma warning disable CS1591 on 19 exclusion files.
+       Plan 39-VG validated the gap-free baseline (`dotnet build -p:NoWarn=1591` → 0 CS1591).
+       Doc-comment regression is now mechanically impossible. -->
+
+</Project>

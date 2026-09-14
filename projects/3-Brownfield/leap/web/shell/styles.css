@@ -1,0 +1,494 @@
+/*
+ * LEAP shell — hand-rolled static CSS (no framework, no build step).
+ * Visual design LOCKED to the official style guide (D-18):
+ * docs/design/leading-edje-style-guide.html.
+ * Fonts (Sora / Manrope / JetBrains Mono) load via the same Google Fonts
+ * strategy the guide uses (no npm packages, no vendored font files).
+ */
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+:root {
+  /* Brand palette — verbatim from the locked style guide (D-18). */
+  --le-black: #0e0f10;
+  --le-blue: #5c95ff;
+  --le-green: #98c93d;
+  --le-teal: #49c6e5;
+  --le-charcoal: #4c4d4f;
+  --le-taupe: #c4b1ae;
+
+  /* Text-safe darkenings of the brand accents, measured against BOTH surfaces the shell paints
+       text on — the white tile and the `--le-bg` page ground. The brand hues themselves stay above
+       as fills and borders — Principle IX: green, cyan and blue are fill, border and accent colours
+       and MUST NOT be used for normal-size text on a light surface. Reach for one of these any time
+       a brand hue is wanted for TEXT; `.greeting-name` below records what happens otherwise. */
+  --le-cta-green: #5c7c1e; /* 4.82:1 on #fff, 4.53:1 on #f7f8f9 */
+  --le-cta-blue: #3b63b8; /* 5.73:1 on #fff, 5.39:1 on #f7f8f9 */
+  --le-cta-teal: #1b6e85; /* 5.81:1 on #fff, 5.46:1 on #f7f8f9 */
+  --le-link: #3b63b8; /* replaces --le-blue for link TEXT, which was 2.74:1 on the page ground */
+
+  /* Surfaces + border tokens (locked hex values). */
+  --le-bg: #f7f8f9;
+  --le-surface: #ffffff;
+  --le-border: #dde1e5;
+
+  /* Destructive action colour (2026-08-26). NOT a brand colour and deliberately not one of the
+     accents above: the locked style guide (D-18) has none, because until developer tools nothing in
+     the shell destroyed anything. Borrowing --le-green or --le-teal for a button that permanently
+     empties five tables would make the most dangerous control on the page look like every safe one.
+     #B3261E is 6.14:1 on --le-surface and 5.80:1 on --le-bg, so it clears AA for normal-size text on
+     both surfaces the shell paints; --le-danger-strong is the hover, darker still.
+
+     ON :root RATHER THAN SCOPED TO .devtools-bar, which is where it was first written and could
+     never have worked: #devtools-modal is a SIBLING of <main>, not a descendant of the bar, so
+     var(--le-danger) inside the dialog resolved to nothing and every rule hardcoded the hex instead
+     — leaving a declared-but-unused token, which is what review caught. */
+  --le-danger: #b3261e;
+  --le-danger-strong: #921e18;
+
+  /* Type scale tokens from the guide. */
+  --font-display: "Sora", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--le-bg);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background-color: var(--le-bg);
+  color: var(--le-charcoal);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.noscript {
+  margin: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--le-border);
+  border-radius: 8px;
+  background: var(--le-surface);
+  font-family: var(--font-body);
+}
+
+.leap-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 4rem) clamp(1rem, 4vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ---- Top bar (issue #271) ----
+   Styled after the Compass nav chrome (web/compass/src/components/CompassNav.tsx): the same
+   gray bar and "leading EDJE" wordmark, used here purely as STYLING — this bar carries no nav
+   links (LEAP FR-8: the launcher evaluates no permissions) and no user role. `--le-charcoal`
+   is the same hex as Compass's `--color-brand-gray` (#4c4d4f), so the chrome matches exactly. */
+.leap-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--le-charcoal);
+  color: #ffffff;
+}
+
+.leap-logo {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 1.1875rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.leap-logo-edje {
+  font-weight: 800;
+  color: var(--le-green);
+}
+
+.leap-logo-divider {
+  margin-left: 0.625rem;
+  padding-left: 0.875rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+}
+
+.leap-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--le-green);
+  color: var(--le-black);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+/* [hidden] must come AFTER `.leap-avatar` and win over its own `display` — the attribute
+   selector matches the UA stylesheet's own `[hidden] { display: none }` rule, but that rule loses
+   to `.leap-avatar` on source order once both have equal specificity (0,1,0), so this class's
+   `display: inline-flex` would otherwise defeat `hidden` entirely. */
+.leap-avatar[hidden] {
+  display: none;
+}
+
+/* ---- Ephemeral preview badge ---- */
+.ephemeral-badge {
+  align-self: flex-start;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  background: var(--le-teal);
+  color: var(--le-black);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+/* ---- Loading / error states ---- */
+.loading-view,
+.error-view {
+  padding: 2rem 0;
+}
+
+.loading-text,
+.error-text {
+  font-size: 1rem;
+  color: var(--le-charcoal);
+}
+
+.retry-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-weight: 600;
+  color: var(--le-link);
+  text-decoration: none;
+}
+
+.retry-link:hover {
+  text-decoration: underline;
+}
+
+/* ---- Authenticated view ---- */
+.greeting {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  color: var(--le-black);
+  margin: 0;
+}
+
+.greeting-sub {
+  margin: 0.25rem 0 0;
+  color: var(--le-charcoal);
+}
+
+/* ---- Module tiles ---- */
+.tile-list {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+@media (max-width: 640px) {
+  .tile-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  min-height: 140px;
+  border: 1px solid var(--le-border);
+  border-radius: 14px;
+  background: var(--le-surface);
+  color: var(--le-black);
+  text-decoration: none;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+
+a.tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--le-green);
+  box-shadow: 0 8px 24px rgba(14, 15, 16, 0.08);
+}
+
+.tile-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.tile-desc {
+  font-size: 0.9375rem;
+  color: var(--le-charcoal);
+}
+
+/* Compass "coming soon" tile — greyed, non-interactive (D-05). */
+.tile.tile-disabled {
+  opacity: 0.55;
+  cursor: default;
+  pointer-events: none;
+  background: var(--le-bg);
+}
+
+.coming-soon-pill {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  background: var(--le-charcoal);
+  color: var(--le-surface);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---- Tile fidelity to `#s-home` (feature 008, US1) ----
+   Icon chip, colour accent and call-to-action come from the mockup. The ACCENT HUES are the mockup's
+   (`--le-green`/`--le-blue`/`--le-teal`) because a 5px border is a non-text boundary; the CTA TEXT
+   colours are NOT, and that difference is constitution Principle X rule 2 in practice.
+
+   Measured against the white tile surface, every call-to-action colour the mockup uses fails the
+   4.5:1 normal-text minimum:
+
+       #7FAE2C green  2.63:1      #5C95FF blue  2.92:1      #2596B3 cyan  3.45:1
+
+   So each is darkened until it passes, and each darkening is a recorded departure. Copying the
+   mockup verbatim here would have shipped an AC-NFR-5 failure that looks exactly correct — the
+   failure Principle IX names as the one most likely to ship. */
+.tile-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.tile-go {
+  margin-top: auto;
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+
+/* The accent is selected by a class the STATIC tile catalog supplies — never from /api/me. */
+.tile-compass {
+  border-top: 5px solid var(--le-green);
+}
+.tile-compass .tile-icon {
+  background: #eef6dc;
+}
+.tile-compass .tile-go {
+  color: var(
+    --le-cta-green
+  ); /* 4.82:1 on white; the mockup's #7FAE2C is 2.63:1 */
+}
+
+/* The <li> carries no list styling: the tile IS the visual unit. The semantics are the point. */
+.tile-list > li {
+  display: flex;
+  list-style: none;
+}
+.tile-list > li > .tile {
+  flex: 1;
+}
+
+/* ---- Greeting hero (`#s-home`) ---- */
+
+/* `--le-cta-green`, NOT the raw `--le-green` this first shipped with. #98C93D on the page ground is
+   1.84:1 — it misses the 4.5:1 normal-text minimum AND the 3:1 large-text one, so no font size
+   rescues it. That is the same trap the CTA tokens above were introduced for in this very file, and
+   the name of the signed-in person is the last thing on the launcher that should be unreadable.
+   #5C7C1E is 4.53:1 on `--le-bg`, clearing AA outright at any size.
+
+   Nothing mechanical guards this: `brand-token-parity.test.ts` covers web/compass only, and the
+   shell's Playwright specs run no axe pass. So it is a comment, and a measurement, or nothing. */
+.greeting-name {
+  color: var(--le-cta-green);
+  font-weight: 700;
+}
+
+/* ---- Developer tools (2026-08-26) ----
+   Konami-revealed, environment-gated, and the only identity-dependent surface in the launcher
+   (see the comment on #devtools-bar in index.html). The destructive colour is `--le-danger`, defined
+   on :root with its contrast measurements. */
+.devtools-bar {
+  align-self: flex-end;
+  margin-bottom: -1rem;
+}
+
+.devtools-open {
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--le-border);
+  border-radius: 6px;
+  background: var(--le-surface);
+  color: var(--le-charcoal);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.devtools-open:hover:not(:disabled) {
+  border-color: var(--le-cta-teal);
+  color: var(--le-cta-teal);
+}
+
+/* Disabled is what a non-authorised user sees. `opacity` alone would be a contrast failure, so the
+   colour is set explicitly and `not-allowed` makes the state legible without a tooltip. */
+.devtools-open:disabled {
+  border-style: dashed;
+  color: #6b6c6e;
+  cursor: not-allowed;
+}
+
+.devtools-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(14 15 16 / 55%);
+  z-index: 50;
+}
+
+/* `[hidden]` must beat `display: flex` above — an attribute selector and a class selector have the
+   same specificity, so without this the modal would render permanently open the moment these
+   styles load. It is one line and it is the whole feature working or not. */
+.devtools-backdrop[hidden] {
+  display: none;
+}
+
+.devtools-dialog {
+  width: 100%;
+  max-width: 30rem;
+  padding: 1.25rem;
+  border: 1px solid var(--le-border);
+  border-radius: 10px;
+  background: var(--le-surface);
+  box-shadow: 0 12px 32px rgb(14 15 16 / 25%);
+}
+
+.devtools-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.devtools-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--le-black);
+}
+
+.devtools-close {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--le-charcoal);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.devtools-close:hover {
+  background: var(--le-bg);
+  color: var(--le-black);
+}
+
+.devtools-hint,
+.devtools-confirm-text {
+  margin: 0 0 0.85rem;
+  font-size: 0.9rem;
+}
+
+.devtools-confirm-text {
+  font-weight: 700;
+  color: var(--le-black);
+}
+
+.devtools-confirm-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.devtools-danger {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--le-danger);
+  border-radius: 6px;
+  background: var(--le-danger);
+  color: var(--le-surface);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.devtools-danger:hover:not(:disabled) {
+  background: var(--le-danger-strong);
+  border-color: var(--le-danger-strong);
+}
+
+.devtools-danger:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.devtools-secondary {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--le-border);
+  border-radius: 6px;
+  background: var(--le-surface);
+  color: var(--le-charcoal);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.devtools-status {
+  margin: 0.85rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.devtools-status.is-success {
+  color: var(--le-cta-green);
+}
+
+.devtools-status.is-error {
+  color: var(--le-danger);
+}

@@ -1,0 +1,33 @@
+// appsettings.Local.json.example — local real-Google-SAML developer path (Option A).
+//
+// HOW TO USE
+//   1. Register a "Compass (local)" custom SAML app in Google Admin (super-admin, ~30 min):
+//        ACS URL   : https://compass-local.dev.leadingedje.com:5176/Saml2/Acs
+//        Entity ID : https://compass-local.dev.leadingedje.com:5176/Saml2
+//        Attribute : Group membership → attribute named "groups"
+//        Groups    : add yourself to the Compass-*-dev groups you want (see
+//                    appsettings.Development.json → GoogleAuth:Groups for the role mapping).
+//   2. Download that app's IdP metadata XML and save it to (gitignored):
+//        api/saml/idp-metadata.xml
+//   3. Copy this file to appsettings.Local.json (same directory) and fill IdentityProvider:EntityId
+//      with the IdP Entity ID from Google (shown on the app's SSO/details page, e.g.
+//      https://accounts.google.com/o/saml2?idpid=XXXXXXXXX).
+//   4. Serve the frontend over https (mkcert) so the ACS origin matches
+//      https://compass-local.dev.leadingedje.com:5176, then sign in via the normal /auth/login flow.
+//
+// ALL-OR-NOTHING GATE
+//   The API only wires the Sustainsys SAML handler when ALL THREE of Saml2:EntityId,
+//   Saml2:IdentityProvider:EntityId, and a resolvable metadata location are non-empty
+//   (Program.cs → ConfigureSaml2). Leave any one blank / delete appsettings.Local.json and the
+//   app boots SAML-OFF, exactly as tracked config ships it — stub-login + DevBypass stay the
+//   default local sign-in. This file is gitignored; never commit real IdP metadata or entity IDs.
+{
+  "Saml2": {
+    "EntityId": "https://compass-local.dev.leadingedje.com:5176/Saml2",
+    "GroupsAttributeName": "groups",
+    "IdentityProvider": {
+      "EntityId": "https://accounts.google.com/o/saml2?idpid=REPLACE_WITH_YOUR_IDP_ID",
+      "MetadataLocation": "saml/idp-metadata.xml"
+    }
+  }
+}

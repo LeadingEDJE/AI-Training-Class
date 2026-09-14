@@ -1,0 +1,30 @@
+{
+  "name": "leap",
+  "private": true,
+  "workspaces": [
+    "web/compass",
+    "packages/*"
+  ],
+  "scripts": {
+    "generate:api": "npm run generate --workspace=@leap/api-client",
+    "test:scripts": "vitest run"
+  },
+  "engines": {
+    "node": ">=22.22.1",
+    "npm": ">=10.0.0 <11.0.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.10",
+    "jsdom": "^30.0.0",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.4"
+  },
+  "overrides": {
+    "lodash": "^4.18.0",
+    "serialize-javascript": "^7.0.5",
+    "flatted": "^3.4.2",
+    "keyv": "^4.5.4",
+    "flat-cache": "^4.0.1"
+  },
+  "version": "1.5.0"
+}

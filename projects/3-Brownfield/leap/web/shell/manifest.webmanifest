@@ -1,0 +1,22 @@
+{
+    "name": "LEAP",
+    "short_name": "LEAP",
+    "description": "LEAP — the LeadingEDJE platform launcher.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "theme_color": "#0E0F10",
+    "background_color": "#F7F8F9",
+    "icons": [
+        {
+            "src": "/icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

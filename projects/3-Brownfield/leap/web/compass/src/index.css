@@ -1,0 +1,182 @@
+/* Tailwind v4 via the Vite plugin — no PostCSS, no tailwind.config.js.
+   Compass adopts the timesheet SPA's type tokens BY CONVENTION rather than through a shared UI
+   package: the rule-of-three threshold for extracting one is not met with two consumers, and
+   inventing a package now would be speculative design. */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import 'tailwindcss';
+
+/*
+ * The five EDJE brand values (US7 / #57). Measured against white: green #98C93D (1.95:1), cyan
+ * #49C6E5 (2.0:1) and blue #5C95FF (2.92:1) all fail the WCAG AA 4.5:1 minimum for normal body
+ * text — taupe #C4B1AE fails likewise. Only the brand gray (8.46:1) passes. These four generate
+ * `bg-brand-*` / `border-brand-*` / `fill-brand-*` utilities for fill, border and accent use —
+ * see web/compass/README.md for the enforced convention that none of them is used as body text.
+ * Kept in step with `src/styles/brand-tokens.ts`, which is what the AA and contrast tests import.
+ */
+@theme {
+  --color-brand-green: #98c93d;
+  --color-brand-cyan: #49c6e5;
+  --color-brand-blue: #5c95ff;
+  --color-brand-taupe: #c4b1ae;
+  --color-brand-gray: #4c4d4f;
+
+  /* The mockups' own `--text` (#68), NOT in the style guide's grey ramp. Distinct from
+     `--color-brand-gray` (`--le-gray` in the mockup): that one is CHROME — the topbar, `th`,
+     `.field label`, `.btn.secondary` — while `--text` is plain body copy, which is what `body`
+     below actually uses. 13.41:1 on white, 12.29:1 on the shell — comfortably clears AA, so
+     Principle X rule 3 gives this pure-presentation value to the mockup. Kept in step with
+     `src/styles/brand-tokens.ts`'s `BRAND_TEXT`, which the contrast tests import. */
+  --color-brand-text: #2e2f30;
+
+  /* Secondary text: `--le-gray-600` from the style guide's grey ramp — 6.98:1 on white and 6.40:1 on
+     the #f4f5f6 shell set above, so it clears AA on both surfaces this app actually paints. NOT the
+     style guide's `--color-fg-muted` (`--le-gray-500`, #6f757c): that is 4.26:1 on the shell and real
+     axe-core failed it there. Kept in step with `src/styles/brand-tokens.ts`, which the contrast
+     tests import. */
+  --color-brand-gray-muted: #545a60;
+
+  /* Style-guide RAMP values (US2 / #59) — legitimate to use, NOT brand values. The constitution permits
+     the extensions with one caveat: "Use them, but do not defend them as 'the brand.'" Each ratio below
+     was measured for the surface it is used on; two of the mockups' own pairings fail, so the ratios
+     decide. Kept in step with `src/styles/brand-tokens.ts` — the contrast tests import that file, so a
+     value changed HERE alone is a value nothing measures. */
+
+  /* `--le-charcoal-900`. Text on a brand fill: 8.35:1 on the green. Brand gray on green is 4.33:1,
+     which passes as large text and fails as a 14px button label. */
+  --color-brand-ink: #1f2022;
+
+  /* `--le-green-700`. The border a green-filled CONTROL needs: 3.37:1 on white, 3.22:1 on the shell,
+     clearing §1.4.11's 3:1. The fill cannot provide it — brand green is 1.95:1 on white. Not
+     `--le-green-600` (#82b22f), which is 2.51:1 and misses. A BORDER token only — it was the link
+     hover colour until 2026-08-21, where 3.37:1 failed §1.4.3 for hovered TEXT. */
+  --color-brand-green-700: #6d9924;
+
+  /* `--le-green-100`. Surface under an affirmative status pill: 7.22:1 under
+     --color-brand-green-accent below. NOT the mockups' `.pill.green` (#5c7c1e on #eef6dc), which is
+     4.33:1. */
+  --color-brand-green-tint: #e6f2ca;
+
+  /* Text on --color-brand-green-tint: the mockups' own `.pill.green` HUE, darkened until it clears
+     AA. Their #5c7c1e is 4.11:1 on our tint (4.33:1 on their own) and misses the normal-text
+     minimum, which is the pairing the tint's own comment already rejected; this is 5.80:1 on the
+     tint and 6.80:1 on white. It exists because the affirmative pill previously borrowed
+     --color-brand-gray, which is accessible but reads as a grey chip rather than the mockups' green
+     one. Neutral pills keep the grey.
+
+     Also the hover colour of `tableLinkClass` (2026-08-21) — 6.80:1 on white, 5.95:1 on
+     --color-brand-gray-tint — where --color-brand-green-700's 3.37:1 failed §1.4.3. */
+  --color-brand-green-accent: #4a6318;
+
+  /* `--le-gray-100`. Surface under a neutral pill and a table header: 7.41:1 under brand gray. A
+     SURFACE, not a border — 1.14:1 against white, so it cannot delimit a control. */
+  --color-brand-gray-tint: #eef0f2;
+
+  /* `--color-danger` a step darker for text: 6.15:1 on white, 5.88:1 on the shell. The style guide's
+     own #d9534f is 3.96:1 and misses. Colour is never the only signal — an invalid field also carries
+     `aria-invalid` and a message. */
+  --color-brand-danger: #b3322e;
+
+  /* Feature 007 (Sales Dashboard). The mockups' own `.pill.red` surface, kept verbatim: 5.24:1 under
+     --color-brand-danger above, which supplies the paired text so there is one "urgent" text colour
+     rather than two near-duplicates. */
+  --color-brand-danger-tint: #fde8e8;
+
+  /* `--le-taupe-100`. Surface under the dashboard's "later" urgency pill: 6.84:1 under
+     --color-brand-taupe-accent below. */
+  --color-brand-taupe-tint: #efe7e5;
+
+  /* Darkened taupe text for --color-brand-taupe-tint. NOT the mockups' own pill text (#8a6f69,
+     3.95:1 on their own background — misses AA the same way their green pill does). No taupe ramp
+     step exists in the style guide, so this is derived by darkening further: 5.61:1 on the tint
+     above, 5.86:1 on the mockups' own #f3ecea. */
+  --color-brand-taupe-accent: #6b5650;
+
+  /* Darkened `--le-blue-600` (#4a7cdb, itself 4.04:1 on white — clears 3:1 but misses 4.5:1 for
+     normal-text links). No darker blue ramp step exists, so this is derived further: 5.44:1 on
+     white, 4.98:1 on the shell. Used for the Confirmed Rollouts tile and the availability report's
+     matching subheading — no longer for links, which wear `tableLinkClass` (2026-08-21). */
+  --color-brand-blue-accent: #3a66c2;
+
+  /* Darkened `--le-teal-600` (#2ea9c8, the closest ramp analogue to the mockups' "cyan" — itself
+     only 2.75:1 on white). Derived further: 4.16:1 on white, 3.81:1 on the shell. Used for the
+     EDJErs-on-the-Beach tile. */
+  --color-brand-teal-accent: #2487a0;
+
+  /* RPT-3's three subheadings are 13px -- normal text -- so they need 4.5:1, which none of the mockup's
+     own three colours reaches. See brand-tokens.ts for the measured ratios; §2 reuses
+     --color-brand-blue-accent above, which already passes. */
+  --color-brand-teal-heading: #1e6e82;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Set on html so the dynamic-viewport area never shows a white gap.
+     `docs/design/edje-compass-mockups.html`'s own `--bg` (US7 #57 predates that file's use as a
+     design source under Principle X). The old value, #f8fafc, was Tailwind's own slate 50 step
+     hard-coded as a literal hex rather than a class, which is why the #57 retrofit's own
+     `no-slate-palette.test.ts` — a blunt regex for the class-name form only — never caught it. */
+  html {
+    background-color: #f4f5f6;
+  }
+
+  body {
+    font-family: 'Manrope', system-ui, sans-serif;
+    /* The mockups' `body{color:var(--text)}` — matches its own value (#68), not the
+       chrome-scoped brand gray. See `--color-brand-text`'s own comment above. */
+    color: var(--color-brand-text);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: 'Sora', system-ui, sans-serif;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  /*
+   * A pointer over anything clickable.
+   *
+   * **Tailwind v4 removed `cursor: pointer` from Preflight's button reset** — a documented breaking
+   * change from v3. Preflight still resets a button's font, colour and background, but sets no cursor
+   * at all, so every `<button>` falls back to the UA default and shows the ARROW. Verified against the
+   * built stylesheet: the whole sheet contained exactly ONE `cursor: pointer`, from a hand-written
+   * `cursor-pointer` utility on the sales dashboard.
+   *
+   * That is most of Compass's interactive surface, because almost nothing here is an `<a href>`: the
+   * `Button` primitive, the `Toggle` switch, `Table`'s sortable column headers, the pagination
+   * controls, and the lookup screen's link-styled Edit are all real `<button>` elements — chosen over
+   * anchors precisely because they act rather than navigate. Native links are unaffected; they get the
+   * pointer from the UA.
+   *
+   * **Restored here rather than as a utility on each control.** `SalesDashboardPage` had already
+   * patched two of its own controls with `cursor-pointer`, which is the duplication that says the
+   * default is wrong rather than those two controls being special. Every future control would need to
+   * remember it, and forgetting is silent — a screenshot does not capture a cursor.
+   *
+   * The mockups agree: `.btn` and `th` both carry `cursor:pointer`.
+   *
+   * `:not(:disabled)` so a disabled control is not advertised as clickable. Those already declare
+   * `disabled:cursor-not-allowed`, which is in the utilities layer and would win over this regardless
+   * — the guard is for a disabled control that declares nothing, which then keeps the UA default
+   * instead of inheriting a lie.
+   *
+   * **`button` only, deliberately.** A `[role='button']` term was here first and bought nothing: no
+   * element in `src/` carries that role, and `:not(:disabled)` cannot exclude a non-form element
+   * anyway — so the shape someone would actually write, `<div role="button" aria-disabled="true">`,
+   * would have been handed a pointer regardless. Add the term with an `aria-disabled` guard if and
+   * when such an element exists.
+   */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}

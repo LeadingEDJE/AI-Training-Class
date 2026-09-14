@@ -1,0 +1,41 @@
+# Declared, intentional row deletions -- read by scripts/rehearse-migration.sh.
+#
+# WHAT THIS IS FOR, AND WHAT IT IS NOT
+#
+# The rehearsal gate fails when any table loses rows against a populated database, because almost
+# every migration that does so is losing them by accident. A CONTRACT migration that retires a row
+# on purpose is the exception, and before this file existed there was no way to express it -- the
+# only way past the gate was to weaken it for everyone.
+#
+# This is NOT a mute switch. A declaration here makes the gate STRICTER for the table it names:
+#
+#   * The loss must be EXACTLY the declared delta. One row more and it fails; one row fewer and it
+#     fails too, because "deleted less than I said" means the migration is not doing what its author
+#     described.
+#   * A declaration that does not fire FAILS THE RUN. So an entry cannot rot into a standing
+#     exemption: the moment its migration stops deleting, the file breaks the build until someone
+#     removes the line. That is deliberate -- an escape hatch nobody is forced to revisit is the
+#     failure mode this format is shaped against.
+#   * It only applies while its migration is PENDING. Once merged and part of the baseline the entry
+#     is inert historical record, and grants nothing to any later migration touching the same table.
+#   * Undeclared loss anywhere still fails exactly as before.
+#
+# LIMIT, STATED PLAINLY: the delta must be DETERMINISTIC -- a known lookup row, not "however many
+# orphans happen to exist". A data-dependent deletion cannot be declared here honestly and should be
+# reviewed on its own terms instead of being forced into this format.
+#
+# FORMAT -- tab-separated, four fields. Comments (#) and blank lines are ignored.
+#
+#   <migration_id>  <schema.table>  <negative delta | DROP>  <reason>
+#
+# The reason is mandatory and is read by a human deciding whether the deletion was justified. Write
+# why the rows may go, not what the statement does.
+#
+# DELTA vs DROP: a negative integer declares rows removed from a table that SURVIVES, and must match
+# exactly (see the strictness rules above). The literal DROP declares that the whole table is
+# intentionally dropped -- all-or-nothing, so it carries no count. A DROP declaration fires only when
+# that exact table is actually dropped while its migration is pending; an undeclared drop of a
+# populated table still fails, and a DROP declaration that no longer matches breaks the build.
+
+20260828161335_RemoveCompassUnknownEmployeeType	compass.employee_type	-1	Retires the Unknown employee type (id 4) per issue #398: TPS EmploymentStatus 0 now maps to Full Time, so nothing writes it and the product owner ruled there will never be an unknown employee type. EDJErs on it are reclassified to Full Time by the same migration BEFORE the delete -- the foreign key requires it -- so no employee row is lost, only the retired lookup row.
+20260911202720_DropLegacyDirectoryTables	public.employees	DROP	Drops the frozen legacy directory table public.employees in the OOTO->Compass cutover. The directory is read from Compass now, public.employees has no remaining reader, and the product owner authorized dropping it (public.people is kept). The rehearsal seeds this table as the historical FK parent for out_of_office_events; those event rows survive the drop.

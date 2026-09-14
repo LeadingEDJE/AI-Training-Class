@@ -1,0 +1,34 @@
+@baseUrl = http://localhost:5009
+
+### Get all system settings
+GET {{baseUrl}}/api/admin/system-settings
+Accept: application/json
+
+### Get system setting by key
+GET {{baseUrl}}/api/admin/system-settings/data_retention_years
+Accept: application/json
+
+### Create a new system setting
+POST {{baseUrl}}/api/admin/system-settings
+Content-Type: application/json
+Accept: application/json
+
+{
+    "key": "new_setting",
+    "value": "some_value",
+    "description": "A new system setting"
+}
+
+### Update a system setting
+PUT {{baseUrl}}/api/admin/system-settings/data_retention_years
+Content-Type: application/json
+Accept: application/json
+
+{
+    "value": "5",
+    "description": "Rolling calendar years of data retained plus current year"
+}
+
+### Delete a system setting
+DELETE {{baseUrl}}/api/admin/system-settings/new_setting
+Accept: application/json

@@ -55,6 +55,14 @@ projects/3-Brownfield/eShopOnWeb/**/TestResults/
 # eShopOnWeb .vscode/launch.json gives attendees F5 debugging - track it despite the global .vscode/ ignore above
 !projects/3-Brownfield/eShopOnWeb/.vscode/
 
+# leap .vscode/settings.json gives attendees editor defaults - track it despite the global .vscode/ ignore above
+!projects/3-Brownfield/leap/.vscode/
+
+# --- projects/3-Brownfield/leap: leap/.gitignore already has [Bb]in/ and [Oo]bj/ (redundant here),
+# but not a bare coverage/ dir (only coverage-results/ and coverage*.json/.xml/.info) -- Compass's
+# vitest writes to web/compass/coverage/, so that one stays scoped here. ---
+projects/3-Brownfield/leap/**/coverage/
+
 # --- projects/3-Brownfield/hexo/example-site: generated site output, never source ---
 projects/3-Brownfield/hexo/example-site/public/
 projects/3-Brownfield/hexo/example-site/db.json

@@ -1,0 +1,122 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <!-- ═══ DO NOT REMOVE EITHER OF THE NEXT TWO PROPERTIES ═══
+         Phase 48 plan 48-08.
+
+         With no explicit <AssemblyName>, the published assembly filename equals
+         MSBuildProjectName (the .csproj filename), which in turn tracked whatever the project
+         directory was called. That coupling was the single highest-risk item in the LEAP rename:
+         `dotnet build`, `dotnet test`, `dotnet format`, the frontend checks, Vitest, Playwright,
+         `make verify-full`, scripts/check-coverage.sh and all twelve agent hooks NEVER execute
+         the published image's entrypoint. So a mismatch between this name and the `dotnet <X>.dll`
+         string in the container entrypoints produces a container that starts, dies, and leaves
+         EVERY LOCAL GATE GREEN. In Kubernetes it surfaces as CrashLoopBackOff, then a Helm wait
+         timeout, then an atomic rollback which DELETES the release and erases the logs.
+
+         Declaring the name explicitly permanently decouples the assembly filename from both the
+         .csproj filename and the directory name, so the later move of this project to a short
+         lowercase directory (plan 48-09) can never re-arm the trap.
+
+         If you change this value you MUST change all of these in the SAME commit:
+           deploy/docker/api-entrypoint.sh   (the deployed entrypoint)
+           docker/api.Dockerfile             (the local Compose release-stage ENTRYPOINT)
+         and then re-run `bash scripts/check-api-dll-entrypoint.sh`, which cold-builds the
+         deployed image (no layer cache) and compares the published .dll against the string the
+         copied entrypoint actually executes. Nothing else in the repo can catch a mismatch.
+
+         <RootNamespace> is explicit for the same reason: it otherwise defaults to
+         MSBuildProjectName, and EF Core derives a GENERATED MIGRATION's namespace from it — so
+         without this, `dotnet ef migrations add` emits migrations in the OLD namespace
+         (observed in plan 48-07 Task 3). -->
+    <AssemblyName>LeadingEDJE.Leap.Api</AssemblyName>
+    <RootNamespace>LeadingEDJE.Leap.Api</RootNamespace>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.AspNetCore.Http.Validation.Generated</InterceptorsNamespaces>
+    <UserSecretsId>5316e86f-2a0c-4df9-a81a-cf0b0aaef9d3</UserSecretsId>
+  </PropertyGroup>
+
+  <!-- #141 OpenAPI diff gate: build-time emission of the compass-v1 document. OFF by default so a
+       normal `dotnet build` neither slows down nor writes files; scripts/generate-openapi-snapshot.sh
+       opts in with -p:OpenApiGenerateDocumentsOnBuild=true. Emits into an ignored obj/ artifacts dir
+       (the committed snapshot lives under Contracts/ and is refreshed by that script). -->
+  <PropertyGroup>
+    <OpenApiGenerateDocumentsOnBuild Condition="'$(OpenApiGenerateDocumentsOnBuild)' == ''">false</OpenApiGenerateDocumentsOnBuild>
+    <OpenApiDocumentsDirectory>$(BaseIntermediateOutputPath)openapi</OpenApiDocumentsDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Must name the test ASSEMBLY, which is now explicit rather than derived from the project
+         filename. Get this wrong and internal test helpers become inaccessible and the unit test
+         project fails to compile with "inaccessible due to its protection level". -->
+    <InternalsVisibleTo Include="LeadingEDJE.Leap.Api.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Issue #596: the SES API transport. SES **v1** (`Amazon.SimpleEmail`) DELIBERATELY, not
+         SimpleEmailV2 — the pod role's policy conditions on `ses:FromAddress` for the v1 actions
+         `ses:SendEmail` / `ses:SendRawEmail`, and SESv2 has no `ses:SendRawEmail` action at all, so a
+         v2 client would send under a policy written for a different action set. TPS sends through v1
+         too. This replaced MailKit SMTP, which IRSA's temporary credentials cannot drive: an SES SMTP
+         password is derived from a long-lived IAM access key. -->
+    <PackageReference Include="AWSSDK.SimpleEmail" Version="4.0.100.12" />
+    <!-- Issue #589: STS. NOT referenced in code, and DO NOT remove it as unused. IRSA authenticates
+         every AWS call (SES, S3) by exchanging a web-identity token via STS AssumeRoleWithWebIdentity,
+         and the SDK loads this assembly by REFLECTION at that moment (ServiceClientHelpers.GetSDKAssembly
+         then Assembly.Load), so the compile graph never pulls it in. Without it every
+         IRSA-authenticated call throws FileNotFoundException before reaching AWS, which is exactly how
+         dev email failed. AwsSecurityTokenAssemblyTests load-probes it so its absence is a red test
+         rather than an incident. -->
+    <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.100.13" />
+    <PackageReference Include="CsvHelper" Version="33.1.0" />
+    <PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.76.0.4252" />
+    <PackageReference Include="Google.Apis.Sheets.v4" Version="1.75.0.4178" />
+    <!-- MailKit / MimeKit are GONE with the SMTP transport (issue #596). They had exactly one
+         consumer, the deleted SesEmailSender, and nothing else in the solution referenced either
+         package (checked across every .csproj and every .cs, not assumed). The SES API takes an
+         address, a subject and two body strings, so the MIME builder had nothing left to build; the
+         one thing it was still doing, folding a display name into a single From value, is
+         System.Net.Mail.MailAddress in SesApiEmailSender.FormatSource. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
+    <!-- Phase 41: persist the Data Protection key ring to Postgres (PersistKeysToDbContext) so a
+         cookie session survives API pod restarts / replica switches. Unified with the rest of the
+         EF Core graph at 10.0.10 in Phase 43 (43-09) after the TPS Oracle provider was deleted. -->
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
+    <!-- Pin transitive Microsoft.OpenApi to the patched version. Microsoft.AspNetCore.OpenApi
+         rc.2 pulls 2.0.0, which GHSA-v5pm-xwqc-g5wc flags (NU1903, circular-schema-ref DoS,
+         vulnerable <= 2.7.4). TreatWarningsAsErrors turns the audit warning into a restore error. -->
+    <!-- Held at 2.x: Microsoft.AspNetCore.OpenApi 10.x source-generates against the
+         Microsoft.OpenApi 2.x API (3.x made IOpenApiMediaType.Example read-only → CS0200).
+         Dependabot ignores the 3.x major in .github/dependabot.yml. -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.12.2" />
+    <!-- Build-time OpenAPI document emission for the #141 diff gate. Off by default so normal builds
+         neither slow down nor dirty the tree; the snapshot script opts in with
+         -p:OpenApiGenerateDocumentsOnBuild=true. Emits to an ignored artifacts dir; the committed
+         snapshot lives under Contracts/ and is refreshed by scripts/generate-openapi-snapshot.sh. -->
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.11">
+      <IncludeAssets>build</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.9.0" />
+    <!-- Npgsql 10.0.3: the sole EF Core database provider (Postgres). Unpinned from 10.0.0 in
+         Phase 43 (43-09) once the TPS Oracle provider was deleted, freeing the EF graph to 10.0.10. -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="Quartz" Version="3.20.1" />
+    <PackageReference Include="Quartz.AspNetCore" Version="3.20.1" />
+    <PackageReference Include="QuestPDF" Version="2026.8.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.17.3" />
+    <PackageReference Include="SlackNet" Version="0.18.0" />
+    <!-- Phase 41: Google SAML SSO. Sustainsys.Saml2.AspNetCore2 2.11.0 is the same version
+         TPS pins in production (net8 target); 2.11.0 is the newest release on NuGet (no newer
+         stable or prerelease exists as of 2026-07-22). Consumed by .NET 10 via the net8.0 TFM
+         (backwards-compatible). See 41-01-SUMMARY.md "Library Decision" for the compatibility
+         spike evidence. -->
+    <PackageReference Include="Sustainsys.Saml2.AspNetCore2" Version="2.11.0" />
+  </ItemGroup>
+
+</Project>
