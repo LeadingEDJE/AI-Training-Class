@@ -85,6 +85,14 @@ describe('the Compass router', () => {
     expect(matchedIds.indexOf('/admin')).toBeLessThan(matchedIds.indexOf('/admin/lookups'));
   });
 
+  it('resolves the skill administration screen', () => {
+    const router = resolve('/admin/skills');
+
+    expect(router.matchRoutes(router.state.location).map((match) => match.routeId)).toContain(
+      '/admin/skills',
+    );
+  });
+
   it('resolves the EDJEr administration list', () => {
     const router = resolve('/admin/edjers');
 

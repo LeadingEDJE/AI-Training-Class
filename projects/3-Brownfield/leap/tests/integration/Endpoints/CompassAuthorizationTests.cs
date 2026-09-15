@@ -188,8 +188,16 @@ public class CompassAuthorizationTests : IntegrationTestBase
     /// include these routes for the mirror-image reason: it builds the default
     /// <c>TestWebApplicationFactory</c>, whose host leaves the gate off.
     /// </para>
+    /// <para>
+    /// 18 → 20 (technical-skills feature). Skill administration gained
+    /// <c>POST /api/compass/v1/admin/skills</c> and <c>PUT /api/compass/v1/admin/skills/{id}</c>,
+    /// mounted on the same <c>CompassAdminRouteGroup</c> as the other lookups, behind
+    /// <c>RolePolicy.CompassSuperAdmin</c>. <c>GET /api/compass/v1/admin/skills</c> and the new
+    /// application-read <c>GET /api/compass/skills</c> are not writes and do not count, matching
+    /// <see cref="WriteMethods"/>'s own filter.
+    /// </para>
     /// </remarks>
-    private const int ExpectedCompassWriteSurfaceCount = 18;
+    private const int ExpectedCompassWriteSurfaceCount = 20;
 
     private static readonly string[] WriteMethods = ["POST", "PUT", "PATCH", "DELETE"];
 

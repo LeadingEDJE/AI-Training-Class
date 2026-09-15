@@ -35,6 +35,8 @@ interface TeamDirectoryPageProps {
   /** State codes the state filter offers. */
   stateOptions?: string[];
   coachOptions?: { id: number; name: string }[];
+  /** Skills offered by the filter, from the active-only public skill list. */
+  skillOptions?: { id: number; name: string }[];
   /** The column the SERVER is ordering by. Absent or empty means its own default, hire date. */
   sort?: string;
   /** Whether that order is reversed. */
@@ -45,6 +47,7 @@ interface TeamDirectoryPageProps {
   onEmployeeTypeChange?: (employeeType: string) => void;
   onStateChange?: (state: string) => void;
   onCoachIdChange?: (coachId: string) => void;
+  onSkillChange?: (skill: string) => void;
 }
 
 /**
@@ -63,6 +66,7 @@ export function TeamDirectoryPage({
   employeeTypeOptions = [],
   stateOptions = [],
   coachOptions = [],
+  skillOptions = [],
   sort,
   descending = false,
   onSearchChange,
@@ -71,11 +75,13 @@ export function TeamDirectoryPage({
   onEmployeeTypeChange,
   onStateChange,
   onCoachIdChange,
+  onSkillChange,
 }: TeamDirectoryPageProps) {
   const [search, setSearch] = useState('');
   const [employeeType, setEmployeeType] = useState('');
   const [state, setState] = useState('');
   const [coachId, setCoachId] = useState('');
+  const [skill, setSkill] = useState('');
   const [status, setStatus] = useState('active');
   const [pageSize, setPageSize] = useState<PageSize>(TEAM_DIRECTORY_DEFAULT_PAGE_SIZE);
   const [page, setPage] = useState(1);
@@ -103,6 +109,7 @@ export function TeamDirectoryPage({
     employeeType === '' &&
     state === '' &&
     coachId === '' &&
+    skill === '' &&
     (!isElevated || status === 'active');
 
   function handleClearFilters() {
@@ -110,6 +117,7 @@ export function TeamDirectoryPage({
     if (employeeType !== '') changeAndReset('', setEmployeeType, onEmployeeTypeChange);
     if (state !== '') changeAndReset('', setState, onStateChange);
     if (coachId !== '') changeAndReset('', setCoachId, onCoachIdChange);
+    if (skill !== '') changeAndReset('', setSkill, onSkillChange);
     if (isElevated && status !== 'active') changeAndReset('active', setStatus, onStatusChange);
   }
 
@@ -117,11 +125,16 @@ export function TeamDirectoryPage({
 
   const direction: TableSortableColumn['sortDirection'] = descending ? 'descending' : 'ascending';
 
-  const columns: TableColumn[] = SORTABLE_COLUMNS.map((column) => ({
-    label: column.label,
-    sortDirection: column.key === activeSort ? direction : undefined,
-    onSort: () => onSortChange?.(column.key),
-  }));
+  const columns: TableColumn[] = [
+    ...SORTABLE_COLUMNS.map((column) => ({
+      label: column.label,
+      sortDirection: column.key === activeSort ? direction : undefined,
+      onSort: () => onSortChange?.(column.key),
+    })),
+    // Not sortable: 'skills' has no matching branch in `CompassReadRepository.Sort`, and inventing a
+    // client-side key that the server does not recognise would silently fall through to hire date.
+    'Skills',
+  ];
 
   return (
     <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 text-brand-text">
@@ -208,6 +221,18 @@ export function TeamDirectoryPage({
             value={state}
             options={stateOptions.map((code) => ({ value: code, label: stateName(code) }))}
             onChange={(next) => changeAndReset(next, setState, onStateChange)}
+          />
+
+          <FilterSelect
+            id="team-directory-skill"
+            label="Skill"
+            allLabel="All Skills"
+            value={skill}
+            options={skillOptions.map((option) => ({
+              value: String(option.id),
+              label: option.name,
+            }))}
+            onChange={(next) => changeAndReset(next, setSkill, onSkillChange)}
           />
 
           {isElevated && (
@@ -386,6 +411,7 @@ function TeamDirectoryTableRow({ row }: { row: TeamDirectoryRow }) {
           ))}
         </ul>
       </td>
+      <td className="px-3 py-2">{(row.skills ?? []).map((skill) => skill.name).join(', ')}</td>
     </tr>
   );
 }

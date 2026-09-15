@@ -59,6 +59,11 @@ public class CompassReadRepository(LeapDbContext context, IClientStatusDerivatio
             employees = employees.Where(e => e.CoachEmployeeId == query.CoachId);
         }
 
+        if (query.SkillId is not null)
+        {
+            employees = employees.Where(e => e.EmployeeSkills.Any(es => es.SkillId == query.SkillId));
+        }
+
         employees = Sort(employees, query.Sort, query.Descending, isCurrent, hasStarted);
 
         return await employees
@@ -74,6 +79,10 @@ public class CompassReadRepository(LeapDbContext context, IClientStatusDerivatio
                 CoachId = e.Coach != null ? e.Coach.Id : (int?)null,
                 Coach = e.Coach != null ? e.Coach.FirstName + " " + e.Coach.LastName : null,
                 State = e.StateOfResidence,
+                Skills = e.EmployeeSkills
+                    .Select(es => new SkillOptionDto { Id = es.SkillId, Name = es.Skill!.TypeName })
+                    .OrderBy(s => s.Name)
+                    .ToList(),
                 CurrentAssignments = e.ClientAssignments
                     .AsQueryable()
                     .Where(isCurrent)
@@ -126,6 +135,10 @@ public class CompassReadRepository(LeapDbContext context, IClientStatusDerivatio
                 CoachId = e.Coach != null ? e.Coach.Id : (int?)null,
                 Coach = e.Coach != null ? e.Coach.FirstName + " " + e.Coach.LastName : null,
                 State = e.StateOfResidence,
+                Skills = e.EmployeeSkills
+                    .Select(es => new SkillOptionDto { Id = es.SkillId, Name = es.Skill!.TypeName })
+                    .OrderBy(s => s.Name)
+                    .ToList(),
 
                 IsDeliveryTeam = e.IsDeliveryTeam,
                 IsActive = seesElevated ? e.IsActive : null,

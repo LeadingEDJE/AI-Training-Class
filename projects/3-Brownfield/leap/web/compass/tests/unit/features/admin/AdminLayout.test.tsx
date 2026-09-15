@@ -103,6 +103,7 @@ describe('AdminLayout', () => {
 
   it.each([
     ['/admin/lookups', 'Lookups'],
+    ['/admin/skills', 'Skills'],
     ['/admin/edjers', 'EDJErs'],
   ])('offers %s as a configuration area', (to, label) => {
     // Named explicitly, unlike the test above, which iterates ADMIN_SECTIONS and therefore adapts to

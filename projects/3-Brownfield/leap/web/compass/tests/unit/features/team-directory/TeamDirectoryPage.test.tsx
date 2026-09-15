@@ -96,6 +96,7 @@ describe('TeamDirectoryPage', () => {
       'Coach',
       'State',
       'Current Client(s)',
+      'Skills',
     ]);
   });
 
@@ -254,6 +255,30 @@ describe('TeamDirectoryPage', () => {
 
     expect(screen.queryByText('ada.active@example.test')).not.toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: /email/i })).not.toBeInTheDocument();
+  });
+
+  it('renders the assigned skill names in the Skills column', () => {
+    renderPage({
+      rows: [
+        {
+          ...ROWS[0],
+          skills: [
+            { id: 1, name: 'Java' },
+            { id: 2, name: 'SQL' },
+          ],
+        },
+      ],
+    });
+
+    const row = screen.getByRole('row', { name: /Active/ });
+    expect(within(row).getByText('Java, SQL')).toBeInTheDocument();
+  });
+
+  it('renders an empty Skills cell when an EDJEr has none', () => {
+    renderPage({ rows: [ROWS[0]] });
+
+    const row = screen.getByRole('row', { name: /Active/ });
+    expect(within(row).getAllByRole('cell').at(-1)).toHaveTextContent('');
   });
 
   it('renders every current assignment as its own client link, not just the first (AC-5)', () => {
@@ -531,6 +556,36 @@ describe('TeamDirectoryPage', () => {
       await userEvent.selectOptions(select, '');
 
       expect(onCoachIdChange).toHaveBeenLastCalledWith('');
+    });
+
+    it('offers every skill it was given, plus an all-skills default', async () => {
+      const onSkillChange = vi.fn();
+      renderPage({
+        skillOptions: [
+          { id: 1, name: 'Java' },
+          { id: 2, name: 'SQL' },
+        ],
+        onSkillChange,
+      });
+
+      const select = screen.getByLabelText('Skill');
+      expect(
+        Array.from(select.querySelectorAll('option')).map((option) => option.textContent),
+      ).toEqual(['All Skills', 'Java', 'SQL']);
+
+      await userEvent.selectOptions(select, 'Java');
+      expect(onSkillChange).toHaveBeenCalledWith('1');
+    });
+
+    it('reports clearing the skill filter as an empty value', async () => {
+      const onSkillChange = vi.fn();
+      renderPage({ skillOptions: [{ id: 1, name: 'Java' }], onSkillChange });
+
+      const select = screen.getByLabelText('Skill');
+      await userEvent.selectOptions(select, 'Java');
+      await userEvent.selectOptions(select, '');
+
+      expect(onSkillChange).toHaveBeenLastCalledWith('');
     });
   });
 

@@ -610,6 +610,7 @@ public class CompassEmployeeEndpointsTests : IntegrationTestBase
         // uncommitted DDL above. See NoHttpContextCurrentUser's remarks.
         var edjers = new CompassEmployeeService(
             scope.ServiceProvider.GetRequiredService<ICompassEmployeeRepository>(),
+            scope.ServiceProvider.GetRequiredService<ICompassLookupRepository<Skill>>(),
             scope.ServiceProvider.GetRequiredService<ICompassUnitOfWork>(),
             scope.ServiceProvider.GetRequiredService<IAuditService>(),
             new NoHttpContextCurrentUser(),

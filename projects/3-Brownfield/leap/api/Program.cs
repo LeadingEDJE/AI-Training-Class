@@ -1025,6 +1025,7 @@ app.MapCompassAdminEmployeeTypeEndpoints();
 app.MapCompassAdminInvoiceFrequencyTypeEndpoints();
 app.MapCompassAdminEdjerEndpoints();
 app.MapCompassAdminClientEndpoints();
+app.MapCompassAdminSkillEndpoints();
 
 // Contract periods (feature 010) — create, plus list and by-id reads. The reads exist because
 // VERIFICATION needs them: SC-002 requires every migrated relationship checked at 100%, and a
@@ -1068,6 +1069,7 @@ else if (DeveloperToolsGate.IsSuppressedByProduction(app.Configuration, app.Envi
 // so they are not part of the published contract out-of-monolith consumers bind to.
 app.MapCompassTeamDirectoryEndpoints();
 app.MapCompassClientDirectoryEndpoints();
+app.MapCompassSkillsEndpoints();
 // The assignment/SOW write surface (feature 006) — Compass's first audited write path. Mounted on the
 // application surface (never /api/compass/v1) under RolePolicy.CompassOps, alongside the read routes.
 // Fully qualified for the same reason as the versioned-boundary registration above: extension-method

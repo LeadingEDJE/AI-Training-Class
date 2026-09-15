@@ -76,7 +76,9 @@ public class PostgresSequenceSyncTests
         // non-existent public.employee and the whole seed/import path errors — which is exactly how
         // this surfaced: 7 unrelated integration tests failed the moment compass tables were mapped.
         var compassStatements = statements.Where(s => s.Contains("compass")).ToList();
-        compassStatements.Count.ShouldBe(7, "the ERD's seven tables are all int-identity keyed");
+        compassStatements.Count.ShouldBe(
+            9, "the ERD's seven tables plus the technical-skills feature's two (skill, "
+                + "employee_skill) are all int-identity keyed");
         compassStatements.ShouldAllBe(s => s.Contains("'\"compass\".\"") && s.Contains("FROM \"compass\".\""));
         statements.ShouldNotContain(s => s.Contains("'\"employee\"'"), "must never be unqualified");
     }

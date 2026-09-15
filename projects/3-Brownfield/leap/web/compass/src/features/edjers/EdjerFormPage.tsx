@@ -11,11 +11,12 @@ import {
   StatusPill,
   Toggle,
 } from '../../components/ui';
-import { fieldControlClass } from '../../components/ui-classes';
+import { CONTROL_BORDER, fieldControlClass } from '../../components/ui-classes';
 import { formatDate } from '../../lib/date';
 import { US_STATES } from '../../lib/us-states';
 import { US_TIMEZONES } from '../../lib/us-timezones';
 import { fetchLookups, lookupQueryKey } from '../lookups/lookup-api';
+import { fetchSkills, skillsQueryKey, type CompassSkill } from '../skills/skill-api';
 import { EdjerAssignmentHistory } from './EdjerAssignmentHistory';
 import {
   createEdjer,
@@ -51,6 +52,7 @@ interface EdjerFormValues {
   timesheetRequired: boolean;
   canSubmitUnder40: boolean;
   includeInPayroll: boolean;
+  skillIds: number[];
 }
 
 const BLANK: EdjerFormValues = {
@@ -68,6 +70,7 @@ const BLANK: EdjerFormValues = {
   timesheetRequired: true,
   canSubmitUnder40: false,
   includeInPayroll: true,
+  skillIds: [],
 };
 
 export function EdjerFormPage() {
@@ -89,6 +92,10 @@ export function EdjerFormPage() {
 
   const coaches = useQuery({ queryKey: edjersQueryKey(), queryFn: fetchEdjers });
 
+  /** The whole skill collection, including retired ones — needed so an already-assigned but retired
+   * skill can still be shown, checked and labelled (mirroring the retired-employee-type pattern). */
+  const skills = useQuery({ queryKey: skillsQueryKey(), queryFn: fetchSkills });
+
   const record = useQuery({
     queryKey: edjerQueryKey(edjerId ?? 0),
     queryFn: () => fetchEdjer(edjerId ?? 0),
@@ -98,6 +105,7 @@ export function EdjerFormPage() {
   const allTypes = asArray(employeeTypes.data?.kind === 'loaded' ? employeeTypes.data.values : []);
   const activeTypes = allTypes.filter((type) => type.isActive);
   const coachOptions = asArray(coaches.data?.kind === 'loaded' ? coaches.data.value : []);
+  const allSkills = asArray(skills.data?.kind === 'loaded' ? skills.data.values : []);
 
   if (isEditing && record.data?.kind === 'refused') {
     return <LoadFailure message="You do not have permission to manage EDJEr records." />;
@@ -127,6 +135,7 @@ export function EdjerFormPage() {
       storedTypeName={allTypes.find((type) => type.id === loaded?.employeeTypeId)?.typeName ?? null}
       activeTypes={activeTypes}
       coachOptions={coachOptions}
+      allSkills={allSkills}
       onSaved={async (savedId) => {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: edjersQueryKey() }),
@@ -155,6 +164,7 @@ interface EdjerFormProps {
   storedTypeName: string | null;
   activeTypes: { id: number; typeName: string }[];
   coachOptions: { id: number; firstName: string; lastName: string; isActive: boolean }[];
+  allSkills: CompassSkill[];
   /** Called with the id of the record just written — the add flow navigates to it. */
   onSaved: (savedId: number) => Promise<void>;
   onCancel: () => void;
@@ -166,6 +176,7 @@ function EdjerForm({
   storedTypeName,
   activeTypes,
   coachOptions,
+  allSkills,
   onSaved,
   onCancel,
 }: EdjerFormProps) {
@@ -404,6 +415,36 @@ function EdjerForm({
         </FormGrid>
       </Card>
 
+      <Card title="Skills">
+        {skillsOffered(allSkills, values.skillIds).length === 0 ? (
+          <p className="text-sm text-brand-gray-muted">No skills are defined yet.</p>
+        ) : (
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            {skillsOffered(allSkills, values.skillIds).map((skill) => (
+              <label key={skill.id} className="flex items-center gap-2 text-sm text-brand-text">
+                <input
+                  type="checkbox"
+                  checked={values.skillIds.includes(skill.id)}
+                  onChange={(event) =>
+                    set(
+                      'skillIds',
+                      event.target.checked
+                        ? [...values.skillIds, skill.id]
+                        : values.skillIds.filter((id) => id !== skill.id),
+                    )
+                  }
+                  className={`h-4 w-4 rounded border ${CONTROL_BORDER} text-brand-green-700`}
+                />
+                {skill.name}
+                {!skill.isActive && (
+                  <span className="text-xs text-brand-gray-muted"> (retired, no longer offered)</span>
+                )}
+              </label>
+            ))}
+          </div>
+        )}
+      </Card>
+
       <Card title="Time Tracking Settings">
         <div className="flex flex-wrap gap-6">
           <Toggle
@@ -464,6 +505,7 @@ function toValues(loaded: CompassEdjer): EdjerFormValues {
     timesheetRequired: loaded.timesheetRequired,
     canSubmitUnder40: loaded.canSubmitUnder40,
     includeInPayroll: loaded.includeInPayroll,
+    skillIds: loaded.skillIds ?? [],
   };
 }
 
@@ -484,11 +526,21 @@ function toRequest(values: EdjerFormValues): CompassEdjerRequest {
     timesheetRequired: values.timesheetRequired,
     canSubmitUnder40: values.canSubmitUnder40,
     includeInPayroll: values.includeInPayroll,
+    skillIds: values.skillIds,
   };
 }
 
 function asArray<T>(value: T[]): T[] {
   return Array.isArray(value) ? value : [];
+}
+
+/**
+ * Every active skill, plus any retired skill this EDJEr is already assigned — the same
+ * keep-the-stored-value-selectable rule {@link retiredSelection} applies to Employee Type, so
+ * retiring a skill never silently un-assigns it on the next unrelated save.
+ */
+function skillsOffered(allSkills: CompassSkill[], assignedIds: number[]): CompassSkill[] {
+  return allSkills.filter((skill) => skill.isActive || assignedIds.includes(skill.id));
 }
 
 function retiredSelection(selected: string, active: { id: number }[]): boolean {

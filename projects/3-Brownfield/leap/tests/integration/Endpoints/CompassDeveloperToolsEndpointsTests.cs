@@ -17,17 +17,19 @@ namespace LeadingEDJE.Leap.Api.IntegrationTests.Endpoints;
 /// <remarks>
 /// <para>
 /// This suite is not redundant coverage — for this feature it is the ONLY coverage that means
-/// anything. The service issues a real <c>TRUNCATE ... RESTART IDENTITY</c> across five
+/// anything. The service issues a real <c>TRUNCATE ... RESTART IDENTITY</c> across six
 /// schema-qualified tables. The EF Core InMemory provider the unit suite runs on has no
 /// <c>TRUNCATE</c>, no foreign keys and no sequences, so it cannot show that the statement parses,
-/// that naming exactly five tables satisfies every foreign key between them (which is what lets the
+/// that naming exactly six tables satisfies every foreign key between them (which is what lets the
 /// statement omit <c>CASCADE</c>), or that identity sequences restart. Each of those is asserted
-/// below, and each would be invisible to a green unit run.
+/// below, and each would be invisible to a green unit run — including the FK edge the
+/// technical-skills feature added: <c>employee_skill</c> references <c>employee</c>, so a clear that
+/// forgot to name it would 500 here the moment an EDJEr has a tagged skill.
 /// </para>
 /// <para>
-/// The two Compass LOOKUP tables get their own assertion for the same reason they are excluded in the
-/// first place: they are FK parents of tables the clear empties, so a <c>CASCADE</c> added "to make it
-/// work" would silently take them with it and every other test here would still pass.
+/// The three Compass LOOKUP tables get their own assertion for the same reason they are excluded in
+/// the first place: they are FK parents of tables the clear empties, so a <c>CASCADE</c> added "to
+/// make it work" would silently take them with it and every other test here would still pass.
 /// </para>
 /// </remarks>
 #pragma warning disable IDE0290 // Primary constructor not possible: factory captured for client creation
@@ -47,7 +49,7 @@ public class CompassDeveloperToolsEndpointsTests : IntegrationTestBase
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     /// <summary>
-    /// Writes one row into every Compass table — the five that get cleared and the two that must not.
+    /// Writes one row into every Compass table — the six that get cleared and the three that must not.
     /// </summary>
     private async Task SeedCompassAsync()
     {
@@ -56,8 +58,10 @@ public class CompassDeveloperToolsEndpointsTests : IntegrationTestBase
 
         var employeeType = new EmployeeType { TypeName = "Full Time", IsActive = true };
         var invoiceFrequency = new InvoiceFrequencyType { TypeName = "Monthly", IsActive = true };
+        var skill = new Skill { TypeName = "React", IsActive = true };
         db.Add(employeeType);
         db.Add(invoiceFrequency);
+        db.Add(skill);
         await db.SaveChangesAsync(Token);
 
         var client = new Client
@@ -92,6 +96,7 @@ public class CompassDeveloperToolsEndpointsTests : IntegrationTestBase
             CategoryName = "Development",
             IsActive = true,
         });
+        db.Add(new EmployeeSkill { EmployeeId = employee.Id, SkillId = skill.Id });
         await db.SaveChangesAsync(Token);
 
         db.Add(new Sow
@@ -111,7 +116,7 @@ public class CompassDeveloperToolsEndpointsTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task Clear_EmptiesTheFiveCompassOperationalTables()
+    public async Task Clear_EmptiesTheSixCompassOperationalTables()
     {
         // Arrange
         await ResetDatabaseAsync();
@@ -132,6 +137,7 @@ public class CompassDeveloperToolsEndpointsTests : IntegrationTestBase
             Sows = await db.Set<Sow>().CountAsync(Token),
             Assignments = await db.Set<ClientAssignment>().CountAsync(Token),
             Employees = await db.Set<Employee>().CountAsync(Token),
+            EmployeeSkills = await db.Set<EmployeeSkill>().CountAsync(Token),
             Clients = await db.Set<Client>().CountAsync(Token),
         });
 
@@ -139,15 +145,17 @@ public class CompassDeveloperToolsEndpointsTests : IntegrationTestBase
         counts.Sows.ShouldBe(0);
         counts.Assignments.ShouldBe(0);
         counts.Employees.ShouldBe(0);
+        counts.EmployeeSkills.ShouldBe(0);
         counts.Clients.ShouldBe(0);
     }
 
     [Fact]
     public async Task Clear_LeavesTheCompassLookupTablesIntact()
     {
-        // Arrange — employee_type and invoice_frequency_type are FK PARENTS of cleared tables, so the
-        // most likely "fix" for an FK error (adding CASCADE) would empty them too and break Compass's
-        // ability to accept a single new EDJEr or client. Nothing else here would notice.
+        // Arrange — employee_type, invoice_frequency_type and skill are FK PARENTS of cleared tables,
+        // so the most likely "fix" for an FK error (adding CASCADE) would empty them too and break
+        // Compass's ability to accept a single new EDJEr, client, or tagged skill. Nothing else here
+        // would notice.
         await ResetDatabaseAsync();
         await SeedCompassAsync();
         var client = CompassPrincipalFactory.AsRoles(_factory, RolePolicy.CompassSuperAdminRole);
@@ -160,10 +168,12 @@ public class CompassDeveloperToolsEndpointsTests : IntegrationTestBase
         {
             EmployeeTypes = await db.Set<EmployeeType>().CountAsync(Token),
             InvoiceFrequencyTypes = await db.Set<InvoiceFrequencyType>().CountAsync(Token),
+            Skills = await db.Set<Skill>().CountAsync(Token),
         });
 
         lookups.EmployeeTypes.ShouldBe(1);
         lookups.InvoiceFrequencyTypes.ShouldBe(1);
+        lookups.Skills.ShouldBe(1);
     }
 
     [Fact]
@@ -181,11 +191,12 @@ public class CompassDeveloperToolsEndpointsTests : IntegrationTestBase
         var body = await response.Content.ReadFromJsonAsync<CompassDataClearedResponse>(Token);
         body.ShouldNotBeNull();
         body.Employees.ShouldBe(1);
+        body.EmployeeSkills.ShouldBe(1);
         body.Clients.ShouldBe(1);
         body.ClientAssignments.ShouldBe(1);
         body.Sows.ShouldBe(1);
         body.BillableTimeCategories.ShouldBe(1);
-        body.TotalRowsCleared.ShouldBe(5);
+        body.TotalRowsCleared.ShouldBe(6);
     }
 
     [Fact]

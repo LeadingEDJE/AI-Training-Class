@@ -17,6 +17,15 @@ export interface TeamDirectoryRow {
   state: string;
   currentAssignments: TeamDirectoryAssignment[];
   isActive?: boolean;
+  /** The employee's assigned skills, mirroring `SkillOptionDto`. Optional — a row from before this
+   * feature, or a server that has not caught up yet, carries no skills at all. */
+  skills?: TeamDirectorySkill[];
+}
+
+/** One skill an EDJEr is tagged with, as `SkillOptionDto` shapes it. */
+export interface TeamDirectorySkill {
+  id: number;
+  name: string;
 }
 
 /** A client an EDJEr is currently assigned to, carrying AC-7's link into the client view. */
@@ -32,6 +41,8 @@ export interface TeamDirectoryFilters {
   state: string;
   /** The coach's own id, as a string (issue #655) — empty means no coach constraint. */
   coachId: string;
+  /** The skill's own id, as a string — empty means no skill constraint. */
+  skill: string;
   sort: string;
   desc: boolean;
   status: 'active' | 'inactive' | 'all';

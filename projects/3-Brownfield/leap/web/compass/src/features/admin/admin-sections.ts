@@ -11,6 +11,7 @@ export type AdminSection = TabNavItem;
  */
 export const ADMIN_SECTIONS: AdminSection[] = [
   { to: '/admin/lookups', label: 'Lookups' },
+  { to: '/admin/skills', label: 'Skills' },
   { to: '/admin/edjers', label: 'EDJErs' },
   { to: '/admin/clients', label: 'Clients' },
 ];

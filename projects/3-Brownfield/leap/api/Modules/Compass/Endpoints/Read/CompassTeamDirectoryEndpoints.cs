@@ -32,19 +32,21 @@ public static class CompassTeamDirectoryEndpoints
         int? coachId = null,
         string? sort = null,
         bool desc = false,
-        string? status = null)
+        string? status = null,
+        int? skill = null)
     {
         var logger = loggerFactory.CreateLogger(typeof(CompassTeamDirectoryEndpoints));
 
         logger.LogInformation(
             "Team Directory requested (search={Search}, employeeType={EmployeeType}, state={State}, "
-                + "coachId={CoachId}, sort={Sort}, status={Status})",
+                + "coachId={CoachId}, sort={Sort}, status={Status}, skill={Skill})",
             LogSanitizer.Clean(search),
             LogSanitizer.Clean(employeeType),
             LogSanitizer.Clean(state),
             coachId,
             LogSanitizer.Clean(sort),
-            LogSanitizer.Clean(status));
+            LogSanitizer.Clean(status),
+            skill);
 
         var query = new TeamDirectoryQuery(
             search,
@@ -53,7 +55,8 @@ public static class CompassTeamDirectoryEndpoints
             coachId,
             sort,
             desc,
-            ParseStatus(status));
+            ParseStatus(status),
+            skill);
 
         return TypedResults.Ok(await readService.GetTeamDirectoryAsync(query, cancellationToken));
     }

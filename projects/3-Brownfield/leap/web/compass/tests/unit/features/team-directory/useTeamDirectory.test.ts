@@ -20,6 +20,7 @@ describe('buildTeamDirectoryQuery', () => {
       employeeType: 'Full Time',
       state: 'OH',
       coachId: '9',
+      skill: '3',
       sort: 'lastName',
       desc: true,
       status: 'all',
@@ -29,6 +30,7 @@ describe('buildTeamDirectoryQuery', () => {
     expect(query).toContain('employeeType=Full+Time');
     expect(query).toContain('state=OH');
     expect(query).toContain('coachId=9');
+    expect(query).toContain('skill=3');
     expect(query).toContain('sort=lastName');
     expect(query).toContain('desc=true');
     expect(query).toContain('status=all');
@@ -36,6 +38,10 @@ describe('buildTeamDirectoryQuery', () => {
 
   it('omits the coach filter when blank, issue #655', () => {
     expect(buildTeamDirectoryQuery({ coachId: '' })).toBe('');
+  });
+
+  it('omits the skill filter when blank', () => {
+    expect(buildTeamDirectoryQuery({ skill: '' })).toBe('');
   });
 
   it('omits desc entirely when ascending', () => {

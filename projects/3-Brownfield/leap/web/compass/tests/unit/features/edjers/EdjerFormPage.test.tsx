@@ -19,6 +19,7 @@ const { EdjerFormPage } = await import('../../../../src/features/edjers/EdjerFor
 
 const EDJERS = '/api/compass/v1/admin/edjers';
 const EMPLOYEE_TYPES = '/api/compass/v1/admin/employee-types';
+const SKILLS = '/api/compass/v1/admin/skills';
 const TEAM_DIRECTORY = '/api/compass/team-directory';
 
 /**
@@ -59,6 +60,11 @@ const EXISTING = {
   includeInPayroll: true,
 };
 
+const SKILL_LIST = [
+  { id: 1, name: 'Java', isActive: true },
+  { id: 2, name: 'SQL', isActive: true },
+];
+
 const SUMMARIES = [
   {
     id: 3,
@@ -74,6 +80,7 @@ const SUMMARIES = [
 function baseResponders(): Parameters<typeof stubFetchByUrl>[0] {
   return {
     [`GET ${EMPLOYEE_TYPES}`]: { status: 200, body: EMPLOYEE_TYPE_LIST },
+    [`GET ${SKILLS}`]: { status: 200, body: SKILL_LIST },
     [`GET ${EDJERS}`]: { status: 200, body: SUMMARIES },
     [`GET ${EDJERS}/7`]: { status: 200, body: EXISTING },
 
@@ -585,6 +592,37 @@ describe('EdjerFormPage — adding', () => {
     expect(screen.queryByRole('button', { name: /assign to client/i })).not.toBeInTheDocument();
   });
 
+  it('offers every skill as a checkbox, unchecked by default (technical-skills feature)', async () => {
+    renderForm(stubFetchByUrl(baseResponders()));
+
+    // Awaited on the checkbox itself, not just the card: the skill list arrives from its own query,
+    // which renders after the card does.
+    await screen.findByRole('checkbox', { name: /java/i });
+
+    expect(screen.getByRole('checkbox', { name: /java/i })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /sql/i })).not.toBeChecked();
+  });
+
+  it('sends the checked skill ids on save', async () => {
+    const stub = stubFetchByUrl(baseResponders());
+    renderForm(stub);
+
+    await screen.findByRole('checkbox', { name: /java/i });
+
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Ada');
+    await userEvent.type(screen.getByLabelText(/last name/i), 'Lovelace');
+    await userEvent.type(screen.getByLabelText(/hire date/i), '2020-01-06');
+    await userEvent.type(screen.getByLabelText(/email address/i), 'ada@example.test');
+    await userEvent.selectOptions(screen.getByLabelText(/employee type/i), '1');
+    await userEvent.selectOptions(screen.getByLabelText(/state of residence/i), 'OH');
+    await userEvent.click(screen.getByRole('checkbox', { name: /java/i }));
+
+    await userEvent.click(screen.getByRole('button', { name: /save edjer/i }));
+
+    await waitFor(() => expect(stub.bodiesFor(`POST ${EDJERS}`)).toHaveLength(1));
+    expect(stub.bodiesFor(`POST ${EDJERS}`)[0]).toMatchObject({ skillIds: [1] });
+  });
+
   it('offers a way out that does not save', async () => {
     renderForm(stubFetchByUrl(baseResponders()));
 
@@ -999,6 +1037,42 @@ describe('EdjerFormPage — editing', () => {
     await screen.findByRole('alert');
 
     expect(screen.getByRole('switch', { name: /status/i })).toBeChecked();
+  });
+
+  it('shows the stored skills as checked (technical-skills feature)', async () => {
+    renderForm(
+      stubFetchByUrl({
+        ...baseResponders(),
+        [`GET ${EDJERS}/7`]: { status: 200, body: { ...EXISTING, skillIds: [2] } },
+      }),
+    );
+
+    await screen.findByDisplayValue('Maya');
+    await screen.findByRole('checkbox', { name: /sql/i });
+
+    expect(screen.getByRole('checkbox', { name: /sql/i })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /java/i })).not.toBeChecked();
+  });
+
+  it('keeps an already-assigned retired skill checked and labelled', async () => {
+    // Mirrors the retired-employee-type rule (#277/FR-007): retiring a skill must not silently
+    // un-assign it on the next unrelated save.
+    renderForm(
+      stubFetchByUrl({
+        ...baseResponders(),
+        [`GET ${SKILLS}`]: {
+          status: 200,
+          body: [...SKILL_LIST, { id: 9, name: 'COBOL', isActive: false }],
+        },
+        [`GET ${EDJERS}/7`]: { status: 200, body: { ...EXISTING, skillIds: [9] } },
+      }),
+    );
+
+    await screen.findByDisplayValue('Maya');
+
+    const cobol = await screen.findByRole('checkbox', { name: /cobol/i });
+    expect(cobol).toBeChecked();
+    expect(screen.getByText(/retired, no longer offered/i)).toBeInTheDocument();
   });
 
   it('reports a record that could not be loaded', async () => {

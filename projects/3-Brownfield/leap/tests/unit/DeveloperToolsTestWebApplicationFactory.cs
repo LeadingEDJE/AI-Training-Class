@@ -36,7 +36,7 @@ public sealed class DeveloperToolsTestWebApplicationFactory : TestWebApplication
 {
     /// <summary>The counts <see cref="StubDataResetService"/> reports, for tests to assert against.</summary>
     public static readonly CompassDataClearedResponse StubResult =
-        new(3, 4, 5, 97, 28, 137, new DateTime(2026, 8, 26, 14, 30, 0, DateTimeKind.Utc));
+        new(3, 4, 5, 97, 0, 28, 137, new DateTime(2026, 8, 26, 14, 30, 0, DateTimeKind.Utc));
 
     private sealed class StubDataResetService : ICompassDataResetService
     {

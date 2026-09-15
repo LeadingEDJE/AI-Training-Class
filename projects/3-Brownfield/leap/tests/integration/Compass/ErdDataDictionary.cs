@@ -87,8 +87,12 @@ internal static class ErdDataDictionary
     /// empty or truncated list satisfies a both-direction set comparison trivially, so a walk that
     /// only compares sets is a gate that passes when it has nothing to say. Changing this number is
     /// the deliberate act of accepting that the schema's shape changed.
+    /// 50 → 56 (technical-skills feature, outside the ERD document itself). <c>skill</c> (3 columns)
+    /// and <c>employee_skill</c> (3 columns) are listed for the same reason the postdating
+    /// <c>legacy_tps_id</c>/<c>timezone</c>/<c>is_delivery_team</c> columns are: omitting them would
+    /// fail this walk as "undocumented columns" rather than leave the gate meaningful.
     /// </remarks>
-    internal const int ExpectedPairCount = 50;
+    internal const int ExpectedPairCount = 56;
 
     /// <summary>
     /// Grouped by table with the lookups first — this file's own arrangement, not the document's.
@@ -154,5 +158,14 @@ internal static class ErdDataDictionary
         "sow.sow_end_date",
         "sow.note",
         "sow.legacy_tps_id",
+        // compass.skill — Super Admin-managed lookup of technical skills (technical-skills feature,
+        // postdates the ERD document, listed for the same reason as employee.timezone above)
+        "skill.skill_id",
+        "skill.name",
+        "skill.is_active",
+        // compass.employee_skill — join of an EDJEr to a tagged skill
+        "employee_skill.employee_skill_id",
+        "employee_skill.employee_id",
+        "employee_skill.skill_id",
     ];
 }

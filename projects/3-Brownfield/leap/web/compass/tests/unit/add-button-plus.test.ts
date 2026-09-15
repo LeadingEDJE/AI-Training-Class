@@ -31,8 +31,11 @@ const SRC_DIR = join(__dirname, '../../src');
  *
  * 4 → 5 (feature 006 US3/#66, 2026-08-19): the SOWs/Contracts card on `AssignmentDetailPage` added
  * "+ Add SOW / Contract" — already carrying the single leading `+` this suite enforces.
+ *
+ * 5 → 6 (technical-skills feature): `SkillSection`'s "+ Add Skill" control, on the new Skills admin
+ * screen.
  */
-const EXPECTED_ADD_CONTROLS = 5;
+const EXPECTED_ADD_CONTROLS = 6;
 
 function listSourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {

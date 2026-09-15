@@ -34,6 +34,7 @@ const REQUEST: CompassEdjerRequest = {
   timesheetRequired: true,
   canSubmitUnder40: false,
   includeInPayroll: true,
+  skillIds: [1, 2],
 };
 
 const SAVED = { id: 7, ...REQUEST };
@@ -161,6 +162,7 @@ describe('createEdjer', () => {
         'isActive',
         'isDeliveryTeam',
         'lastName',
+        'skillIds',
         'stateOfResidence',
         'timesheetRequired',
         'timezone',

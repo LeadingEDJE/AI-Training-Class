@@ -20,8 +20,8 @@ namespace LeadingEDJE.Leap.Api.Tests.Services;
 /// </para>
 /// <para>
 /// What this file cannot establish. The repository behind the double issues a real Postgres
-/// <c>TRUNCATE</c>. That it parses, that naming exactly five tables satisfies every foreign key
-/// between them, that identity sequences restart, and that the two Compass lookup tables survive are
+/// <c>TRUNCATE</c>. That it parses, that naming exactly six tables satisfies every foreign key
+/// between them, that identity sequences restart, and that the three Compass lookup tables survive are
 /// all asserted against real PostgreSQL in
 /// <c>tests/integration/Endpoints/CompassDeveloperToolsEndpointsTests.cs</c>. The statement's TEXT is
 /// asserted without a database in <c>CompassDataResetRepositoryTests</c>.
@@ -50,7 +50,7 @@ public class CompassDataResetServiceTests
     {
         public int ClearCalls { get; private set; }
 
-        public CompassTableRowCounts Counts { get; init; } = new(3, 4, 5, 97, 28);
+        public CompassTableRowCounts Counts { get; init; } = new(3, 4, 5, 97, 0, 28);
 
         public Task<CompassTableRowCounts> ClearAsync(CancellationToken cancellationToken)
         {
@@ -112,7 +112,7 @@ public class CompassDataResetServiceTests
         CompassTableRowCounts? counts = null,
         DbUpdateException? auditFailure = null)
     {
-        var repository = new FakeResetRepository { Counts = counts ?? new(3, 4, 5, 97, 28) };
+        var repository = new FakeResetRepository { Counts = counts ?? new(3, 4, 5, 97, 0, 28) };
         var audit = new RecordingAuditService { ThrowOnLog = auditFailure };
         var service = new CompassDataResetService(
             repository,
@@ -161,7 +161,7 @@ public class CompassDataResetServiceTests
     public async Task ClearAllAsync_ReportsTheRepositoryCountsRatherThanCountingAnything()
     {
         // Arrange — deliberately lopsided numbers no accidental recomputation would reproduce.
-        var (service, _, audit) = Build(counts: new(1, 2, 3, 4, 5));
+        var (service, _, audit) = Build(counts: new(1, 2, 3, 4, 0, 5));
 
         // Act
         var result = await service.ClearAllAsync(Token);
@@ -179,7 +179,7 @@ public class CompassDataResetServiceTests
     {
         // Arrange — pressing the button twice must not be an error. The second press is the realistic
         // one: someone clears, sees the message, and clicks again to be sure.
-        var (service, repository, _) = Build(counts: new(0, 0, 0, 0, 0));
+        var (service, repository, _) = Build(counts: new(0, 0, 0, 0, 0, 0));
 
         // Act
         var result = await service.ClearAllAsync(Token);

@@ -156,6 +156,7 @@ export function compassScreens({
     // done on a desktop — which is why FR-006b keeps them tables at every width.
     { name: 'admin-index', path: '/compass/admin', category: 'admin' },
     { name: 'admin-lookups', path: '/compass/admin/lookups', category: 'admin' },
+    { name: 'admin-skills', path: '/compass/admin/skills', category: 'admin' },
     { name: 'admin-edjers', path: '/compass/admin/edjers', category: 'admin' },
     { name: 'admin-edjer-new', path: '/compass/admin/edjers/new', category: 'admin' },
     { name: 'admin-edjer-edit', path: `/compass/admin/edjers/${employeeId}`, category: 'admin' },
@@ -241,12 +242,15 @@ export function compassScreens({
  *   (`isInternal` drops the SOW column and leaves plain-text End Date last), so the extra two are the
  *   difference between covering the defect and passing beside it ................................. +2
  *
- * Total: 26.
+ * Total: 27.
  *
  * **Went 25 → 26 with `reports-sow-extension` (issue #534).** Bumping this is the LAST step, not the
  * first: the number is a consequence of `compassScreens()` above, so read that list, then count.
+ *
+ * **Went 26 → 27 with `admin-skills` (technical-skills feature)** — the new Skills admin screen,
+ * one more leaf route among the 23 above (now 24).
  */
-export const EXPECTED_SCREEN_COUNT_WITH_ASSIGNMENT = 26;
+export const EXPECTED_SCREEN_COUNT_WITH_ASSIGNMENT = 27;
 
 /** The five viewport widths `docs/nfr/NFR-catalog.md` P4 names, re-exported from the axe helper. */
 export { VIEWPORTS } from './axe';

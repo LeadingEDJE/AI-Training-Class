@@ -152,8 +152,9 @@ public class CompassSchemaIsANamespaceTests(IntegrationTestFactory factory)
 
         // Assert
         compassMappedTables.Count.ShouldBe(
-            7,
-            "the ERD's seven entities must be mapped to the compass schema"
+            9,
+            "the ERD's seven entities, plus the technical-skills feature's two (Skill, "
+                + "EmployeeSkill), must be mapped to the compass schema"
         );
         compassDbSets.ShouldBeEmpty(
             "Compass entities are reached with context.Set<T>(); a DbSet here would make the "

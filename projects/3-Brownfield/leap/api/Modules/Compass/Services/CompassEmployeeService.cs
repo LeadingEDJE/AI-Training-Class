@@ -11,6 +11,7 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Services;
 /// </summary>
 public class CompassEmployeeService(
     ICompassEmployeeRepository employees,
+    ICompassLookupRepository<Skill> skills,
     ICompassUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserContext currentUser,
@@ -106,6 +107,12 @@ public class CompassEmployeeService(
             LegacyTpsId = CompassLegacyProvenance.Normalise(request.LegacyTpsId),
         };
 
+        if (request.SkillIds is { } createSkillIds)
+        {
+            employee.EmployeeSkills =
+                [.. createSkillIds.Distinct().Select(skillId => new EmployeeSkill { SkillId = skillId })];
+        }
+
         await employees.AddAsync(employee, cancellationToken);
 
         try
@@ -198,6 +205,11 @@ public class CompassEmployeeService(
         if (request.IsDeliveryTeam is { } isDeliveryTeam)
         {
             employee.IsDeliveryTeam = isDeliveryTeam;
+        }
+
+        if (request.SkillIds is { } updateSkillIds)
+        {
+            SyncEmployeeSkills(employee, updateSkillIds);
         }
 
         try
@@ -344,6 +356,17 @@ public class CompassEmployeeService(
             return DuplicateEmail(request.Email);
         }
 
+        if (request.SkillIds is { } skillIds)
+        {
+            foreach (var skillId in skillIds.Distinct())
+            {
+                if (await skills.GetByIdAsync(skillId, cancellationToken) is null)
+                {
+                    return Invalid("That skill does not exist.");
+                }
+            }
+        }
+
         return null;
     }
 
@@ -375,6 +398,31 @@ public class CompassEmployeeService(
         var trimmed = timezone?.Trim();
         return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
+
+    /// <summary>
+    /// Adds and removes join rows so <paramref name="employee"/>'s tagged skills exactly match
+    /// <paramref name="skillIds"/>, rather than clearing and blind-reinserting the whole set.
+    /// </summary>
+    private static void SyncEmployeeSkills(Employee employee, IReadOnlyList<int> skillIds)
+    {
+        var desired = skillIds.Distinct().ToHashSet();
+
+        foreach (var employeeSkill in employee.EmployeeSkills.Where(es => !desired.Contains(es.SkillId)).ToList())
+        {
+            employee.EmployeeSkills.Remove(employeeSkill);
+        }
+
+        var current = employee.EmployeeSkills.Select(es => es.SkillId).ToHashSet();
+
+        foreach (var skillId in desired.Except(current))
+        {
+            employee.EmployeeSkills.Add(new EmployeeSkill { SkillId = skillId });
+        }
+    }
+
+    /// <summary>Skill ids, sorted and comma-joined, for a stable audit-log rendering.</summary>
+    private static string SkillIdsText(IEnumerable<int> skillIds) =>
+        string.Join(",", skillIds.OrderBy(id => id));
 
     private static CompassWrite<CompassEdjerDto> Invalid(string error) =>
         CompassWrite<CompassEdjerDto>.Invalid(error);
@@ -433,6 +481,11 @@ public class CompassEmployeeService(
             new(nameof(Employee.IncludeInPayroll), null, employee.IncludeInPayroll.ToString()),
             new(nameof(Employee.Timezone), null, employee.Timezone),
             new(nameof(Employee.IsDeliveryTeam), null, employee.IsDeliveryTeam.ToString()),
+            new(
+                nameof(Employee.EmployeeSkills),
+                null,
+                SkillIdsText(employee.EmployeeSkills.Select(es => es.SkillId))
+            ),
         ];
 
     /// <summary>
@@ -496,6 +549,13 @@ public class CompassEmployeeService(
             (after.IsDeliveryTeam ?? before.IsDeliveryTeam).ToString()
         );
 
+        var beforeSkillIds = before.EmployeeSkills.Select(es => es.SkillId);
+        Compare(
+            nameof(Employee.EmployeeSkills),
+            SkillIdsText(beforeSkillIds),
+            SkillIdsText(after.SkillIds ?? [.. beforeSkillIds])
+        );
+
         return changes;
 
         void Compare(string field, string? previous, string? next)
@@ -522,6 +582,7 @@ public class CompassEmployeeService(
             employee.CanSubmitUnder40,
             employee.IncludeInPayroll,
             employee.Timezone,
-            employee.IsDeliveryTeam
+            employee.IsDeliveryTeam,
+            [.. employee.EmployeeSkills.Select(es => es.SkillId).OrderBy(id => id)]
         );
 }

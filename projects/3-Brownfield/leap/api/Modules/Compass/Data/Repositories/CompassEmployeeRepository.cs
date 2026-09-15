@@ -31,9 +31,16 @@ public class CompassEmployeeRepository(LeapDbContext context) : ICompassEmployee
     }
 
     /// <inheritdoc />
-    /// <remarks>Uses <c>AsNoTracking</c>, since the service reloads before any update.</remarks>
+    /// <remarks>
+    /// Tracked, not <c>AsNoTracking</c> — the service mutates and saves the same instance. Includes
+    /// <see cref="Employee.EmployeeSkills"/> so the service can diff the tagged set against a request
+    /// instead of reloading it separately.
+    /// </remarks>
     public async Task<Employee?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
-        await context.Set<Employee>().FirstOrDefaultAsync(employee => employee.Id == id, cancellationToken);
+        await context
+            .Set<Employee>()
+            .Include(employee => employee.EmployeeSkills)
+            .FirstOrDefaultAsync(employee => employee.Id == id, cancellationToken);
 
     /// <inheritdoc />
     public async Task<bool> EmailExistsAsync(

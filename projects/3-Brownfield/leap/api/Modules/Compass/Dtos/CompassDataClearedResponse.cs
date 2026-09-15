@@ -12,14 +12,16 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos;
 /// <param name="Sows">Rows removed from <c>compass.sow</c>.</param>
 /// <param name="ClientAssignments">Rows removed from <c>compass.client_assignment</c>.</param>
 /// <param name="Employees">Rows removed from <c>compass.employee</c>.</param>
+/// <param name="EmployeeSkills">Rows removed from <c>compass.employee_skill</c>.</param>
 /// <param name="Clients">Rows removed from <c>compass.client</c>.</param>
-/// <param name="TotalRowsCleared">The sum of the five counts above.</param>
+/// <param name="TotalRowsCleared">The sum of the six counts above.</param>
 /// <param name="ClearedAtUtc">When the clear committed, in UTC.</param>
 public sealed record CompassDataClearedResponse(
     int BillableTimeCategories,
     int Sows,
     int ClientAssignments,
     int Employees,
+    int EmployeeSkills,
     int Clients,
     int TotalRowsCleared,
     DateTime ClearedAtUtc);

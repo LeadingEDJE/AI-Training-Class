@@ -64,6 +64,12 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos;
 /// save by a client older than this field. It goes after <paramref name="LegacyTpsId"/> because the
 /// ETL passes the leading arguments positionally.
 /// </param>
+/// <param name="SkillIds">
+/// The technical skills to tag this EDJEr with. Nullable and trailing, for the same reason as
+/// <paramref name="IsDeliveryTeam"/>: absent means "say nothing about skills" — a create leaves the
+/// EDJEr with none, and an update leaves the existing set alone rather than clearing it. Present
+/// (including an empty list) replaces the set exactly.
+/// </param>
 public record CompassEdjerRequest(
     string FirstName,
     string LastName,
@@ -78,5 +84,6 @@ public record CompassEdjerRequest(
     bool IncludeInPayroll,
     string? Timezone = null,
     string? LegacyTpsId = null,
-    bool? IsDeliveryTeam = null
+    bool? IsDeliveryTeam = null,
+    IReadOnlyList<int>? SkillIds = null
 );

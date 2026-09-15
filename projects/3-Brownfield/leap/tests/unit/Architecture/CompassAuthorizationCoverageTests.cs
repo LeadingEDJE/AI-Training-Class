@@ -414,8 +414,17 @@ public class CompassAuthorizationCoverageTests
     /// were deleted with the rest of the Timesheet module rather than kept for one route. No
     /// replacement route exists. <c>CompassLegacyTimezoneEndpointsTests</c> is deleted alongside it.
     /// </para>
+    /// <para>
+    /// 55 → 59 (technical-skills feature). Skill administration added three:
+    /// <c>GET/POST/PUT /api/compass/v1/admin/skills</c>, all behind
+    /// <see cref="RolePolicy.CompassSuperAdmin"/> via <c>CompassAdminRouteGroup</c>, same as every
+    /// other lookup. One more, <c>GET /api/compass/skills</c>, is the application read surface (ADR-008
+    /// shape) backing the Team Directory's skill filter and EDJEr tagging picker — bare
+    /// <c>RequireAuthorization()</c>, no Compass policy, same floor as the two directories. No new
+    /// policy; <see cref="CompassPolicies"/> is unchanged.
+    /// </para>
     /// </remarks>
-    private const int ExpectedCompassEndpointCount = 55;
+    private const int ExpectedCompassEndpointCount = 59;
 
     /// <summary>
     /// The published Directory boundary's route prefix (ADR-004, ADR-008).

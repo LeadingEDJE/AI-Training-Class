@@ -35,6 +35,9 @@ public sealed class EmployeeDetailDto
     /// <summary>State of residence.</summary>
     public string State { get; init; } = string.Empty;
 
+    /// <summary>The technical skills this EDJEr is tagged with.</summary>
+    public IReadOnlyList<SkillOptionDto> Skills { get; init; } = [];
+
     /// <summary>Whether this EDJEr is on the delivery team.</summary>
     /// <remarks>
     /// Visible only to Compass Super Admin, the same gating as <see cref="TimeTrackingSettings"/> —

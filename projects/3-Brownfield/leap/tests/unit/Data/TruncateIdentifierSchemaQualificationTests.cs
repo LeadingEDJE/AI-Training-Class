@@ -77,7 +77,9 @@ public class TruncateIdentifierSchemaQualificationTests
         // This test is doing exactly what its own header said it would: it was written to FAIL when a
         // new schema appeared, with the instruction to update the expected split rather than revert
         // the qualification. Feature 003 added two.
-        Count(identifiers, "compass").ShouldBe(7, "the Compass ERD maps seven tables into compass");
+        Count(identifiers, "compass").ShouldBe(
+            9, "the Compass ERD maps seven tables into compass, plus the technical-skills feature's "
+                + "two (skill, employee_skill)");
         Count(identifiers, "timesheet").ShouldBe(
             0, "the Timesheet module and its schema were removed; a non-zero count means either it "
                 + "came back or this reset path needs to schema-qualify a third schema again");

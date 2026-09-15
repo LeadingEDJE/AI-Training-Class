@@ -59,13 +59,15 @@ public class CompassMigrationHistoryTests(IntegrationTestFactory factory)
             TestContext.Current.CancellationToken);
 
         // Assert — after the Timesheet/Ooto retirement the whole schema (Platform and Compass alike)
-        // is created by ONE InitialCreate migration; one applied migration is the strongest available
-        // expression of "one migration timeline, one context" now that there is nothing to split it
-        // from.
+        // is created by InitialCreate, plus AddSkills for the technical-skills feature — both on the
+        // SAME context and the SAME __EFMigrationsHistory table, which is the property this test
+        // actually guards. A count is not the invariant itself (a legitimate new migration is expected
+        // to move it); the invariant is that it never forks into a second timeline.
         applied.Count()
             .ShouldBe(
-                1,
-                "the compass schema must be created by the single migration on the single context");
+                2,
+                "the compass schema must be created by migrations on the single context/single "
+                    + "history table, not a diverged second timeline");
 
         // No trailing semicolon: SingleAsync wraps this in a subquery to check cardinality, and an
         // embedded semicolon there is a syntax error rather than a statement terminator.

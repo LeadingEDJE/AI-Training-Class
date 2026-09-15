@@ -7,6 +7,7 @@ export interface TeamDirectoryParams {
   employeeType?: string;
   state?: string;
   coachId?: string;
+  skill?: string;
   sort?: string;
   desc?: boolean;
   status?: string;
@@ -23,6 +24,7 @@ export function buildTeamDirectoryQuery(params: TeamDirectoryParams): string {
   if (params.employeeType?.trim()) query.set('employeeType', params.employeeType.trim());
   if (params.state?.trim()) query.set('state', params.state.trim());
   if (params.coachId?.trim()) query.set('coachId', params.coachId.trim());
+  if (params.skill?.trim()) query.set('skill', params.skill.trim());
   if (params.sort?.trim()) query.set('sort', params.sort.trim());
   if (params.desc) query.set('desc', 'true');
   if (params.status?.trim()) query.set('status', params.status.trim());

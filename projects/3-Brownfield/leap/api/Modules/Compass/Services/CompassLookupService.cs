@@ -9,6 +9,7 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Services;
 public class CompassLookupService(
     ICompassLookupRepository<EmployeeType> employeeTypes,
     ICompassLookupRepository<InvoiceFrequencyType> invoiceFrequencyTypes,
+    ICompassLookupRepository<Skill> skills,
     ICompassUnitOfWork unitOfWork
 ) : ICompassLookupService
 {
@@ -62,6 +63,29 @@ public class CompassLookupService(
         bool isActive,
         CancellationToken cancellationToken
     ) => UpdateAsync(invoiceFrequencyTypes, id, typeName, isActive, ToDto, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<SkillDto>> GetSkillsAsync(
+        bool activeOnly,
+        CancellationToken cancellationToken
+    ) =>
+        [
+            .. (await skills.GetAllAsync(activeOnly, cancellationToken)).Select(ToDto),
+        ];
+
+    /// <inheritdoc />
+    public Task<CompassLookupWrite<SkillDto>> CreateSkillAsync(
+        string name,
+        CancellationToken cancellationToken
+    ) => CreateAsync(skills, name, ToDto, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<CompassLookupWrite<SkillDto>> UpdateSkillAsync(
+        int id,
+        string name,
+        bool isActive,
+        CancellationToken cancellationToken
+    ) => UpdateAsync(skills, id, name, isActive, ToDto, cancellationToken);
 
     private async Task<CompassLookupWrite<TDto>> CreateAsync<TLookup, TDto>(
         ICompassLookupRepository<TLookup> repository,
@@ -188,4 +212,6 @@ public class CompassLookupService(
 
     private static InvoiceFrequencyTypeDto ToDto(InvoiceFrequencyType lookup) =>
         new(lookup.Id, lookup.TypeName, lookup.IsActive);
+
+    private static SkillDto ToDto(Skill lookup) => new(lookup.Id, lookup.TypeName, lookup.IsActive);
 }

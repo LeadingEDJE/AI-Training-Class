@@ -77,4 +77,7 @@ public class Employee
 
     /// <summary>This EDJEr's client engagements, past and present.</summary>
     public ICollection<ClientAssignment> ClientAssignments { get; set; } = [];
+
+    /// <summary>The technical skills this EDJEr is tagged with.</summary>
+    public ICollection<EmployeeSkill> EmployeeSkills { get; set; } = [];
 }

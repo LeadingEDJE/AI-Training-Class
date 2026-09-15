@@ -6,15 +6,23 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Data.Repositories;
 
-/// <summary>Counts and empties the five Compass operational tables.</summary>
+/// <summary>Counts and empties the six Compass operational tables.</summary>
 public sealed class CompassDataResetRepository(LeapDbContext context) : ICompassDataResetRepository
 {
     /// <summary>The tables to empty, in the order <c>TRUNCATE</c> requires.</summary>
+    /// <remarks>
+    /// <see cref="EmployeeSkill"/> is here, not just <see cref="Skill"/>'s lookup parent, for the same
+    /// reason <see cref="ClientAssignment"/> is: TRUNCATE without CASCADE (see
+    /// <c>BuildTruncateStatement_OmitsCascade_SoANewReferencingTableFailsLoudly</c>) requires every
+    /// table with a live FK into <see cref="Employee"/> to be named in the same statement, or the
+    /// truncate fails outright once an EDJEr has a tagged skill.
+    /// </remarks>
     internal static readonly Type[] TablesToClear =
     [
         typeof(BillableTimeCategory),
         typeof(Sow),
         typeof(ClientAssignment),
+        typeof(EmployeeSkill),
         typeof(Employee),
         typeof(Client),
     ];
@@ -22,7 +30,7 @@ public sealed class CompassDataResetRepository(LeapDbContext context) : ICompass
     /// <summary>The only schema this repository will ever issue a TRUNCATE against.</summary>
     internal const string CompassSchema = "compass";
 
-    /// <summary>Counts the rows in each of the five tables.</summary>
+    /// <summary>Counts the rows in each of the six tables.</summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The per-table counts.</returns>
     internal async Task<CompassTableRowCounts> CountAsync(CancellationToken cancellationToken) =>
@@ -31,6 +39,7 @@ public sealed class CompassDataResetRepository(LeapDbContext context) : ICompass
             Sows: await context.Set<Sow>().CountAsync(cancellationToken),
             ClientAssignments: await context.Set<ClientAssignment>().CountAsync(cancellationToken),
             Employees: await context.Set<Employee>().CountAsync(cancellationToken),
+            EmployeeSkills: await context.Set<EmployeeSkill>().CountAsync(cancellationToken),
             Clients: await context.Set<Client>().CountAsync(cancellationToken));
 
     /// <inheritdoc />

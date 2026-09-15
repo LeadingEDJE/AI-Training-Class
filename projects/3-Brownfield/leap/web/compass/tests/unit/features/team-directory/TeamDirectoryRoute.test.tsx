@@ -59,6 +59,12 @@ const DIRECTORY = [
   row(3, 'Carter', '1099', 'OH'),
 ];
 
+/** The active skill list the public `/api/compass/skills` endpoint answers with. */
+const SKILL_OPTIONS = [
+  { id: 1, name: 'Java' },
+  { id: 2, name: 'SQL' },
+];
+
 /** Answers like the real endpoint: applies the query's own filters, so a filtered call returns less. */
 function respondFromDirectory(url: string) {
   const params = new URLSearchParams(url.slice(url.indexOf('?') + 1));
@@ -78,6 +84,13 @@ function respondFromDirectory(url: string) {
   return { ok: true, status: 200, json: async () => rows };
 }
 
+/** The default fetch responder: the public skill list on its own endpoint, the directory otherwise. */
+function respond(url: string) {
+  return url.startsWith('/api/compass/skills')
+    ? { ok: true, status: 200, json: async () => SKILL_OPTIONS }
+    : respondFromDirectory(url);
+}
+
 function renderRoute() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -95,28 +108,35 @@ function requestedUrls(): string[] {
 describe('TeamDirectoryRoute', () => {
   beforeEach(() => {
     fetchSpy.mockReset();
-    fetchSpy.mockImplementation((url: string) => Promise.resolve(respondFromDirectory(url)));
+    fetchSpy.mockImplementation((url: string) => Promise.resolve(respond(url)));
   });
+
+  /** Every requested team-directory URL, ignoring the independent skill-options read. */
+  function requestedDirectoryUrls(): string[] {
+    return requestedUrls().filter((url) => url.includes('/api/compass/team-directory'));
+  }
 
   it('requests the read surface with the default status filter', async () => {
     renderRoute();
 
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-    expect(requestedUrls()[0]).toContain('/api/compass/team-directory');
-    expect(requestedUrls()[0]).toContain('status=active');
+    await waitFor(() => expect(requestedDirectoryUrls().length).toBeGreaterThan(0));
+    expect(requestedDirectoryUrls()[0]).toContain('status=active');
   });
 
-  it('opens with ONE request, not two', async () => {
+  it('opens with ONE team-directory request, not two', async () => {
     // The screen reads the directory twice — once for the table and once, unfiltered, for the count
     // pill and the filter options. On first load both are the same URL, and `useTeamDirectory` keys its
     // cache by that URL, so react-query serves them from a single request. Keying by the params OBJECT
     // instead would make `{status}` and `{search: '', status}` different keys for one URL, and the
     // screen would open by fetching the same rows twice.
+    //
+    // The independent skill-options read (its own endpoint, its own query key) is a legitimate separate
+    // request and is excluded from this count via `requestedDirectoryUrls`.
     renderRoute();
 
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
     await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(requestedDirectoryUrls()).toHaveLength(1);
   });
 
   it('sends the search term to the SERVER rather than filtering locally', async () => {
@@ -175,6 +195,30 @@ describe('TeamDirectoryRoute', () => {
 
     await waitFor(() =>
       expect(requestedUrls().some((url) => url.includes('coachId=12'))).toBe(true),
+    );
+  });
+
+  it('sends the skill filter to the server', async () => {
+    const user = userEvent.setup();
+    renderRoute();
+    await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
+
+    await user.selectOptions(screen.getByLabelText('Skill'), 'Java');
+
+    await waitFor(() =>
+      expect(requestedDirectoryUrls().some((url) => url.includes('skill=1'))).toBe(true),
+    );
+  });
+
+  it('offers every skill from the public skill list', async () => {
+    renderRoute();
+    await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
+
+    const select = screen.getByLabelText('Skill');
+    await waitFor(() =>
+      expect(
+        Array.from(select.querySelectorAll('option')).map((option) => option.textContent),
+      ).toEqual(['All Skills', 'Java', 'SQL']),
     );
   });
 

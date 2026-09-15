@@ -40,6 +40,8 @@ export interface CompassEdjer {
   timesheetRequired: boolean;
   canSubmitUnder40: boolean;
   includeInPayroll: boolean;
+  /** The ids of every skill currently assigned to this EDJEr. */
+  skillIds: number[];
 }
 
 export type CompassEdjerRequest = Omit<CompassEdjer, 'id'>;

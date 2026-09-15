@@ -233,6 +233,11 @@ test.describe('WCAG 2.1 AA sweep [critical]', () => {
         path: '/compass/admin/lookups',
         ready: heading('Lookup Administration'),
       },
+      {
+        name: 'Skill administration',
+        path: '/compass/admin/skills',
+        ready: heading('Skill Administration'),
+      },
       { name: 'EDJEr list', path: '/compass/admin/edjers', ready: heading('EDJErs') },
       { name: 'EDJEr add form', path: '/compass/admin/edjers/new', ready: heading('Profile') },
       {
@@ -256,7 +261,7 @@ test.describe('WCAG 2.1 AA sweep [critical]', () => {
     // Derived from the real screens -- see SCREEN_SCAN_ALLOWANCE_MS and INTERACTION_ALLOWANCE_MS.
     test.setTimeout(budgetFor(screens));
 
-    expect(await sweep(page, screens), 'administrative screens scanned').toBe(8);
+    expect(await sweep(page, screens), 'administrative screens scanned').toBe(9);
   });
 
   /**

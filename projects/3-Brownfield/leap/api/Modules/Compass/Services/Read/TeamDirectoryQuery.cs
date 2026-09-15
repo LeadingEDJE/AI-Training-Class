@@ -13,6 +13,7 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Services.Read;
 /// <param name="Sort">Column to sort by; unrecognised values fall back to hire date.</param>
 /// <param name="Descending">Reverses the sort.</param>
 /// <param name="Status">Presentation filter, defaulting to <see cref="DirectoryStatusFilter.Active"/>.</param>
+/// <param name="SkillId">Narrows to EDJErs tagged with this skill. Null matches everything.</param>
 public sealed record TeamDirectoryQuery(
     string? Search = null,
     string? EmployeeType = null,
@@ -20,7 +21,8 @@ public sealed record TeamDirectoryQuery(
     int? CoachId = null,
     string? Sort = null,
     bool Descending = false,
-    DirectoryStatusFilter Status = DirectoryStatusFilter.Active);
+    DirectoryStatusFilter Status = DirectoryStatusFilter.Active,
+    int? SkillId = null);
 
 /// <summary>The Q2 status filter — presentation only, never the access control.</summary>
 public enum DirectoryStatusFilter

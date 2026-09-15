@@ -20,6 +20,7 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos;
 /// purely cosmetic and can be freely rearranged without affecting callers.
 /// </param>
 /// <param name="IsDeliveryTeam">Whether the EDJEr is on the delivery team.</param>
+/// <param name="SkillIds">The technical skills this EDJEr is currently tagged with.</param>
 public sealed record CompassEdjerDto(
     int Id,
     string FirstName,
@@ -34,5 +35,6 @@ public sealed record CompassEdjerDto(
     bool CanSubmitUnder40,
     bool IncludeInPayroll,
     string Timezone,
-    bool IsDeliveryTeam
+    bool IsDeliveryTeam,
+    IReadOnlyList<int> SkillIds
 );

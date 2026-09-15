@@ -10,6 +10,7 @@ import { ClientListPage } from '../features/clients/ClientListPage';
 import { EdjerFormPage } from '../features/edjers/EdjerFormPage';
 import { EdjerListPage } from '../features/edjers/EdjerListPage';
 import { LookupAdminPage } from '../features/lookups/LookupAdminPage';
+import { SkillAdminPage } from '../features/skills/SkillAdminPage';
 import { TeamDirectoryRoute } from '../features/team-directory/TeamDirectoryRoute';
 import { EmployeeDetailRoute } from '../features/employee-detail/EmployeeDetailRoute';
 import { ClientDirectoryRoute } from '../features/client-directory/ClientDirectoryRoute';
@@ -55,6 +56,12 @@ const adminLookupsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/lookups',
   component: LookupAdminPage,
+});
+
+const adminSkillsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/skills',
+  component: SkillAdminPage,
 });
 
 const teamDirectoryRoute = createRoute({
@@ -204,6 +211,7 @@ export const routeTree = rootRoute.addChildren([
   adminRoute.addChildren([
     adminIndexRoute,
     adminLookupsRoute,
+    adminSkillsRoute,
     adminEdjersRoute,
     adminEdjerNewRoute,
     adminEdjerRoute,

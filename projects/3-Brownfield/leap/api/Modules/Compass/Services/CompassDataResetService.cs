@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Services;
 
-/// <summary>Empties the seven Compass operational tables and records who did it.</summary>
+/// <summary>Empties the six Compass operational tables and records who did it.</summary>
 /// <param name="repository">Owns the SQL; a Compass service may not name a data context.</param>
 /// <param name="auditService">Records who cleared what.</param>
 /// <param name="currentUser">The caller, for the audit record.</param>
@@ -32,15 +32,17 @@ public sealed class CompassDataResetService(
         var clearedAt = timeProvider.GetUtcNow().UtcDateTime;
 
         logger.LogWarning(
-            "Compass data cleared by {Actor}: {Total} rows removed across five tables "
+            "Compass data cleared by {Actor}: {Total} rows removed across six tables "
                 + "({BillableTimeCategories} billable time categories, {Sows} SOWs, "
-                + "{ClientAssignments} assignments, {Employees} EDJErs, {Clients} clients).",
+                + "{ClientAssignments} assignments, {Employees} EDJErs, {EmployeeSkills} tagged skills, "
+                + "{Clients} clients).",
             currentUser.EdjeId,
             counts.Total,
             counts.BillableTimeCategories,
             counts.Sows,
             counts.ClientAssignments,
             counts.Employees,
+            counts.EmployeeSkills,
             counts.Clients);
 
         await RecordAuditAsync(counts, clearedAt);
@@ -50,6 +52,7 @@ public sealed class CompassDataResetService(
             counts.Sows,
             counts.ClientAssignments,
             counts.Employees,
+            counts.EmployeeSkills,
             counts.Clients,
             counts.Total,
             clearedAt);
@@ -70,6 +73,7 @@ public sealed class CompassDataResetService(
                 new FieldChange("sow", counts.Sows.ToString(), "0"),
                 new FieldChange("client_assignment", counts.ClientAssignments.ToString(), "0"),
                 new FieldChange("employee", counts.Employees.ToString(), "0"),
+                new FieldChange("employee_skill", counts.EmployeeSkills.ToString(), "0"),
                 new FieldChange("client", counts.Clients.ToString(), "0"),
                 new FieldChange("total", counts.Total.ToString(), "0"),
                 new FieldChange("clearedAtUtc", null, clearedAt.ToString("O")),

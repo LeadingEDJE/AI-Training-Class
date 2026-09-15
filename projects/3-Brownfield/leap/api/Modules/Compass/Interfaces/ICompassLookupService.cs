@@ -49,4 +49,24 @@ public interface ICompassLookupService
         bool isActive,
         CancellationToken cancellationToken
     );
+
+    /// <summary>Skills, all of them or only the selectable ones.</summary>
+    Task<IReadOnlyList<SkillDto>> GetSkillsAsync(
+        bool activeOnly,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>Adds a skill. New values are active.</summary>
+    Task<CompassLookupWrite<SkillDto>> CreateSkillAsync(
+        string name,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>Renames a skill and/or changes whether it is selectable.</summary>
+    Task<CompassLookupWrite<SkillDto>> UpdateSkillAsync(
+        int id,
+        string name,
+        bool isActive,
+        CancellationToken cancellationToken
+    );
 }

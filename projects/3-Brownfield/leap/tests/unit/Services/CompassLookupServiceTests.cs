@@ -115,7 +115,11 @@ public class CompassLookupServiceTests
         var invoiceFrequencyTypes = new FakeLookupRepository<InvoiceFrequencyType>();
         var unitOfWork = new CountingUnitOfWork();
         return (
-            new CompassLookupService(employeeTypes, invoiceFrequencyTypes, unitOfWork),
+            new CompassLookupService(
+                employeeTypes,
+                invoiceFrequencyTypes,
+                new FakeLookupRepository<Skill>(),
+                unitOfWork),
             employeeTypes,
             invoiceFrequencyTypes,
             unitOfWork
@@ -635,6 +639,7 @@ public class CompassLookupServiceTests
         var service = new CompassLookupService(
             employeeTypes,
             new FakeLookupRepository<InvoiceFrequencyType>(),
+            new FakeLookupRepository<Skill>(),
             new ThrowingUnitOfWork()
         );
 

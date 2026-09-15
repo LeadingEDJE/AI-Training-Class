@@ -31,7 +31,7 @@ public class CompassDataResetRepositoryTests
             .UseInMemoryDatabase($"CompassClear_{Guid.NewGuid():N}")
             .Options);
 
-    /// <summary>Seeds one row in each of the five cleared tables plus one in each lookup table.</summary>
+    /// <summary>Seeds one row in each of the six cleared tables plus one in each lookup table.</summary>
     private static async Task SeedAsync(LeapDbContext context)
     {
         context.Add(new EmployeeType { Id = 1, TypeName = "Full Time", IsActive = true });
@@ -64,11 +64,13 @@ public class CompassDataResetRepositoryTests
         });
         context.Add(new BillableTimeCategory { Id = 1, ClientId = 1, CategoryName = "Development" });
         context.Add(new BillableTimeCategory { Id = 2, ClientId = 1, CategoryName = "Support" });
+        context.Add(new Skill { Id = 1, TypeName = "React", IsActive = true });
+        context.Add(new EmployeeSkill { Id = 1, EmployeeId = 1, SkillId = 1 });
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
-    public void BuildTruncateStatement_NamesAllFiveTables_SchemaQualifiedAndQuoted()
+    public void BuildTruncateStatement_NamesAllSixTables_SchemaQualifiedAndQuoted()
     {
         // Arrange — every identifier must be schema-qualified: the application connection pins
         // search_path to `public` (issue #208), so an unqualified `employee` resolves to a table in the
@@ -81,18 +83,19 @@ public class CompassDataResetRepositoryTests
         // Assert
         sql.ShouldBe(
             "TRUNCATE TABLE \"compass\".\"billable_time_category\", \"compass\".\"sow\", "
-                + "\"compass\".\"client_assignment\", \"compass\".\"employee\", "
-                + "\"compass\".\"client\" RESTART IDENTITY");
+                + "\"compass\".\"client_assignment\", \"compass\".\"employee_skill\", "
+                + "\"compass\".\"employee\", \"compass\".\"client\" RESTART IDENTITY");
     }
 
     [Fact]
     public void BuildTruncateStatement_OmitsCascade_SoANewReferencingTableFailsLoudly()
     {
         // Arrange — CASCADE is the obvious "fix" the first time someone adds a Compass table with a
-        // foreign key into one of these five and hits an FK error. It would also silently empty their
-        // new table AND both lookup tables, which are FK parents here. Naming all five instead
-        // satisfies every FK between them (including employee's self-reference through the coach FK)
-        // while leaving anything outside the list to fail the statement rather than be destroyed.
+        // foreign key into one of these six and hits an FK error. It would also silently empty their
+        // new table AND every lookup table, which are FK parents here. Naming all six instead
+        // satisfies every FK between them (including employee's self-reference through the coach FK,
+        // and employee_skill's FK into employee) while leaving anything outside the list to fail the
+        // statement rather than be destroyed.
         using var context = NewContext();
 
         // Act
@@ -113,13 +116,16 @@ public class CompassDataResetRepositoryTests
         var sql = CompassDataResetRepository.BuildTruncateStatement(context.Model);
 
         // Assert — asserted on the rendered SQL, not only on the type list, because the SQL is what
-        // reaches the database.
+        // reaches the database. The quoted, schema-qualified form distinguishes "skill" the lookup
+        // table from "employee_skill", which DOES appear (it is one of the six cleared tables and
+        // happens to contain "skill" as a substring).
         sql.ShouldNotContain("employee_type");
         sql.ShouldNotContain("invoice_frequency_type");
+        sql.ShouldNotContain("\"compass\".\"skill\"");
     }
 
     [Fact]
-    public void TablesToClear_IsExactlyTheFiveOperationalTables()
+    public void TablesToClear_IsExactlyTheSixOperationalTables()
     {
         // Arrange / Act — a pinning test. The list is the sole input to the generated TRUNCATE, so a
         // change to it is a change to what gets destroyed.
@@ -131,6 +137,7 @@ public class CompassDataResetRepositoryTests
             typeof(BillableTimeCategory),
             typeof(Sow),
             typeof(ClientAssignment),
+            typeof(EmployeeSkill),
             typeof(Employee),
             typeof(Client),
         ]);
@@ -138,6 +145,7 @@ public class CompassDataResetRepositoryTests
         // And explicitly NOT the lookup tables — stated as an assertion so adding one fails here first.
         tables.ShouldNotContain(typeof(EmployeeType));
         tables.ShouldNotContain(typeof(InvoiceFrequencyType));
+        tables.ShouldNotContain(typeof(Skill));
     }
 
     // ---------------------------------------------------------------- the model guards
@@ -233,7 +241,7 @@ public class CompassDataResetRepositoryTests
     }
 
     [Fact]
-    public void BuildLockStatement_LocksAllFiveTablesInAccessExclusiveMode()
+    public void BuildLockStatement_LocksAllSixTablesInAccessExclusiveMode()
     {
         // Arrange — this statement is what makes the reported counts true. Counting and truncating are
         // two statements, and under READ COMMITTED each takes its own snapshot, so without holding the
@@ -247,8 +255,8 @@ public class CompassDataResetRepositoryTests
         // Assert
         sql.ShouldBe(
             "LOCK TABLE \"compass\".\"billable_time_category\", \"compass\".\"sow\", "
-                + "\"compass\".\"client_assignment\", \"compass\".\"employee\", "
-                + "\"compass\".\"client\" IN ACCESS EXCLUSIVE MODE");
+                + "\"compass\".\"client_assignment\", \"compass\".\"employee_skill\", "
+                + "\"compass\".\"employee\", \"compass\".\"client\" IN ACCESS EXCLUSIVE MODE");
     }
 
     [Fact]
@@ -292,8 +300,9 @@ public class CompassDataResetRepositoryTests
         counts.Sows.ShouldBe(1);
         counts.ClientAssignments.ShouldBe(1);
         counts.Employees.ShouldBe(1);
+        counts.EmployeeSkills.ShouldBe(1);
         counts.Clients.ShouldBe(1);
-        counts.Total.ShouldBe(6);
+        counts.Total.ShouldBe(7);
     }
 
     [Fact]

@@ -63,14 +63,21 @@ public class CompassSchemaFromErdTests(IntegrationTestFactory factory)
     private const string NotNullViolation = "23502";
     private const string ForeignKeyViolation = "23503";
 
+    /// <summary>
+    /// The ERD's seven tables plus the two the technical-skills feature added afterwards
+    /// (<c>skill</c>, <c>employee_skill</c>) — outside the original ERD, but the same "exactly this
+    /// set" discipline applies once a table is deliberately added.
+    /// </summary>
     private static readonly string[] ExpectedTables =
     [
         "billable_time_category",
         "client",
         "client_assignment",
         "employee",
+        "employee_skill",
         "employee_type",
         "invoice_frequency_type",
+        "skill",
         "sow",
     ];
 
@@ -98,8 +105,9 @@ public class CompassSchemaFromErdTests(IntegrationTestFactory factory)
         tables.ShouldBe(
             ExpectedTables,
             ignoreOrder: false,
-            customMessage: "the compass schema must hold exactly the ERD's seven tables — an extra "
-                + "table is speculative modelling, a missing one is an unimplemented ERD entity"
+            customMessage: "the compass schema must hold exactly the ERD's seven tables plus the "
+                + "technical-skills feature's two (skill, employee_skill) — an extra table is "
+                + "speculative modelling, a missing one is an unimplemented entity"
         );
     }
 

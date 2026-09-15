@@ -155,6 +155,37 @@ public class CompassEmployeeServiceTests
         }
     }
 
+    /// <summary>In-memory stand-in for the skill lookup, seeded by id so a test controls exactly which ids exist.</summary>
+    private sealed class FakeSkillRepository : ICompassLookupRepository<Skill>
+    {
+        private readonly Dictionary<int, Skill> _rows = [];
+
+        public Skill Seed(int id, string name, bool isActive = true)
+        {
+            var skill = new Skill { Id = id, TypeName = name, IsActive = isActive };
+            _rows[id] = skill;
+            return skill;
+        }
+
+        public Task<IReadOnlyList<Skill>> GetAllAsync(bool activeOnly, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<Skill>>([.. _rows.Values.Where(s => !activeOnly || s.IsActive)]);
+
+        public Task<Skill?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
+            Task.FromResult(_rows.GetValueOrDefault(id));
+
+        public Task<bool> NameExistsAsync(string typeName, int? excludingId, CancellationToken cancellationToken) =>
+            Task.FromResult(
+                _rows.Values.Any(s =>
+                    s.Id != excludingId
+                    && string.Equals(s.TypeName, typeName, StringComparison.OrdinalIgnoreCase)));
+
+        public Task AddAsync(Skill lookup, CancellationToken cancellationToken)
+        {
+            _rows[lookup.Id] = lookup;
+            return Task.CompletedTask;
+        }
+    }
+
     private sealed class CountingUnitOfWork : ICompassUnitOfWork
     {
         /// <summary>
@@ -260,6 +291,7 @@ public class CompassEmployeeServiceTests
         // would let the write path and the blockers route drift apart while both suites stayed green.
         var service = new CompassEmployeeService(
             employees,
+            new FakeSkillRepository(),
             unitOfWork,
             audit,
             new StubCurrentUser(),

@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { fetchSkillOptions, skillOptionsQueryKey } from '../skills/skill-api';
 import { TeamDirectoryPage } from './TeamDirectoryPage';
 import { useTeamDirectory } from './useTeamDirectory';
 import { EMPLOYEE_TYPE_COUNT_ORDER, type TeamDirectoryRow } from './types';
@@ -16,6 +18,7 @@ export function TeamDirectoryRoute() {
   const [employeeType, setEmployeeType] = useState('');
   const [state, setState] = useState('');
   const [coachId, setCoachId] = useState('');
+  const [skill, setSkill] = useState('');
   const [sort, setSort] = useState('');
   const [desc, setDesc] = useState(false);
   const [status, setStatus] = useState('active');
@@ -26,11 +29,18 @@ export function TeamDirectoryRoute() {
     employeeType,
     state,
     coachId,
+    skill,
     sort,
     desc,
     status,
   });
   const scope = useTeamDirectory({ status });
+  // The public, active-only endpoint (any authenticated viewer, no admin role) — distinct from the
+  // admin-gated skill-api reads the Skills admin screen uses.
+  const skillOptionsQuery = useQuery({
+    queryKey: skillOptionsQueryKey(),
+    queryFn: fetchSkillOptions,
+  });
 
   const rows = data ?? [];
 
@@ -55,12 +65,14 @@ export function TeamDirectoryRoute() {
       employeeTypeOptions={employeeTypeOptions}
       stateOptions={stateOptions}
       coachOptions={coachOptions}
+      skillOptions={skillOptionsQuery.data ?? []}
       sort={sort}
       descending={desc}
       onSearchChange={setSearch}
       onEmployeeTypeChange={setEmployeeType}
       onStateChange={setState}
       onCoachIdChange={setCoachId}
+      onSkillChange={setSkill}
       onStatusChange={setStatus}
       onSortChange={(column) => {
         setDesc(column === sort ? !desc : false);

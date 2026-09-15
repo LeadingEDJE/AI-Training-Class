@@ -40,6 +40,9 @@ public sealed class TeamDirectoryRowDto
     /// </summary>
     public IReadOnlyList<TeamDirectoryAssignmentDto> CurrentAssignments { get; init; } = [];
 
+    /// <summary>The technical skills this EDJEr is tagged with.</summary>
+    public IReadOnlyList<SkillOptionDto> Skills { get; init; } = [];
+
     /// <summary>
     /// Whether the EDJEr is active — elevated tiers only, and absent otherwise.
     /// </summary>

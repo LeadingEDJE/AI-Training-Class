@@ -46,6 +46,9 @@ public class CompassEdjerDtoTests
         // issue #502: stored on the Compass record rather than derived from the frozen legacy
         // directory tables. On BOTH the DTO and the request, for the same reason as Timezone.
         "IsDeliveryTeam",
+        // NOT an AC-17 field either. The technical-skills feature: which skills this EDJEr is tagged
+        // with. On BOTH the DTO and the request, same shape as Timezone/IsDeliveryTeam above.
+        "SkillIds",
     ];
 
     private static readonly string[] AgreedSummaryMembers =
@@ -98,6 +101,9 @@ public class CompassEdjerDtoTests
         // absent stays distinguishable from an explicit false — a non-nullable bool would bind
         // false for a client that says nothing, and false is the one value nobody may infer.
         "IsDeliveryTeam",
+        // See the detail DTO above. Nullable and trailing for the same reason: absent means "say
+        // nothing about skills" rather than "clear them".
+        "SkillIds",
     ];
 
     private static string[] MembersOf(Type type) =>
