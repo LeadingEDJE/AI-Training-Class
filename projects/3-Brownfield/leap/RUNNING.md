@@ -111,6 +111,10 @@ Those comments are part of the puzzle.
   — install Node 22 (which ships npm 10) and re-run.
 - **Wrong Node version generally**: run `nvm use` (reads `.nvmrc`), then re-run
   `npm ci` — switching Node alone doesn't refresh already-installed packages.
+- **`npm ci` fails with EBADENGINE even on Node 22**: `.nvmrc` only pins the major
+  version (`22`), but `package.json` `engines` requires `>=22.22.1` — an older Node 22.x
+  (e.g. 22.16.0) still fails. Run `nvm install 22.22.1` (or later) and `nvm use` that,
+  then re-run `npm ci`.
 - **Port already in use** (`5009` or `5176`): a previous run is still listening.
   Find and stop it, or run `make dev-down`.
 - **API can't reach Postgres / migrations fail**: Postgres wasn't ready yet. Re-run
