@@ -62,7 +62,7 @@ Use **auto mode** again. Manual or Accept Edits mode also works here if you want
 
 ### Prompt 2 - Overview
 
-> Give me a high-level overview of this repository, starting at the top level. Identify what it is meant to do and how it does it. Identify the primary components, services, and layers, what each is responsible for, and the common patterns used across the repo. Then dig into each component you identified and describe its key files, its entry points, and how it talks to the others. Skip build output and dependency folders. Save the result as ARCHITECTURE.md in the repo root, with a consistent structure for every component and a simple ASCII tree of the folder layout with a one-line purpose for each folder. Tell me anything you could not determine or are guessing about.  Use Sonnet sub-agents to scout the codebase after you get the high level so you can avoid bloating your own context.
+> Give me a high-level overview of this repository, starting at the top level. Identify what it is meant to do and how it does it. Identify the primary components, services, and layers, what each is responsible for, and the common patterns used across the repo. Then dig into each component you identified and describe its key files, its entry points, and how it talks to the others. Skip build output and dependency folders. Save the result as ARCHITECTURE.md in the repo root, with a consistent structure for every component and a simple ASCII tree of the folder layout with a one-line purpose for each folder. Tell me anything you could not determine or are guessing about.  Use Sonnet sub-agents to scout the codebase after you get the high level so you can avoid bloating your own context.  If appropriate, add additional documentation to the codebase calling out inconsistencies with patterns that are otherwise standard.  Make this easy for future agents to understand where to look.
 
 Skim the file while it's writing. Correct anything you know is wrong before moving on. That correction is context.
 
@@ -74,19 +74,21 @@ Same session.
 
 > Using ARCHITECTURE.md, figure out how to build this project, run it locally, and execute its test suite. Actually run each command and show me the real output. If something fails because of my environment, diagnose it and tell me what to install or change, then retry. When everything works, add a "Running locally" section to ARCHITECTURE.md with the exact commands that succeeded, the URLs or entry points to open, and any gotchas you hit.
 
-**If you brought your own repo and this step eats the whole session, that is fine.** Getting a legacy project to build on a fresh machine with an agent's help is the lab. Flag us down and we'll work through it with you.
+**If you are working on your own project and don't have a way to run it locally, this may be your whole lab, and it'll be worth it.** We will help you find a solution.
 
-### Step 3 - Create specialized agents (10 minutes)
+Having a way for the agents to actually run the code pays for itself immediately. Agents love to tell you they're done when they don't have the ability to prove it to you.
+
+### Step 3 - Create specialized agents (and skills) (10 minutes)
 
 Start a **fresh session** in the repo folder (`/clear`). We've documented what is necessary for this task already.  This is a good habit for not bloating context.
 
 ### Prompt 4 - Build the team
 
-> Read ARCHITECTURE.md, including the Running locally section. Then create a set of specialized subagents for this codebase in .claude/agents/, one file each. At minimum create a front-end agent and a back-end agent. Add others only where this codebase genuinely has a distinct area, such as data access and migrations, tests, build and tooling, or infrastructure. For each agent write: a one-paragraph description of when to use it, the folders and layers it owns, the conventions and patterns it must follow with real examples from this repo, the exact commands it must run to verify its work, and the things it must not touch. Then create or update CLAUDE.md so it points at ARCHITECTURE.md and the agents, states the build, run, and test commands, and lists the two or three things about this repo that are most likely to trip up a new contributor. Keep CLAUDE.md under 60 lines. Show me the list of files you created.  Also create any skills that may be of value to these agents or you as the orchestrator of the codebase.  Don't add things for the sake of adding them, but if things will genuinely add value, add them.  Specify higher level models (Opus) for "thinking" tasks like research and planning, lower level (sonnet) for "doing" things like actually writing code.  Ask me if you're not sure what model to specify.
+> Read ARCHITECTURE.md, including the Running locally section. Then create a set of specialized subagents for this codebase in .claude/agents/, one file each. At minimum create a front-end agent and a back-end agent. Add others only where this codebase genuinely has a distinct area, such as data access and migrations, tests, build and tooling, or infrastructure. For each agent write: a one-paragraph description of when to use it, the folders and layers it owns, the conventions and patterns it must follow with real examples from this repo, the exact commands it must run to verify its work, and the things it must not touch. Then create or update CLAUDE.md so it points at ARCHITECTURE.md and the agents, states the build, run, and test commands, and lists the two or three things about this repo that are most likely to trip up a new contributor. If this repo has a repetitive workflow worth packaging, such as running the test suite and interpreting failures, regenerating a client, or seeding data, also create a skill for it in .claude/skills/. Keep CLAUDE.md under 60 lines. Show me the list of files you created.  Also create any skills that may be of value to these agents or you as the orchestrator of the codebase.  Don't add things for the sake of adding them, but if things will genuinely add value, add them.  Specify higher level models (Opus) for "thinking" tasks like research and planning, lower level (sonnet) for "doing" things like actually writing code.  Ask me if you're not sure what model to specify.
 
 Open the agents. Delete anything generic that could describe any project. What's left is the context.
 
-### Step 4 - The retrospective habit (5 minutes)
+### Step 4 - What did we learn? Ask your robot (5 minutes)
 
 Before you close a session, ask what it learned. Do it now in the session from Step 3.
 
@@ -110,13 +112,13 @@ Switch to a powerful model for this. `/model` and pick Opus or the strongest mod
 >
 > When the plan is executed, you will act as the orchestrator and delegate the work to the subagents in .claude/agents/. Use Sonnet for implementation and test-writing tasks. Use Opus only for research or design decisions. Structure the plan so the work can be delegated that way.
 >
-> Write the finished plan to docs/plans/[feature-name].md. Put a handoff prompt at the top of that file: the exact message I should paste into a fresh session to execute this plan, including the orchestration and verification instructions above.
+> Write the finished plan to docs/plans/<feature>.md. Give me a handoff prompt when you are done to hand to a new agent with fresh context (it should point at the mardown file).  MAKE SURE the prompt is clear that the next agent is not done until it is able to validate the feature is working end to end.  If it needs additional tools or plugins to do that it should ask me to install them.
 
 Answer its questions honestly. Push back on the plan at least once. Read the handoff prompt it wrote. If it doesn't say "you are not done until it runs locally," add that yourself.
 
 ### Step 6 - Execute the plan (20 to 30 minutes)
 
-Clear your context. `/clear` or start a new session. Stay on the powerful model as orchestrator. Paste the handoff prompt from the top of your plan file. If you wrote your own, make sure it includes this:
+Clear your context. `/clear` or start a new session. Stay on the powerful model as orchestrator. Paste the handoff prompt from the top of your plan file. If you wrote your own, make sure it covers everything Prompt 7 below does.
 
 ### Prompt 7 - Execute
 
@@ -124,7 +126,7 @@ Clear your context. `/clear` or start a new session. Stay on the powerful model 
 
 This is the long wait. Watch how it delegates. Notice when a subagent's report and the orchestrator's summary disagree. When it says done, go look.  
 
-*NOTE:  I usually ask the orchestrator to show me and/or prove it here.  For example: If you've got the playwright or browser tools available (and it's a web app), It's a good habit to ask the agent to drive the running feature end to end walk through it together one step at a time.  You'll learn a lot this way and eventually can make it a rule never to tell you its done until it proves it end to end itself.*
+*NOTE:  I usually ask the orchestrator to show me and/or prove it here.  For example: If you've got the playwright or browser tools available (and it's a web app), It's a good habit to ask the agent to drive the running feature end to end walk through it together one step at a time.  You'll learn a lot this way and eventually can make it a rule never to tell you its done until it proves it end to end itself.* The original prompt should have made it ask you to do this, but agents often conveniently forget to actually validate their work.
 
 ### Step 7 - Show and tell
 
