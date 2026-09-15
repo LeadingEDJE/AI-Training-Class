@@ -25,7 +25,8 @@ Every prompt below is a starting point. Edit the bracketed parts. Paste the rest
 
    If you're on a fallback repo, keep the branch local. You don't have push rights to the workshop repo. Fork it first if you want to keep your work.
 
-4. Fallback prerequisites: the .NET 8 SDK for eShopOnWeb, or Node.js 22 for hexo. Check with `dotnet --list-sdks` or `node --version`. Per-platform install commands are in each repo's `RUNNING.md`.
+4. Pick a feature from [FEATURES.md](FEATURES.md) if you're on a fallback repo, or a real ticket from your own backlog. You'll use it twice.
+5. Fallback prerequisites: the .NET 8 SDK for eShopOnWeb, or Node.js 22 for hexo. Check with `dotnet --list-sdks` or `node --version`. Per-platform install commands are in each repo's `RUNNING.md`.
 
 ## Part 1 - The wrong way (10 minutes)
 
@@ -37,7 +38,7 @@ Before you paste the prompt, switch to **auto mode** so it doesn't stop to ask p
 
 ### Prompt 1 - Just build it
 
-> Add [the feature your instructor gave you, in one or two sentences]. Make assumptions and just get it done.
+> Add [your feature from FEATURES.md, in one or two sentences]. Make assumptions and just get it done.
 
 Set a 10-minute timer and let it run. Answer its questions if it asks any. When time is up, don't fix anything. Lets talk through the results and why some will be better than other.
 
@@ -192,7 +193,7 @@ Open `https://localhost:5001`. Admin area is at `/admin`. Log in with `demouser@
 
 Full setup and a click-through tour of the app: [eShopOnWeb/RUNNING.md](eShopOnWeb/RUNNING.md).
 
-Your instructor will hand you a feature at Part 1. Use the same feature in Step 5 so you can compare the two attempts.
+Pick a feature from [FEATURES.md](FEATURES.md). Use the same feature in Part 1 and Step 5 so you can compare the two attempts.
 
 ### hexo (Node)
 
@@ -222,7 +223,7 @@ Open `http://localhost:4111`. Port 4000 is hexo's default but is often taken by 
 
 Full setup and a tour: [hexo/RUNNING.md](hexo/RUNNING.md).
 
-Your instructor will hand you a feature at Part 1. Use the same feature in Step 5 so you can compare the two attempts.
+Pick a feature from [FEATURES.md](FEATURES.md). Use the same feature in Part 1 and Step 5 so you can compare the two attempts.
 
 ### LEAP (Compass) (.NET + React)
 
@@ -251,4 +252,4 @@ Open `http://localhost:5176/compass/`. You're auto-signed-in (DevBypass); `SAML=
 
 Full setup and a tour of the app: [leap/RUNNING.md](leap/RUNNING.md).
 
-Your instructor will hand you a feature at Part 1. Use the same feature in Step 5 so you can compare the two attempts.
+Pick a feature from [FEATURES.md](FEATURES.md). Use the same feature in Part 1 and Step 5 so you can compare the two attempts.
