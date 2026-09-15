@@ -96,15 +96,57 @@ Let an author run `hexo list post --tag <name>` to see only the posts carrying t
 
 ## LEAP (Compass)
 
+### Bulk upload of new EDJErs and clients (L)
+
+Let an administrator load a spreadsheet of new employees (EDJErs) or new clients instead of typing them in one at a time. Import every valid row, and hand back the rows that failed with the row number and the reason, so they can fix just those and re-upload.
+
+**Done looks like:** open `http://localhost:5176/compass/admin/edjers`, upload a file with several good rows, one duplicate email and one bad state code; the good rows appear in the list, the two bad ones come back named by row number, and `curl -s "http://localhost:5009/api/audit-logs/browse?entityType=CompassEmployee"` shows one entry per imported EDJEr.
+
+### Skills on EDJErs, filterable in the directory (L)
+
+Track the technical skills each EDJEr has. Give an administrator a screen to manage the skill list and assign skills to people, and let anyone filter the Team Directory to EDJErs who have a given skill.
+
+**Done looks like:** `make dev-all`, add a skill on the new admin screen, assign it to two EDJErs, then filter `http://localhost:5176/compass/team-directory` to that skill and see exactly those two.
+
+### Renew a SOW in one step (M)
+
+From an assignment's SOW list, let an Ops user renew an expiring statement of work — pick the new end date and have the follow-on SOW created for them, instead of retyping the whole form.
+
+**Done looks like:** open an EDJEr from `http://localhost:5176/compass/team-directory`, open an assignment with a SOW, renew it, and see two SOWs with adjacent non-overlapping ranges — plus a readable error, not a 500, when you deliberately pick an overlapping start.
+
+### Change history on the EDJEr admin screen (M)
+
+On an EDJEr's admin page, show who changed that person's record, when, and what changed — using the history the app already records.
+
+**Done looks like:** at `http://localhost:5176/compass/admin/edjers/1` change the person's state, reload, and see the change with actor and timestamp; then `curl -s -H "X-Dev-Roles: EDJEr,Compass Super Admin" "http://localhost:5009/api/audit-logs/entity?entityType=CompassEmployee&entityId=1"` and confirm a Compass-only admin still gets it.
+
+### "No current work" filter on the Client Directory (M)
+
+Let someone filter the Client Directory down to the clients that have nobody assigned right now, so sales can see who to call.
+
+**Done looks like:** open `http://localhost:5176/compass/client-directory`, turn the filter on and see only clients with no current assignment, brand-new never-assigned clients included; `curl "http://localhost:5009/api/compass/client-directory?..."` returns the same set with the same count.
+
+### Coach load report (M)
+
+Add a report showing each coach, the people who report to them, and how many of those are on an active assignment over a date range the user picks — with a CSV download like the other reports have.
+
+**Done looks like:** open `http://localhost:5176/compass/reports`, pick the new tab and a date range, see coach rows; click Export and get a CSV; `curl "http://localhost:5009/api/compass/reports/<new-route>?from=2025-01-01&to=2025-12-31"` returns the same rows.
+
+### Team Directory time zone filter (S)
+
+Let someone narrow the Team Directory to EDJErs in a particular time zone, combinable with the filters already there.
+
+**Done looks like:** at `http://localhost:5176/compass/team-directory`, pick a time zone and see the list narrow; `curl "http://localhost:5009/api/compass/team-directory?timezone=America/Chicago&state=OH"` returns the same people with both filters applied.
+
 ### Team Directory CSV Export (S)
 
-Add an **Export CSV** button to the Team Directory screen that downloads the currently filtered, currently sorted list of EDJErs as a CSV file, matching the export buttons already on the Reports screens.
+Add an Export CSV button to the Team Directory screen that downloads the currently filtered, currently sorted list of EDJErs as a CSV file, matching the export buttons already on the Reports screens.
 
 **Done looks like:** Open Team Directory, apply any filter, click Export CSV, and see a downloaded file whose rows match the on-screen filtered table.
 
 ### Admin Notification Log Viewer (S)
 
-A new **Notifications** screen under Admin lists recent coach notices (assignment-ending and SOW-extension emails) with recipient, status (Sent/Failed/Skipped), and timestamp, so an admin can see what actually went out without querying the database.
+A new Notifications screen under Admin lists recent coach notices (assignment-ending and SOW-extension emails) with recipient, status (Sent/Failed/Skipped), and timestamp, so an admin can see what actually went out without querying the database.
 
 **Done looks like:** Open Admin, click the new Notifications tab, and see the list of `compass.assignment-ended.*` / `compass.sow-extension-added.*` log rows with real statuses.
 
@@ -116,7 +158,7 @@ On the Admin EDJErs list, an admin can select multiple EDJErs via checkboxes and
 
 ### Client Contract Renewal Badge (M)
 
-The Client Directory and a client's own detail page show a **Renewal Due** badge when that client's MSA is approaching (or past) a renewal date an admin has set; clients with no renewal date set show nothing.
+The Client Directory and a client's own detail page show a Renewal Due badge when that client's MSA is approaching (or past) a renewal date an admin has set; clients with no renewal date set show nothing.
 
 **Done looks like:** Set a near-term renewal date on a client in Admin > Clients, then see that client's row flagged "Renewal Due" on both the Client Directory and its own client view page.
 
@@ -125,10 +167,4 @@ The Client Directory and a client's own detail page show a **Renewal Due** badge
 A user can save their current Team Directory search/filter/sort combination under a name and recall it later from a "My Views" dropdown, without re-entering every filter each time.
 
 **Done looks like:** Apply filters on Team Directory, save them as "My Active Clients", reload the page, pick that saved view from the dropdown, and see the same filters re-applied.
-
-### Inline Audit Trail Panel (L)
-
-An EDJEr's detail page and a client's detail page each gain a collapsible **History** panel showing a timeline of who changed what field, from what value to what value, and when — for that specific record.
-
-**Done looks like:** Edit an EDJEr's coach or a client's MSA date in Admin, then open that EDJEr's or client's detail page and see the change appear in the new History panel with old and new values.
 
