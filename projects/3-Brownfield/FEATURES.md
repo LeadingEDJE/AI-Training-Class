@@ -93,3 +93,42 @@ Let a writer embed a YouTube video in a post by typing `{% youtube <id> %}` in t
 Let an author run `hexo list post --tag <name>` to see only the posts carrying that tag, in the same table format the command uses today.
 
 **Done looks like:** from `example-site/`, run `npx hexo list post --tag <real-tag>` and see only matching posts, versus the full list without the flag.
+
+## LEAP (Compass)
+
+### Team Directory CSV Export (S)
+
+Add an **Export CSV** button to the Team Directory screen that downloads the currently filtered, currently sorted list of EDJErs as a CSV file, matching the export buttons already on the Reports screens.
+
+**Done looks like:** Open Team Directory, apply any filter, click Export CSV, and see a downloaded file whose rows match the on-screen filtered table.
+
+### Admin Notification Log Viewer (S)
+
+A new **Notifications** screen under Admin lists recent coach notices (assignment-ending and SOW-extension emails) with recipient, status (Sent/Failed/Skipped), and timestamp, so an admin can see what actually went out without querying the database.
+
+**Done looks like:** Open Admin, click the new Notifications tab, and see the list of `compass.assignment-ended.*` / `compass.sow-extension-added.*` log rows with real statuses.
+
+### Bulk Reassign Coach (M)
+
+On the Admin EDJErs list, an admin can select multiple EDJErs via checkboxes and reassign all of them to a different coach in one action, instead of opening each EDJEr's edit form individually.
+
+**Done looks like:** Select 2+ EDJErs in Admin > EDJErs, choose a new coach from a bulk action bar, save, then reopen each EDJEr's detail page and see the new coach listed.
+
+### Client Contract Renewal Badge (M)
+
+The Client Directory and a client's own detail page show a **Renewal Due** badge when that client's MSA is approaching (or past) a renewal date an admin has set; clients with no renewal date set show nothing.
+
+**Done looks like:** Set a near-term renewal date on a client in Admin > Clients, then see that client's row flagged "Renewal Due" on both the Client Directory and its own client view page.
+
+### Saved Team Directory Views (M)
+
+A user can save their current Team Directory search/filter/sort combination under a name and recall it later from a "My Views" dropdown, without re-entering every filter each time.
+
+**Done looks like:** Apply filters on Team Directory, save them as "My Active Clients", reload the page, pick that saved view from the dropdown, and see the same filters re-applied.
+
+### Inline Audit Trail Panel (L)
+
+An EDJEr's detail page and a client's detail page each gain a collapsible **History** panel showing a timeline of who changed what field, from what value to what value, and when — for that specific record.
+
+**Done looks like:** Edit an EDJEr's coach or a client's MSA date in Admin, then open that EDJEr's or client's detail page and see the change appear in the new History panel with old and new values.
+
