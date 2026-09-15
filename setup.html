@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
 <title>Connect Claude to LiteLLM - Leading EDJE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,12 +17,14 @@
    --------------------------------------------------------------------------- */
 
 :root {
+  color-scheme: light dark;
   --le-green:       #98C93D;
   --le-green-700:   #6D9924;
   --le-green-100:   #E6F2CA;
   --le-charcoal:    #4C4D4F;
   --le-charcoal-900:#1F2022;
-  --le-white:       #FFFFFF;
+  --le-bg:          #FFFFFF;
+  --le-surface:     #FFFFFF;
   --le-gray-50:     #F7F8F9;
   --le-gray-100:    #EEF0F2;
   --le-gray-200:    #DDE1E5;
@@ -40,6 +43,31 @@
   --radius-pill: 999px;
   --shadow-sm: 0 1px 2px rgba(28,30,33,.06), 0 1px 3px rgba(28,30,33,.04);
   --shadow-lg: 0 12px 24px rgba(28,30,33,.08), 0 4px 8px rgba(28,30,33,.05);
+  --logo-filter: none;
+  --code-border: transparent;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 220ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --le-green-700:   #A9D95C;
+    --le-green-100:   rgba(152, 201, 61, 0.16);
+    --le-charcoal:    #E8EAEC;
+    --le-bg:          #141618;
+    --le-surface:     #1D2023;
+    --le-gray-50:     #26292D;
+    --le-gray-100:    #2B2F34;
+    --le-gray-200:    #35393F;
+    --le-gray-400:    #878E96;
+    --le-gray-500:    #A6ADB5;
+    --color-warning-tint: rgba(242, 169, 59, 0.12);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+    --shadow-lg: 0 12px 24px rgba(0,0,0,.5), 0 4px 8px rgba(0,0,0,.4);
+    --logo-filter: invert(0.90) hue-rotate(180deg);
+    --code-border: var(--le-gray-200);
+  }
+}
   --shadow-focus: 0 0 0 3px rgba(92,149,255,.35);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur: 220ms;
@@ -53,7 +81,7 @@ body {
   font-size: 1rem;
   line-height: 1.55;
   color: var(--le-charcoal);
-  background: var(--le-white);
+  background: var(--le-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -67,7 +95,7 @@ body {
   gap: 0.75rem;
   height: var(--header-h);
   padding: 0 1rem;
-  background: var(--le-white);
+  background: var(--le-surface);
   border-bottom: 1px solid var(--le-gray-200);
   position: sticky;
   top: 0;
@@ -81,7 +109,7 @@ body {
   color: inherit;
   min-width: 0;
 }
-.app-brand-logo { height: 1.625rem; width: auto; flex: 0 0 auto; }
+.app-brand-logo { height: 1.625rem; width: auto; flex: 0 0 auto; filter: var(--logo-filter); }
 .app-brand-title {
   font-family: var(--font-display);
   font-weight: 700;
@@ -147,7 +175,7 @@ h2 {
 .section-note { color: var(--le-gray-500); margin: 0 0 22px; max-width: 62ch; }
 
 .card {
-  background: var(--le-white);
+  background: var(--le-surface);
   border: 1px solid var(--le-gray-200);
   border-radius: var(--radius-xl);
   padding: 22px 24px;
@@ -223,6 +251,7 @@ h2 {
 .code {
   position: relative;
   background: var(--le-charcoal-900);
+  border: 1px solid var(--code-border);
   border-radius: var(--radius-lg);
   margin: 0 0 12px;
   overflow: hidden;
@@ -298,7 +327,7 @@ code.inline {
 /* -- FAQ -- */
 .faq { display: flex; flex-direction: column; gap: 12px; }
 .faq details {
-  background: var(--le-white);
+  background: var(--le-surface);
   border: 1px solid var(--le-gray-200);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
