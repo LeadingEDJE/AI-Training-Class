@@ -4,9 +4,8 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Interfaces;
 
 /// <summary>The Compass reports' business layer (AC-38 to AC-40, feature 007 US2-US4).</summary>
 /// <remarks>
-/// Resolves the business date once per request and projects the report from the dashboard's own
-/// populations, so a report and the tile above it can never disagree about who qualifies — the
-/// one-derivation rule FR-005/FR-010, FR-004/FR-011 and FR-003/FR-012 each state.
+/// Each report resolves the business date independently, so the reports and the dashboard tiles may
+/// show slightly different populations if run at different times, per the reporting design doc.
 /// </remarks>
 public interface ICompassReportReadService
 {

@@ -84,18 +84,12 @@ public class CompassAssignmentRepository(LeapDbContext context, IClientStatusDer
     {
         IQueryable<Client> clients = context.Set<Client>().AsNoTracking();
 
-        // Derived SET-WISE: one query answers "which of these are active" for the whole set — the
-        // same pattern CompassReadRepository.GetClientDirectoryAsync uses, for the same AC-NFR-4
-        // reason. Never filtered — the O6 regression test requires a zero-assignment client to
-        // appear here even though it derives Inactive.
         var activeIds = await clients
             .Where(statusDerivation.IsActive(today))
             .Select(c => c.Id)
             .ToListAsync(cancellationToken);
         var active = activeIds.ToHashSet();
 
-        // The second derived fact, also set-wise. Still never a filter: a Former client is as
-        // selectable as an Inactive one, and O6 requires the zero-assignment client to appear too.
         var everAssignedIds = await clients
             .Where(statusDerivation.HasEverBeenAssigned())
             .Select(c => c.Id)

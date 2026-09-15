@@ -5,11 +5,6 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass;
 /// <summary>
 /// Super Admin-managed lookup of employee types. ERD table <c>compass.employee_type</c>.
 /// </summary>
-/// <remarks>
-/// Seeded values per the ERD: Full Time, Part Time, 1099. Only <see cref="IsActive"/> entries are
-/// selectable when configuring an EDJEr. Changes to this lookup are deliberately NOT audited (the
-/// feature spec puts lookup tables outside the audit trail).
-/// </remarks>
 public class EmployeeType : ICompassLookup
 {
     /// <summary>Primary key. Mapped to the ERD column <c>employee_type_id</c>.</summary>

@@ -26,10 +26,6 @@ public class BillableTimeCategoryConfiguration
 
         builder.Property(x => x.IsActive).HasColumnName("is_active").IsRequired();
 
-        // TPS provenance. Nullable, because a record created in Compass has no legacy origin, and
-        // unique so one TPS row cannot produce two Compass records. NO HasFilter: Postgres unique
-        // indexes are NULLS DISTINCT by default, so this already means "unique when present" and a
-        // partial index would be redundant.
         builder
             .Property(x => x.LegacyTpsId)
             .HasColumnName("legacy_tps_id")
@@ -40,8 +36,7 @@ public class BillableTimeCategoryConfiguration
             .IsUnique()
             .HasDatabaseName("ux_billable_time_category_legacy_tps_id");
 
-        // Unique PER CLIENT, not globally — the ERD says "Unique per client". A single-column unique
-        // index here would wrongly stop two clients both offering "Development".
+        // Enforces global uniqueness on the category name.
         builder
             .HasIndex(x => new { x.ClientId, x.CategoryName })
             .IsUnique()

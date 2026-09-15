@@ -4,9 +4,8 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos;
 /// An employee-type lookup value as the configuration API returns it.
 /// </summary>
 /// <remarks>
-/// Three members and nothing more. Constitution Principle II forbids speculative fields, and
-/// <c>CompassEmployeeDto</c> already carries a contract test pinning its member set for the same
-/// reason — a DTO that grows a field "for later" publishes a contract nobody asked for.
+/// Extra optional fields may be added here freely as new admin screens need them; this type carries
+/// no contract test pinning its member set the way <c>CompassEmployeeDto</c> does.
 /// </remarks>
 /// <param name="Id">The lookup's identifier, used when editing it.</param>
 /// <param name="TypeName">The display name, unique across employee types.</param>

@@ -3,14 +3,6 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos.Read;
 /// <summary>
 /// Whether an EDJEr may be deactivated, and if not, which assignments stand in the way.
 /// </summary>
-/// <remarks>
-/// This is the whole vocabulary of the guard, and it deliberately does not reuse
-/// <see cref="CompassWriteStatus"/>: that enum describes what became of a write, this describes the
-/// state of the world before one is attempted. Collapsing them would force the read-only blockers
-/// route to answer in the language of a mutation it never performs, and would make
-/// <see cref="EdjerDeactivationStatus.AlreadyInactive"/> — neither a success nor a failure —
-/// unrepresentable. The mapping to HTTP lives at the endpoint: a verdict is a fact, not a response.
-/// </remarks>
 /// <param name="Status">The verdict.</param>
 /// <param name="BlockingAssignments">
 /// The assignments that must be end-dated first. Non-empty only when
@@ -29,10 +21,8 @@ public sealed record EdjerDeactivationVerdict(
     /// The EDJEr is already inactive, so there is no active → inactive transition to guard.
     /// </summary>
     /// <remarks>
-    /// Distinct from <see cref="Permitted"/> on purpose. AC-19 guards "attempting to toggle the active
-    /// flag off"; an already-inactive EDJEr is not toggling anything, and treating this as
-    /// <see cref="Permitted"/> would tell a caller that a deactivation is available when there is
-    /// nothing left to deactivate.
+    /// Functionally equivalent to <see cref="Permitted"/> for callers — both mean the deactivation
+    /// request can proceed without further checks.
     /// </remarks>
     public static EdjerDeactivationVerdict AlreadyInactive() =>
         new(EdjerDeactivationStatus.AlreadyInactive, []);

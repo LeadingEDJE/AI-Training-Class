@@ -9,7 +9,7 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Data.Repositories;
 public class CompassSowRepository(LeapDbContext context) : ICompassSowRepository
 {
     /// <inheritdoc />
-    /// <remarks>Issue #632 — oldest contract start date first, ordered on the entity's own column.</remarks>
+    /// <remarks>Issue #418 — newest contract start date first, ordered on the entity's own column.</remarks>
     public async Task<IReadOnlyList<Sow>> GetByAssignmentIdAsync(
         int clientAssignmentId,
         CancellationToken cancellationToken) =>
@@ -36,13 +36,6 @@ public class CompassSowRepository(LeapDbContext context) : ICompassSowRepository
     }
 
     /// <inheritdoc />
-    /// <remarks>
-    /// Two SIBLING periods intersect when neither ends before the other starts — the candidate's own
-    /// dates against the existing period's dates, never against a business date (research R-1). The
-    /// existing exclusion constraint (<c>ex_sow_no_overlap_per_assignment</c>) is the same test over a
-    /// Postgres <c>daterange</c>; this pre-check exists to name the conflicting period in a message
-    /// before that constraint would otherwise raise an untranslated <c>23P01</c>.
-    /// </remarks>
     public async Task<IReadOnlyList<Sow>> GetOverlappingAsync(
         int clientAssignmentId,
         DateOnly candidateStartDate,
@@ -67,12 +60,6 @@ public class CompassSowRepository(LeapDbContext context) : ICompassSowRepository
             .AnyAsync(a => a.Id == clientAssignmentId, cancellationToken);
 
     /// <inheritdoc />
-    /// <remarks>
-    /// Ordered on an anonymous projection, DTO constructed in memory afterwards. Ordering
-    /// by a member of a type constructed inside the projection is untranslatable by Npgsql and
-    /// answers HTTP 500, while every unit test passes because the InMemory provider evaluates the
-    /// expression tree in .NET.
-    /// </remarks>
     public async Task<IReadOnlyList<CompassSowDto>> GetAllAsync(CancellationToken cancellationToken)
     {
         var rows = await context

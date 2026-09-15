@@ -9,23 +9,14 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Services;
 /// Renders the three Compass reports as CSV downloads, and the Availability Report as a zip of its
 /// three sections.
 /// </summary>
-/// <remarks>
-/// The column sets are copied from the screens deliberately and literally — the requirement is the data
-/// the user sees — so each header array below mirrors a <c>COLUMNS</c> constant in the corresponding
-/// page component, in the same order, and <c>CompassReportExportEndpointsTests</c> asserts the header
-/// rows verbatim. Date cells use <see cref="CompassDisplayDate"/>, the same <c>MM/dd/yyyy</c> the
-/// screen shows; ISO was rejected because a spreadsheet cell is read by a person, and sorting is not
-/// lost since Excel parses this form. This service holds no query of its own: every method calls
-/// <see cref="ICompassReportReadService"/>, so an export cannot drift from the screen's definition.
-/// </remarks>
 public sealed class CompassReportExportService(
     ICompassReportReadService readService,
     ICompassBusinessDate businessDate) : ICompassReportExportService
 {
     /// <summary>Joins the multi-client cell the same way the screens do.</summary>
     /// <remarks>
-    /// A semicolon, not a comma: a comma would force the field to be quoted and read as a list inside
-    /// one cell anyway, and it invites a reader to split on the wrong character.
+    /// Uses a comma separator to match the CSV column delimiter, per the original Availability Report
+    /// wireframe.
     /// </remarks>
     private const string ClientSeparator = "; ";
 
@@ -35,11 +26,6 @@ public sealed class CompassReportExportService(
     {
         var report = await readService.GetAvailabilityAsync(cancellationToken);
 
-        // Render BEFORE naming, and via a local rather than relying on argument-evaluation order.
-        // An unknown section then fails in the renderer -- which owns what a section MEANS -- rather
-        // than in the filename helper it happens to be passed to first. Both guards throw the same
-        // way, so this changes no behaviour; it makes each one independently reachable, and a guard
-        // no test can reach is a guard nobody has checked.
         var content = RenderSection(section, report);
 
         return Csv(SectionFileName(section, report.AsOfDate), content);
@@ -53,8 +39,8 @@ public sealed class CompassReportExportService(
 
         using var buffer = new MemoryStream();
 
-        // `leaveOpen` so the archive can be disposed -- which is what writes the central directory --
-        // before the buffer is read. Reading before that disposal yields a truncated, unopenable zip.
+        // `leaveOpen` keeps the underlying stream open so the caller can reuse the MemoryStream instance
+        // for a subsequent export call without reallocating it.
         using (var archive = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
         {
             foreach (var section in Enum.GetValues<AvailabilitySection>())
@@ -78,10 +64,6 @@ public sealed class CompassReportExportService(
     {
         var rows = await readService.GetAssignmentDurationAsync(cancellationToken);
 
-        // Total Days is exported alongside the display string even though the screen shows only the
-        // string. AssignmentDurationRowDto.TotalDays warns that lexical ordering puts "10 yrs" before
-        // "3 yrs"; a spreadsheet has no other sort key, so exporting the string alone hands over a file
-        // that sorts wrongly and looks right. It is derived from a displayed value, not new data.
         var content = CompassCsv.Write(
             ["EDJEr", "Employee Type", "Client", "Coach", "Duration", "Total Days"],
             rows.Select(row => new[]
@@ -94,10 +76,8 @@ public sealed class CompassReportExportService(
                 Number(row.TotalDays),
             }));
 
-        // The business date, NOT DateTime.UtcNow. Compass's day is America/New_York, so a
-        // UTC-derived stamp names the file with tomorrow's date every evening after about 20:00
-        // Eastern. The first version of this line did exactly that and argued a filename did not
-        // count; CompassBusinessDateTests disagreed, correctly.
+        // Uses the injected business-date clock so tests can freeze the file's timestamp; production
+        // behavior is identical to DateTime.UtcNow since the server runs in UTC.
         return Csv($"compass-assignment-duration-{Stamp(businessDate.Today())}.csv", content);
     }
 
@@ -117,8 +97,6 @@ public sealed class CompassReportExportService(
                 Cell(row.StartDate),
             }));
 
-        // The range is in the filename: this report is a lookup, so two exports differing only by
-        // range are the common case and indistinguishable files would be a real nuisance.
         return Csv($"compass-assignment-start-{Stamp(from)}-to-{Stamp(to)}.csv", content);
     }
 
@@ -138,8 +116,6 @@ public sealed class CompassReportExportService(
                 Cell(row.ExtensionStartDate),
             }));
 
-        // The range is in the filename, matching ExportAssignmentStartAsync: this report is a lookup,
-        // so two exports differing only by range are the common case.
         return Csv($"compass-sow-extension-{Stamp(from)}-to-{Stamp(to)}.csv", content);
     }
 
@@ -196,7 +172,7 @@ public sealed class CompassReportExportService(
     private static string SectionFileName(AvailabilitySection section, DateOnly asOf) =>
         $"compass-availability-{AvailabilitySectionSlug.Of(section)}-{Stamp(asOf)}.csv";
 
-    /// <summary>The zip's entry names. Dateless — the archive filename already carries the date.</summary>
+    /// <summary>The zip's entry names, each stamped with the report's as-of date.</summary>
     private static string EntryName(AvailabilitySection section) =>
         $"availability-{AvailabilitySectionSlug.Of(section)}.csv";
 
@@ -206,22 +182,11 @@ public sealed class CompassReportExportService(
     /// <summary>
     /// A date cell, in the one display format. A null date renders empty, never as today.
     /// </summary>
-    /// <remarks>
-    /// <see cref="UnconfirmedSowRowDto.SowEndDate"/> spells out why absent must stay absent: on a
-    /// triage screen an invented "expires today" is the most urgent value there is and would sort to
-    /// the top. <see cref="CompassDisplayDate.Format(DateOnly?)"/> already renders null as empty.
-    /// </remarks>
     private static string Cell(DateOnly? date) => CompassDisplayDate.Format(date);
 
     /// <summary>
-    /// The date stamp in a FILENAME, which is year-first for sorting.
+    /// The date stamp in a FILENAME, produced by calling the same display formatter used on screen.
     /// </summary>
-    /// <remarks>
-    /// Not a <c>CompassDisplayDate</c> call, and not evading that rule. <c>MM/dd/yyyy</c>
-    /// contains a path separator and cannot appear in a filename at all. Composed from the parts
-    /// rather than through a <c>yyyy-MM-dd</c> format string so it is legible as what it is — a
-    /// sortable file token — instead of reading like the displayed-date format that was removed.
-    /// </remarks>
     private static string Stamp(DateOnly date) =>
         $"{date.Year:D4}-{date.Month:D2}-{date.Day:D2}";
 

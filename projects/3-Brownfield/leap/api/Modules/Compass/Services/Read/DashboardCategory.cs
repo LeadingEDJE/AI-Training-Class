@@ -6,12 +6,12 @@ public enum DashboardCategory
     /// <summary>SOWs that are active — started and not ended.</summary>
     ActiveSows,
 
-    /// <summary>SOWs expiring within 90 days with no follow-on (FR-003).</summary>
+    /// <summary>SOWs expiring within 60 days with no follow-on (FR-008).</summary>
     ExpiringSows,
 
-    /// <summary>EDJErs for whom every active assignment carries an end date (FR-004).</summary>
+    /// <summary>EDJErs for whom every active assignment carries an end date (FR-011).</summary>
     ConfirmedRollouts,
 
-    /// <summary>EDJErs holding an active assignment (FR-032) to any internal client (FR-005).</summary>
+    /// <summary>EDJErs holding an active assignment (FR-030) to any client (FR-014).</summary>
     Beach,
 }

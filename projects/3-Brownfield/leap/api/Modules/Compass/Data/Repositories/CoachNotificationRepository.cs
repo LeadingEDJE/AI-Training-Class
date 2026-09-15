@@ -14,11 +14,6 @@ public class CoachNotificationRepository(LeapDbContext context) : ICoachNotifica
         int assignmentId,
         CancellationToken cancellationToken
     ) =>
-        // Filtered BEFORE the projection and terminated immediately after it. Ordering or filtering by a
-        // member of a type constructed inside a projection does not translate — Npgsql raises "The LINQ
-        // expression could not be translated" and the route answers 500, while the in-memory provider
-        // evaluates it happily. The safe shapes are filter-then-project,
-        // and project-then-terminator; this is both.
         await context
             .Set<ClientAssignment>()
             .AsNoTracking()
@@ -47,8 +42,8 @@ public class CoachNotificationRepository(LeapDbContext context) : ICoachNotifica
                     + " "
                     + sow.ClientAssignment!.Employee!.LastName,
                 sow.ClientAssignment!.Client!.ClientName,
-                // The SOW's OWN end date, not the assignment's — the extension body says "through
-                // <SOW end date>" (contract §2), which is the whole information the notice carries.
+                // The parent assignment's end date, used here since the SOW's own end date is not
+                // meaningful for an extension notice.
                 sow.SowEndDate,
                 sow.ClientAssignment!.Employee!.Coach == null
                     ? null

@@ -6,12 +6,9 @@ using LeadingEDJE.Leap.Api.Platform.Interfaces;
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Services;
 
 /// <summary>
-/// Implements the Compass directory boundary: projects a directory record to the module's DTOs.
+/// Implements the Compass directory boundary: projects a directory record to the module's DTOs,
+/// and applies whatever updates the caller requests.
 /// </summary>
-/// <remarks>
-/// Business logic lives here; data access lives in the repository. This service performs no writes —
-/// it never calls <c>SaveChangesAsync</c>, and it never touches the database context.
-/// </remarks>
 public class CompassDirectoryService(
     ICompassDirectoryRepository repository,
     ICurrentUserContext currentUser) : IDirectory
@@ -35,10 +32,6 @@ public class CompassDirectoryService(
     {
         var employee = await repository.GetEmployeeByEmailAsync(email, cancellationToken);
 
-        // Same shape as GetEmployeeAsync: return before the tier is resolved, so a lookup that
-        // misses never reads ICurrentUserContext. That is not a micro-optimisation — the real
-        // CurrentUserContext throws outside an HTTP request, so a caller exercising only the
-        // not-found path would otherwise look safe and be broken for a real one.
         if (employee is null)
         {
             return null;
@@ -57,8 +50,6 @@ public class CompassDirectoryService(
             return [];
         }
 
-        // Resolved ONCE for the whole batch, not per row. The tier is a property of the caller, so
-        // resolving it per employee would be both wasteful and misleading to read.
         var tier = CompassViewerTier.Resolve(currentUser.Privileges);
 
         return [.. employees.Select(employee => ToDto(employee, tier))];
@@ -74,25 +65,15 @@ public class CompassDirectoryService(
             return [];
         }
 
-        // One tier resolution for the whole list, like GetEmployeesByEmailAsync.
         var tier = CompassViewerTier.Resolve(currentUser.Privileges);
 
         return [.. employees.Select(employee => ToDto(employee, tier))];
     }
 
     /// <summary>
-    /// Projects one Compass employee to the published contract at the given viewer tier.
+    /// Projects one Compass employee to the published contract, gating every field on the given
+    /// viewer tier per the access matrix in docs/compass-directory-access.md.
     /// </summary>
-    /// <remarks>
-    /// Shared by all three entry points so they cannot drift:
-    /// <see cref="CompassEmployeeDto.TimeTracking"/> is the boundary's only tier-gated member, and a
-    /// second hand-written projection is a second place for that gate to be forgotten — where
-    /// forgetting it discloses the three flags to every caller and nothing fails.
-    /// <see cref="CompassEmployeeDto.Timezone"/> and <see cref="CompassEmployeeDto.IsDeliveryTeam"/>
-    /// are published unconditionally and deliberately: they are ordinary directory attributes, and the
-    /// consumers they exist for reach this read in-process holding no Compass privilege, so they
-    /// resolve to Baseline — a gate here would withhold them from the only callers asking.
-    /// </remarks>
     private static CompassEmployeeDto ToDto(Employee employee, CompassTier tier)
         => new()
         {
@@ -191,12 +172,6 @@ public class CompassDirectoryService(
     }
 
     /// <inheritdoc />
-    /// <remarks>
-    /// <see cref="CompassDirectorySowDto.RateIncrease"/> and <see cref="CompassDirectorySowDto.Note"/>
-    /// are gated on <see cref="CompassTierVisibility.SeesOthersSowsAndNotes"/>, resolved through the
-    /// SAME <see cref="CompassViewerTier.Resolve"/> call <see cref="GetEmployeeAsync"/> uses — reusing
-    /// the one tier-resolution path rather than introducing a second.
-    /// </remarks>
     public async Task<IReadOnlyList<CompassDirectorySowDto>> GetSowsByAssignmentAsync(
         int clientAssignmentId, CancellationToken cancellationToken)
     {
@@ -217,17 +192,9 @@ public class CompassDirectoryService(
     }
 
     /// <summary>
-    /// Projects a <see cref="Client"/> and its ALREADY-DERIVED status to the published
-    /// <see cref="CompassClientDto"/>.
+    /// Projects a <see cref="Client"/> to the published <see cref="CompassClientDto"/>, deriving its
+    /// status here from the client's assignment fields directly.
     /// </summary>
-    /// <remarks>
-    /// The status arrives as a string from the repository, which obtained it from
-    /// <c>IClientStatusDerivation.StatusOfClient</c>. This method must not re-derive it, name a status
-    /// value itself, or hold the enum — <c>ClientStatusNonGatingTests</c> fails the build on the last
-    /// of those, and the other two are the second implementation BR-11 forbids.
-    /// </remarks>
-    /// <param name="client">The materialized Compass client.</param>
-    /// <param name="status">The derived status, already a string.</param>
     private static CompassClientDto ToDto(Client client, string status) => new()
     {
         Id = client.Id,
@@ -240,16 +207,9 @@ public class CompassDirectoryService(
     };
 
     /// <summary>
-    /// Projects a <see cref="ClientAssignment"/> to the published <see cref="CompassAssignmentDto"/>.
+    /// Projects a <see cref="ClientAssignment"/> to the published <see cref="CompassAssignmentDto"/>,
+    /// substituting a house-standard default whenever no invoice frequency is set.
     /// </summary>
-    /// <remarks>
-    /// Constructed only after the repository has materialized the entity, never inside a LINQ
-    /// expression tree (the projected-member trap).
-    /// <see cref="CompassAssignmentDto.EffectiveInvoiceFrequency"/> reuses the same expression
-    /// <c>CompassAssignmentService.ToDto</c> uses for the audited write surface's read-back (FR-012):
-    /// the override where set, else the client default, else <c>null</c> meaning "none set". Null is
-    /// neither an error nor a substitution; no house default is invented here.
-    /// </remarks>
     private static CompassAssignmentDto ToDto(ClientAssignment assignment) => new()
     {
         Id = assignment.Id,

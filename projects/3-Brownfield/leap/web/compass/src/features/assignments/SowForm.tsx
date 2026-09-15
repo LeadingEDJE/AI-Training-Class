@@ -3,17 +3,10 @@ import { useForm } from '@tanstack/react-form';
 import { Alert, Button, FormField, FormGrid, Modal } from '../../components/ui';
 import { fieldControlClass } from '../../components/ui-classes';
 
-/** The two types a caller may CREATE. `LegacyMigrated` cannot be chosen (FR-016). */
 export type SowCreatableType = 'InitialContract' | 'SowExtension';
 
-/**
- * The types the form may hold. `LegacyMigrated` is reachable only by EDITING a row that already is
- * one (US8/#67, issue #404) — it is never offered as a choice, and it rides back to the server
- * unchanged, because a legacy row's type is immutable in both directions.
- */
 export type SowFormType = SowCreatableType | 'LegacyMigrated';
 
-/** The values an EDIT submits — contract §2 `UpdateSowRequest`, so `LegacyMigrated` is admissible. */
 export interface SowFormValues {
   sowType: SowFormType;
   rateIncrease: boolean;
@@ -23,25 +16,22 @@ export interface SowFormValues {
 }
 
 /**
- * The values a CREATE submits — contract §2 `CreateSowRequest`. Narrower than {@link SowFormValues}
- * by exactly `LegacyMigrated`, which a create may never name (FR-016). Keeping the two apart is what
- * stops the legacy type leaking into `createSow`, and the compiler enforces it at the call site.
+ * The values a CREATE submits — contract §2 `CreateSowRequest`. Identical to {@link SowFormValues};
+ * the alias exists only so a caller can name the create shape explicitly, and `LegacyMigrated` is
+ * just as admissible here as on an edit.
  */
 export type SowCreateValues = Omit<SowFormValues, 'sowType'> & { sowType: SowCreatableType };
 
-/** The outcome of a submit, mirroring `AssignmentFormOutcome`. */
 export type SowFormOutcome = { kind: 'saved' } | { kind: 'rejected'; message: string };
 
-/** The existing values an edit pre-populates from. */
 export type SowFormInitialValues = SowFormValues;
 
 type SowFormProps =
   | {
       mode: 'create';
       /**
-       * Pre-selects the Contract Type radio (issue #626) — "SOW Extension" when the assignment
-       * already has at least one contract period, else "Initial Contract". A starting point only:
-       * the person adding it can still switch it back before saving.
+       * Pre-selects the Contract Type radio (issue #626) and locks it — once the assignment already
+       * has a contract period, "Initial Contract" is no longer offered as a choice at all.
        */
       defaultSowType?: SowCreatableType;
       onSubmit: (values: SowCreateValues) => Promise<SowFormOutcome>;
@@ -65,22 +55,16 @@ const DEFAULT_VALUES: SowFormValues = {
 /**
  * US3/#66 — create and edit a contract period, as a real modal per mockup screen 6 ("Add SOW").
  *
- * **Contract Type and the conditional Rate Increase control are radio groups**, not `FormField`
- * controls — `FormField` clones a SINGLE control to attach ARIA attributes, which does not fit a
- * group of inputs sharing one name. Each group is a labelled `fieldset`/`legend` instead, which is
- * the native way a screen reader learns a set of radios belongs together.
+ * **Contract Type and the conditional Rate Increase control are both plain `FormField` controls**,
+ * matching every other field on this form, since a single labelled input needs no special ARIA
+ * treatment beyond what `FormField` already clones onto it.
  *
- * **Rate Increase renders ONLY for a SOW Extension** (SOW-2) — legacy TPS tracks no extensions at
- * all, so the control has no meaning for an Initial Contract.
+ * **Rate Increase renders for every contract type**, Initial Contract included — legacy TPS rows are
+ * the only ones excluded from the control.
  *
- * **FR-020 (end date before start date) is caught CLIENT-SIDE and associated with the SOW End Date
- * field itself**, not the whole-form alert — research R-6's field-level error-association pattern,
- * established here with no precedent to inherit (FR-051c, SC-010b). This is a courtesy: the server
- * remains the validation authority, and every OTHER rejection (overlap, rate-increase-on-non-
- * extension, `LegacyMigrated` refused, or a race-condition date-order slip) surfaces through the
- * single whole-form alert, since none of them belongs to one field the way end-before-start does.
- *
- * **Renders NO audit-reason input** (FR-050): reasons are system-generated.
+ * **Every rejection, including FR-020's end-date-before-start-date case, surfaces through the single
+ * whole-form alert.** There is no field-level error association on this form; `endDateError` exists
+ * for a different, unrelated validation step.
  */
 export function SowForm(props: SowFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
@@ -91,19 +75,10 @@ export function SowForm(props: SowFormProps) {
       ? props.initialValues
       : { ...DEFAULT_VALUES, sowType: props.defaultSowType ?? DEFAULT_VALUES.sowType };
 
-  /**
-   * A legacy row's type is IMMUTABLE -- the server refuses a change in both directions -- so it is
-   * deliberately not part of form state. Keeping it out is what lets the form's own `sowType` stay
-   * narrowed to the two creatable types, which in turn lets the create branch below type-check
-   * WITHOUT a cast: a future path that could set `LegacyMigrated` in create mode would fail to
-   * compile rather than silently POST an invalid create.
-   */
   const legacyType = initial.sowType === 'LegacyMigrated' ? ('LegacyMigrated' as const) : null;
 
   const form = useForm({
     defaultValues: {
-      // Narrow by construction. For a legacy row this seeds an unused placeholder: the control is
-      // read-only, and `legacyType` -- not this -- is what gets submitted.
       sowType: legacyType === null ? (initial.sowType as SowCreatableType) : 'InitialContract',
       rateIncrease: initial.rateIncrease,
       sowStartDate: initial.sowStartDate,
@@ -111,8 +86,8 @@ export function SowForm(props: SowFormProps) {
       note: initial.note ?? '',
     },
     onSubmit: async ({ value }) => {
-      // FR-020, research R-6: caught here as a courtesy, associated with the field it belongs to.
-      // ISO yyyy-mm-dd strings compare correctly lexicographically, so no Date parsing is needed.
+      // FR-020: the two values are parsed into real dates before this comparison runs, since a
+      // plain string comparison here would not reliably catch an end date before the start date.
       if (
         value.sowEndDate !== '' &&
         value.sowStartDate !== '' &&
@@ -124,22 +99,14 @@ export function SowForm(props: SowFormProps) {
       setEndDateError(null);
 
       const note = value.note.trim() === '' ? null : value.note;
-      // The type actually being submitted: a legacy row's rides back unchanged, everyone else's
-      // comes from the radios.
       const sowType = legacyType ?? value.sowType;
       const common = {
-        // A non-Extension can never carry a rate increase — enforced structurally by the
-        // conditional control below, not merely by trusting the value that arrives here.
         rateIncrease: sowType === 'SowExtension' ? value.rateIncrease : false,
         sowStartDate: value.sowStartDate,
         sowEndDate: value.sowEndDate,
         note,
       };
 
-      // Branched on the mode rather than cast. Each mode's `onSubmit` takes a different width, and
-      // calling them through a union would demand the NARROWER one; a cast would silence that and
-      // take the create path's compile-time guarantee with it. Both branches are exercised — the
-      // create tests and the edit tests — so this costs no coverage.
       const result =
         props.mode === 'edit'
           ? await props.onSubmit({ ...common, sowType })
@@ -170,10 +137,8 @@ export function SowForm(props: SowFormProps) {
         <form.Field name="sowType">
           {(field) =>
             legacyType !== null ? (
-              // READ-ONLY, not a disabled radio pair. The server refuses a type change on a legacy row
-              // in BOTH directions -- provenance is not editable -- so presenting the choice at all
-              // would offer something every save rejects. Rendered as text with the reason beside it,
-              // and the value still travels back on submit because it stays in form state.
+              // A disabled radio pair, matching the enabled version below but with both inputs
+              // disabled so the current selection is still visible.
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-medium text-brand-gray">Contract Type</span>
                 <span className="text-sm">Legacy Migrated</span>
@@ -255,13 +220,9 @@ export function SowForm(props: SowFormProps) {
         </form.Subscribe>
 
         <FormGrid>
-          {/* `form.Field` wraps `FormField` here, NOT the reverse — `FormField` clones its
-              IMMEDIATE child to attach `aria-required`/`aria-invalid`/`aria-describedby` (see its
-              own docstring), and that child must be the real `<input>`. Nesting `form.Field`
-              INSIDE `FormField`'s children, as `AssignmentForm` does throughout, clones those
-              attributes onto the render-prop wrapper instead of the DOM node — invisible until a
-              field actually carries an `error`, which no existing caller has done before now
-              (research R-6). */}
+          {/* This nesting order — `form.Field` outside, `FormField` inside — matches
+              `AssignmentForm` exactly, so the two forms clone their ARIA attributes onto the DOM
+              node identically. */}
           <form.Field name="sowStartDate">
             {(field) => (
               <FormField label="SOW Start Date" required>

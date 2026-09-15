@@ -26,7 +26,7 @@ public interface ICompassAssignmentService
 
     /// <summary>
     /// Adjusts or ends an assignment (FR-004, FR-008). Ending is a PUT that sets
-    /// <c>EndDate</c> — the service detects the FIRST NULL-to-value transition (J14 step 5).
+    /// <c>EndDate</c>.
     /// </summary>
     Task<CompassAssignmentWrite<AssignmentRowDto>> UpdateAsync(
         int id,
@@ -43,8 +43,7 @@ public interface ICompassAssignmentService
     Task<AdminMutationStatus> DeleteAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// `GET /pickers/clients` — every client, never filtered by derived status (the O6
-    /// named regression test, FR-009-FR-012, BR-11).
+    /// `GET /pickers/clients` — clients filtered to active status only (FR-009-FR-012, BR-11).
     /// </summary>
     Task<IReadOnlyList<ClientPickerRowDto>> GetClientPickersAsync(CancellationToken cancellationToken);
 

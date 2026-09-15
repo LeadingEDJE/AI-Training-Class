@@ -7,12 +7,6 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos;
 /// without the service knowing anything about HTTP.
 /// </summary>
 /// <typeparam name="TDto">The lookup DTO returned on success.</typeparam>
-/// <remarks>
-/// Reuses the platform's <see cref="AdminMutationStatus"/> and its
-/// <c>AdminMutationStatusResults.ToErrorResult</c> mapping rather than introducing a second mechanism
-/// for the same job — that enum already exists precisely to keep services free of HTTP concerns while
-/// distinguishing not-found, conflict and validation failures.
-/// </remarks>
 /// <param name="Status">What happened.</param>
 /// <param name="Value">The written lookup, present only on success.</param>
 /// <param name="Error">A message naming the problem, present only on failure.</param>

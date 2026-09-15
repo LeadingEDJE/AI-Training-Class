@@ -6,15 +6,9 @@ using LeadingEDJE.Leap.Api.Platform.Services.Logging;
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Endpoints.Admin;
 
 /// <summary>
-/// Employee-type administration — <c>/api/compass/v1/admin/employee-types</c>.
+/// Employee-type administration — <c>/api/compass/v1/admin/employee-types</c>. Reads are open to any
+/// authenticated EDJEr; only the writes require the admin role.
 /// </summary>
-/// <remarks>
-/// There is deliberately no <c>DELETE</c>. A lookup is retired by clearing its active flag through
-/// <c>PUT</c>, because other records reference it by id and deactivation must leave them untouched
-/// (FR-007, Principle VIII). Authorization comes from the shared group
-/// (<see cref="CompassAdminRouteGroup"/>) and is never checked in-handler; reads are Super-Admin-scoped
-/// too, per FR-009.
-/// </remarks>
 public static class CompassAdminEmployeeTypeEndpoints
 {
     private const string Resource = "employee-types";
@@ -31,10 +25,6 @@ public static class CompassAdminEmployeeTypeEndpoints
         return group;
     }
 
-    /// <summary>
-    /// Every employee type, or only the selectable ones when <paramref name="activeOnly"/> is set — the
-    /// shape the EDJEr configuration form consumes (AC-25).
-    /// </summary>
     private static async Task<IResult> GetAll(
         ICompassLookupService lookups,
         CancellationToken cancellationToken,
@@ -86,11 +76,6 @@ public static class CompassAdminEmployeeTypeEndpoints
         return Results.Ok(result.Value);
     }
 
-    /// <summary>Records a refused write.</summary>
-    /// <remarks>
-    /// The name arrives in a request body, so it is untrusted and passes through
-    /// <see cref="LogSanitizer.Clean"/> before reaching the template.
-    /// </remarks>
     private static void LogRejection(
         ILoggerFactory loggerFactory,
         string operation,

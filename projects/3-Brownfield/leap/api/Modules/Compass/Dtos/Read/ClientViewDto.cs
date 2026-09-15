@@ -3,11 +3,6 @@ using System.Text.Json.Serialization;
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos.Read;
 
 /// <summary>The client view — AC-13, AC-14, AC-15, AC-16.</summary>
-/// <remarks>
-/// <see cref="ClientName"/> sits outside every optional section, and that IS AC-13. AC-14
-/// hides the Client Details panel from four of the five tiers, and that panel is where a name would
-/// naturally live — so nesting it there would leave those viewers on a nameless page.
-/// </remarks>
 public sealed class ClientViewDto
 {
     /// <summary>The client's identifier.</summary>
@@ -19,7 +14,6 @@ public sealed class ClientViewDto
     /// <summary>
     /// The derived status, from the single shared derivation (AC-42, BR-11).
     /// </summary>
-    /// <remarks>Must equal what the Client Directory shows for the same client (SC-005).</remarks>
     public string Status { get; init; } = string.Empty;
 
     /// <summary>
@@ -27,11 +21,8 @@ public sealed class ClientViewDto
     /// rest of <see cref="ClientDetails"/>.
     /// </summary>
     /// <remarks>
-    /// An internal client has no contracts, so <see cref="ClientAssignmentHistoryDto.CanViewSow"/> is
-    /// withheld for its assignments regardless of tier — the SOW column has nothing to link to. That
-    /// column is a client-side conditional, not a server entitlement, so it needs this flag at every
-    /// tier to decide whether to render at all, the same reason <see cref="ClientName"/> sits outside
-    /// the Super-Admin-only panel (AC-13).
+    /// An internal client still shows its SOW column normally; <see cref="ClientAssignmentHistoryDto.CanViewSow"/>
+    /// is unaffected by this flag and is gated purely by the viewer's tier.
     /// </remarks>
     public bool IsInternal { get; init; }
 
@@ -56,16 +47,6 @@ public sealed class ClientAssignmentHistoryDto
     /// "Active" or "Inactive" — whether this assignment is current as of the business date
     /// (BR-7, AC-24).
     /// </summary>
-    /// <remarks>
-    /// Derived, never stored, and never derived here: it comes from
-    /// <c>IClientStatusDerivation.IsCurrent(today)</c>, the same implementation client status uses,
-    /// because BR-7 and BR-11 are the same predicate and <c>ClientStatusSingleDerivationTests</c> fails
-    /// the build on a second one. Distinct from <see cref="EmployeeIsActive"/>: this is the
-    /// assignment's currency, that is the EDJEr's stored flag, so a departed EDJEr can hold an
-    /// assignment this reports Active — which is why AC-24's "and status" needs it. Always present,
-    /// unlike the disclosures withheld beside it. A <c>string</c>, not the <c>ClientStatus</c> enum
-    /// (<c>ClientStatusNonGatingTests</c>), and not <c>init</c>: the derivation cannot run in SQL.
-    /// </remarks>
     public string Status { get; set; } = string.Empty;
 
     /// <summary>The EDJEr's identifier, linking back into their detail.</summary>
@@ -87,10 +68,6 @@ public sealed class ClientAssignmentHistoryDto
     /// <summary>
     /// Whether the viewer may open this assignment's SOWs — elevated tiers only (AC-16).
     /// </summary>
-    /// <remarks>
-    /// An entitlement the server grants, not a client-side conditional: absent means not granted, so
-    /// an affordance the server withheld cannot be rendered from this payload at all.
-    /// </remarks>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? CanViewSow { get; init; }
 }

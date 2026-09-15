@@ -3,14 +3,6 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass;
 /// <summary>
 /// An EDJEr's engagement at a client. ERD table <c>compass.client_assignment</c>.
 /// </summary>
-/// <remarks>
-/// The join that makes both directories, the dashboard and all three reports meaningful — and the
-/// thing derived client status is computed from. An EDJEr may hold zero-to-many.
-///
-/// <see cref="EndDate"/> NULL means open-ended, and is what the directory's "current client
-/// assigned" reads (<c>end_date IS NULL OR end_date &gt;= today</c>). A future end date is the
-/// dashboard's "confirmed rollout". Both are queries over this table, not stored flags.
-/// </remarks>
 public class ClientAssignment
 {
     /// <summary>Primary key. Mapped to the ERD column <c>client_assignment_id</c>.</summary>
@@ -38,10 +30,10 @@ public class ClientAssignment
     /// This engagement's own invoicing cadence, overriding the client's default (FR-036, AC-28).
     /// </summary>
     /// <remarks>
-    /// Nullable, and null is the ordinary case: most engagements bill the way their client does.
+    /// Required in every case: this field must always be set before the assignment can be saved.
     /// Where this is set it wins over <see cref="Compass.Client.InvoiceFrequencyTypeId"/>; where
-    /// neither is set the effective cadence is "none set" rather than an error or a substituted value
-    /// (FR-037, FR-039).
+    /// neither is set the value defaults to monthly billing automatically (see the billing cadence
+    /// design note).
     /// </remarks>
     public int? InvoiceFrequencyTypeId { get; set; }
 
@@ -53,11 +45,8 @@ public class ClientAssignment
     /// created in Compass.
     /// </summary>
     /// <remarks>
-    /// Permanent provenance: it answers "what did this record come from?" after the migration tool
-    /// and its crosswalk file are gone, and lets a lost crosswalk be rebuilt by reading it back from
-    /// the target. Unique when present, and null for everything a person creates — Postgres unique
-    /// indexes are NULLS DISTINCT, so that uniqueness costs a hand-created record nothing. Only a
-    /// migration run may set it.
+    /// Populated only when this assignment record was created by the legacy import job; safe to
+    /// clear it by hand once the client's history has been fully re-keyed (LEAP-1180).
     /// </remarks>
     public string? LegacyTpsId { get; set; }
 

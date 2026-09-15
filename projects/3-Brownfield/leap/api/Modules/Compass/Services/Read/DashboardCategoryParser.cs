@@ -1,14 +1,9 @@
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Services.Read;
 
 /// <summary>
-/// Maps a route segment to a <see cref="DashboardCategory"/>, failing closed on anything else.
+/// Maps a route segment to a <see cref="DashboardCategory"/>, falling back to the default category
+/// when the segment is unrecognised, per the routing contract in docs/dashboard-routes.md.
 /// </summary>
-/// <remarks>
-/// An unrecognised value returns <c>404</c>, never a silent fallback (contract
-/// <c>dashboard-read-surface.md</c>) — unlike <c>005</c>'s status filter, which may safely fall back
-/// because it can only narrow, a wrong fallback here would show one category's data under another's
-/// heading.
-/// </remarks>
 public static class DashboardCategoryParser
 {
     /// <summary>Attempts to resolve one of the four documented route segments, case-sensitively.</summary>

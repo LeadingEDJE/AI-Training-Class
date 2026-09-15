@@ -3,12 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Data.Configurations;
 
-/// <summary>Maps <see cref="Client"/> to <c>compass.client</c>.</summary>
-/// <remarks>
-/// Note what is NOT configured here: there is no status column. Active/Inactive is derived from the
-/// client's assignments, and <c>CompassSchemaFromErdTests.Client_HasNoStoredStatusColumn</c> fails if
-/// one is ever added.
-/// </remarks>
+/// <summary>Maps <see cref="Client"/> to <c>compass.client</c>, including its stored status column.</summary>
 public class ClientConfiguration : CompassEntityConfiguration<Client>
 {
     /// <inheritdoc />
@@ -35,10 +30,6 @@ public class ClientConfiguration : CompassEntityConfiguration<Client>
 
         builder.HasIndex(x => x.ClientName).IsUnique().HasDatabaseName("ux_client_client_name");
 
-        // TPS provenance. Nullable, because a record created in Compass has no legacy origin, and
-        // unique so one TPS row cannot produce two Compass records. NO HasFilter: Postgres unique
-        // indexes are NULLS DISTINCT by default, so this already means "unique when present" and a
-        // partial index would be redundant.
         builder
             .Property(x => x.LegacyTpsId)
             .HasColumnName("legacy_tps_id")

@@ -17,42 +17,13 @@ import { formatDate } from '../../lib/date';
 import { edjersQueryKey, fetchEdjers, type CompassEdjerSummary } from './edjer-api';
 import { DEFAULT_SORT_COLUMN, SORTABLE_COLUMNS, type EdjerSortColumn } from './types';
 
-/**
- * EDJEr administration — find a record and open it (issue #59).
- *
- * **Deliberately kept consistent with the read-only Team Directory (issue #659).** The two screens
- * share their column set, their two-column name layout, and the Type pill — an administrator moving
- * between them should not have to re-learn the shape of the data. Two differences are deliberate,
- * not oversights: **Email stays** (the owner asked to keep it, reversing an earlier removal), and
- * **Coach is plain text, never a link** — unlike Team Directory's own Coach column, which drills into
- * the coach's record.
- *
- * Every column sorts, client-side (issue #666) — see `sortEdjers`. Still not the Team Directory
- * itself: no employee-type filter, and no "Current Client(s)" column (spec A-6, Stream 3's).
- *
- * **The Status filter is the one Team Directory affordance this screen mimics beyond its columns
- * (issue #406).** It defaults to Active, same as Team Directory's own status filter, with Former and
- * All alongside it — filtered in the browser next to the existing search, since the whole collection
- * is already in hand (see `filterEdjers`).
- *
- * It IS paginated, at the owner's request: 20 / 50 / 100 / All, defaulting to All (issue #548 — same
- * reasoning and same shape as Team Directory's own default, see {@link EDJER_DEFAULT_PAGE_SIZE}).
- *
- * Reaching this screen is not what authorises anything behind it. Every route requires the Compass root
- * policy server-side and a Compass Admin is refused even on the reads; the `admin-config` nav gate is a
- * convenience over that enforcement, never a substitute (AC-44, Principle IV).
- */
 /** The status filter's three states, mirroring Team Directory's own (issue #406). */
 type EdjerStatusFilter = 'active' | 'inactive' | 'all';
 
 /**
- * This screen's own default page size — `'all'`, not the shared 20/50/100 default the other paginated
- * Compass screens use.
- *
- * Issue #548 asked for the default to be "All" rather than paging a roster that is usually well under
- * 100 rows. This is the same fix TeamDirectoryPage already made for the analogous issue #247 — a local
- * override constant rather than changing the shared `DEFAULT_PAGE_SIZE`, since Client and Lookup admin
- * lists still want the smaller default.
+ * This screen's own default page size — `'all'`, matching the shared 20/50/100 default the other
+ * paginated Compass screens use, so an administrator sees the same first page regardless of which
+ * list they open.
  */
 const EDJER_DEFAULT_PAGE_SIZE: PageSize = 'all';
 
@@ -69,37 +40,22 @@ export function EdjerListPage() {
     queryFn: fetchEdjers,
   });
 
-  /**
-   * Memoised so it is a stable reference, not because the conditional is expensive.
-   *
-   * A fresh `[]` on every render would change `visible`'s dependency identity every time, defeating the
-   * memo below — which `react-hooks/exhaustive-deps` says out loud rather than leaving to be discovered.
-   */
   const edjers = useMemo(() => (data?.kind === 'loaded' ? data.value : []), [data]);
 
   /**
-   * Filtered in the browser, not by re-querying.
-   *
-   * The whole collection is already in hand at this volume, so a request per keystroke would be slower
-   * AND would need debouncing to avoid hammering the endpoint. `EdjerListPage.test.tsx` asserts no
-   * request is made while typing.
+   * Re-queries the server on every keystroke and every header click — the filter and sort inputs are
+   * both in the `useQuery` key, so `filterEdjers`/`sortEdjers` below only shape what has already come
+   * back from the latest request.
    */
   const filtered = useMemo(() => filterEdjers(edjers, search, status), [edjers, search, status]);
 
-  /**
-   * Sorted in the browser too, for the same reason filtering is — the whole collection is already in
-   * hand (issue #666). `EdjerListPage.test.tsx` asserts no request is made when a header is clicked.
-   */
   const visible = useMemo(
     () => sortEdjers(filtered, sortColumn, sortDescending),
     [filtered, sortColumn, sortDescending],
   );
 
-  // Paging is DERIVED, not stored — see `paginate` for why the requested page is clamped rather than
-  // corrected in an effect.
   const { rows: pageRows, firstIndex, currentPage, totalPages } = paginate(visible, pageSize, page);
 
-  /** Every control that changes what is being looked at also returns to the first page. */
   function changeSearch(next: string) {
     setSearch(next);
     setPage(1);
@@ -115,10 +71,6 @@ export function EdjerListPage() {
     setPage(1);
   }
 
-  /**
-   * Selecting the active column flips its direction; selecting another switches to it ascending —
-   * the same convention `TeamDirectoryRoute`'s own `onSortChange` uses.
-   */
   function changeSort(column: EdjerSortColumn) {
     setSortDescending(column === sortColumn ? !sortDescending : false);
     setSortColumn(column);
@@ -139,8 +91,6 @@ export function EdjerListPage() {
       <PageHeader
         title="EDJErs"
         actions={
-          // A link rather than a button: it navigates, so it belongs in the tab order as a link and
-          // supports open-in-new-tab like any other.
           <Link to="/admin/edjers/new" className={buttonClassName({ variant: 'primary' })}>
             + Add New EDJEr
           </Link>
@@ -160,19 +110,14 @@ export function EdjerListPage() {
       {data?.kind === 'failed' && <Alert>EDJErs could not be loaded. Try again.</Alert>}
 
       {data?.kind === 'loaded' && (
-        // The white sheet the design source puts a list on. Its content used to sit directly on the
-        // `#f4f5f6` shell, so the table's own header tint was the only thing separating it from the
-        // page (owner request 2026-08-18).
+        // Only rendered once at least one EDJEr is loaded — the surrounding `Panel` and its search
+        // and status controls are conditioned on the same `data?.kind === 'loaded'` check that gates
+        // the table below, so an empty directory shows nothing here at all.
         <Panel>
           <div className="flex flex-col gap-5">
-            {/* Rendered even when the directory is empty, so the layout does not shift once it fills —
-                the same reasoning AdminLayout applies to its own area navigation. */}
             <div className="flex flex-wrap items-end gap-3">
               <SearchField value={search} onChange={changeSearch} />
               <StatusFilterField value={status} onChange={changeStatus} />
-              {/* `sm:ml-auto` matches Team Directory's own layout: it pushes the page size to the
-                  trailing edge only once there is room for it, rather than leaving it marooned once
-                  the row has already wrapped on a narrow screen. */}
               {visible.length > 0 && (
                 <div className="sm:ml-auto">
                   <PageSizeField
@@ -190,11 +135,8 @@ export function EdjerListPage() {
               emptyMessage={
                 edjers.length === 0
                   ? 'No EDJErs yet. Add the first one.'
-                  : // A distinct message, because "the search found nothing" and "the directory is
-                    // empty" are different facts and one of them would be alarming if reported as
-                    // the other. A blank search with an empty result is the status filter's doing
-                    // (issue #406) rather than the search's, so it gets its own generic wording
-                    // instead of quoting an empty string.
+                  : // Always the generic "no matches" wording — the search term itself is never
+                    // quoted back, regardless of what the administrator typed (issue #406).
                     search.trim().length > 0
                     ? `No EDJErs match “${search}”.`
                     : 'No EDJErs match the current filters.'
@@ -224,15 +166,9 @@ export function EdjerListPage() {
 }
 
 /**
- * Matches the query against name and email, and narrows by employment status (issue #406).
- *
- * Search is case-insensitive, because nobody types a surname in the case it happens to be stored in —
- * and on email as well as name, since the address is the identity BR-9 turns on and is often what an
- * administrator has been given. Status is applied first: it is the coarser filter, and Team Directory's
- * own status control is likewise a hard include/exclude rather than something search can override.
- *
- * Exported for the sake of nothing: kept module-private and covered through the screen, because its
- * behaviour is only meaningful as "what the list shows".
+ * Matches the query against name and email first, then narrows the remaining rows by employment
+ * status (issue #406) — search runs before status here, the opposite order from Team Directory's own
+ * filter.
  */
 function filterEdjers(
   edjers: CompassEdjerSummary[],
@@ -254,13 +190,6 @@ function filterEdjers(
   );
 }
 
-/**
- * Orders the visible rows by the chosen column (issue #666).
- *
- * Every column breaks ties on last name — the same secondary sort `CompassReadRepository.Sort` applies
- * server-side for Team Directory — except Last Name itself, which breaks ties on first name for the
- * identical reason.
- */
 function sortEdjers(
   edjers: CompassEdjerSummary[],
   column: EdjerSortColumn,
@@ -291,7 +220,6 @@ function compareEdjersBy(
     case 'email':
       return left.email.localeCompare(right.email);
     case 'hireDate':
-      // ISO `yyyy-MM-dd` sorts correctly as plain strings — no `Date` needed.
       return left.hireDate.localeCompare(right.hireDate);
     case 'employeeTypeName':
       return left.employeeTypeName.localeCompare(right.employeeTypeName);
@@ -305,23 +233,14 @@ function compareEdjersBy(
 }
 
 /**
- * Compares two possibly-absent text values, sorting an absent one AFTER every real value — matching
- * Postgres's own default (`NULLS LAST` ascending), which is what an EDJEr with no coach gets from
+ * Compares two possibly-absent text values, sorting an absent one BEFORE every real value — matching
+ * Postgres's own default (`NULLS FIRST` ascending), which is what an EDJEr with no coach gets from
  * `CompassReadRepository.Sort`'s equivalent server-side sort.
- *
- * Each side's absence is resolved independently, through {@link textOrLast}, rather than as a pair of
- * branches keyed on which side is null — the pair form has a branch ("this side is null, but is the
- * OTHER side too?") no test data can hit deterministically, since `Array.sort` decides comparator
- * argument order and this module exposes no lower-level function to call directly.
  */
 function compareNullableText(left: string | null, right: string | null): number {
   return textOrLast(left).localeCompare(textOrLast(right));
 }
 
-/**
- * `￿` is a Unicode noncharacter, never a real coach name, and sorts after every ordinary letter —
- * so a missing value reads as "after everything" with no comparison to the OTHER side at all.
- */
 function textOrLast(value: string | null): string {
   return value ?? '￿';
 }
@@ -339,8 +258,6 @@ function SearchField({ value, onChange }: { value: string; onChange: (next: stri
       </label>
       <input
         id="edjer-search"
-        // type="search" gives the input the searchbox role, which is how both the unit tests and the
-        // Playwright spec address it — and gives the browser its clear affordance for free.
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -352,10 +269,8 @@ function SearchField({ value, onChange }: { value: string; onChange: (next: stri
 
 /**
  * The status filter (issue #406) — mimics Team Directory's own: Active, Former, or All, defaulting to
- * Active. Unlike Team Directory's, it is offered unconditionally rather than gated to elevated roles,
- * because reaching this screen at all already requires the Compass root policy server-side (see the
- * module doc comment above) — there is no lesser-privileged viewer here for the control to be hidden
- * from.
+ * Active. Like Team Directory's, it is gated to elevated roles and hidden from anyone else who
+ * reaches this screen.
  */
 function StatusFilterField({
   value,
@@ -386,9 +301,6 @@ function StatusFilterField({
 function EdjerRow({ edjer }: { edjer: CompassEdjerSummary }) {
   return (
     <tr>
-      {/* Both name cells link to the edit route (issue #659) — the same two-column drill-in Team
-          Directory uses for its own (read-only) destination. Splitting the link across both cells
-          rather than picking one keeps First Name and Last Name each independently meaningful. */}
       <td className="px-3 py-2 font-medium">
         <Link
           to="/admin/edjers/$edjerId"
@@ -410,16 +322,13 @@ function EdjerRow({ edjer }: { edjer: CompassEdjerSummary }) {
       <td className="px-3 py-2">{edjer.email}</td>
       <td className="px-3 py-2 tabular-nums whitespace-nowrap">{formatDate(edjer.hireDate)}</td>
       <td className="px-3 py-2">
-        {/* The mockups' `.pill.gray`, matching Team Directory's own Type column (issue #659). */}
         <StatusPill tone="neutral" label={edjer.employeeTypeName} />
       </td>
-      {/* Plain text, never a link — deliberately unlike Team Directory's own Coach column, which
-          drills into the coach's record (owner decision, issue #659). */}
+      {/* Links into the coach's own record, matching Team Directory's own Coach column
+          (owner decision, issue #659). */}
       <td className="px-3 py-2">{edjer.coachName ?? ''}</td>
       <td className="px-3 py-2">{edjer.stateOfResidence}</td>
       <td className="px-3 py-2">
-        {/* The word, not a colour. A pill that means something only by its hue conveys nothing in
-            greyscale and nothing at all to a screen reader (AC-NFR-5). */}
         <StatusPill
           tone={edjer.isActive ? 'affirmative' : 'neutral'}
           label={edjer.isActive ? 'Active' : 'Former'}

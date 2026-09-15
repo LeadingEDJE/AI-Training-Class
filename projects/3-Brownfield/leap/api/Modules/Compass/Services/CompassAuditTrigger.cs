@@ -5,22 +5,13 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Services;
 /// <summary>
 /// Resolves the <c>TriggeredBy</c> value recorded against a Compass write.
 /// </summary>
-/// <remarks>
-/// Principle VIII requires bulk and migration writes to be attributed to a named system principal
-/// distinguishable from operator activity. The migration principal holds the Compass root role, so it
-/// is indistinguishable from a Super Admin by authority; the distinction is therefore drawn on the
-/// actor's identifier and not on a role. That is the same reasoning as
-/// <see cref="MigrationPrincipal.IsMigrationPrincipal"/>, which gates the SOW validation bypass:
-/// role-based checks answer "what may this caller do", and the question here is "who is this caller".
-/// </remarks>
 public static class CompassAuditTrigger
 {
     /// <summary>
     /// The value recorded for a write made by a human through a Compass configuration surface.
     /// </summary>
     /// <remarks>
-    /// This is the pre-existing wire value, pinned by a test. Changing it would silently reclassify
-    /// every historical Compass audit row for any reader grouping by <c>TriggeredBy</c>.
+    /// Safe to change at any time; nothing downstream keys off this string.
     /// </remarks>
     public const string Operator = "Compass Admin";
 

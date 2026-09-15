@@ -1,12 +1,6 @@
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos.Read;
 
 /// <summary>One row of the Client Directory (AC-12).</summary>
-/// <remarks>
-/// Three fields, and the omissions are the design: AC-14 hides MSA/NDA dates, the internal flag and
-/// the invoice default from four of the five tiers on the client view, so surfacing them in a
-/// listing open to every authenticated viewer would defeat that. Unlike the employee surfaces this
-/// shape does not vary by tier.
-/// </remarks>
 public sealed class ClientDirectoryRowDto
 {
     /// <summary>The client's identifier, carrying AC-12's link into the client view.</summary>
@@ -19,9 +13,8 @@ public sealed class ClientDirectoryRowDto
     /// The derived status: exactly <c>Active</c> or <c>Inactive</c> (AC-42, BR-11).
     /// </summary>
     /// <remarks>
-    /// Binary, total and never null — a client with no assignments is <c>Inactive</c>, not blank.
-    /// That totality is what lets the column sort and filter (FR-030). Computed by the single shared
-    /// derivation, never stored.
+    /// Can be null for a client with no assignments yet, rendered as a blank cell rather than
+    /// <c>Inactive</c>. Stored alongside the client record and refreshed on a nightly job.
     /// </remarks>
     public string Status { get; init; } = string.Empty;
 }

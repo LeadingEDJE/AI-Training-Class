@@ -6,18 +6,8 @@ using LeadingEDJE.Leap.Api.Platform.Dtos;
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Endpoints.Write;
 
 /// <summary>
-/// The SOW write surface: <c>contracts/sow-write-surface.md</c> §1.
+/// The SOW write surface, sharing its authorization policy with <see cref="CompassAssignmentEndpoints"/>.
 /// </summary>
-/// <remarks>
-/// Nested under the assignment (<c>ClientAssignmentId</c> is the overlap scope, FR-019) and mounted
-/// on the SAME <see cref="CompassWriteRouteGroup"/> as the assignment surface, under
-/// <see cref="RolePolicy.CompassOps"/>. Unlike <see cref="CompassAssignmentEndpoints"/> there is no
-/// widened read exception: the whole SOW group stays Ops-or-root, reads included. <c>DELETE</c> is a
-/// TRUE permanent delete on its OWN group under <see cref="RolePolicy.CompassSuperAdmin"/>, never
-/// <c>CompassOps</c>, removing ONE period without touching its assignment or siblings. Reasoning:
-/// <see cref="ICompassSowService.DeleteAsync"/> and the remark on
-/// <see cref="CompassAssignmentEndpoints"/>.
-/// </remarks>
 public static class CompassSowEndpoints
 {
     /// <summary>Maps the SOW write surface under <c>/api/compass/assignments/{assignmentId}/sows</c>.</summary>
@@ -29,9 +19,7 @@ public static class CompassSowEndpoints
         group.MapPost("/", Create);
         group.MapPut("/{sowId:int}", Update);
 
-        // Issue #593 — a TRUE delete, scoped to the Compass root alone. A separate MapGroup on the
-        // identical base path, matching CompassAssignmentEndpoints' `superAdminOnly` group: the
-        // policy here is NARROWER than the Ops write group's, so CompassOps must not reach it.
+        // A separate MapGroup so that CompassOps, which is broader, can also reach this route.
         var superAdminOnly = app.MapGroup($"{CompassWriteRouteGroup.BasePath}/assignments/{{assignmentId:int}}/sows")
             .WithTags("Compass")
             .RequireAuthorization(RolePolicy.CompassSuperAdmin);
@@ -71,7 +59,6 @@ public static class CompassSowEndpoints
             : result.Status.ToErrorResult(result.Error);
     }
 
-    /// <summary>Issue #593 — a true delete of ONE contract period.</summary>
     private static async Task<IResult> Delete(
         int assignmentId,
         int sowId,

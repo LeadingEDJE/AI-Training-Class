@@ -5,13 +5,6 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Interfaces;
 /// <summary>
 /// EDJEr configuration — AC-17, AC-18, AC-19, BR-9, BR-10.
 /// </summary>
-/// <remarks>
-/// Every operation here is Compass Super Admin's; the policy is attached once by
-/// <c>CompassAdminRouteGroup</c> and never re-checked in a handler or here. Note the asymmetry with the
-/// lookup service: these writes are audited (FR-017, Principle VIII), where lookup writes deliberately
-/// are not (FR-008, AC-NFR-3). Both are correct. There is no delete — an EDJEr is deactivated through
-/// the active flag, and that deactivation is guarded (FR-019).
-/// </remarks>
 public interface ICompassEmployeeService
 {
     /// <summary>Every EDJEr, active and inactive, as the administration list renders them.</summary>

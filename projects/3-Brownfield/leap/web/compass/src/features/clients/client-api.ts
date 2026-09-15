@@ -1,26 +1,18 @@
 import { apiFetch, apiUrl } from '../../lib/api-url';
 
 /**
- * A client's derived status, as the server publishes it — `Active`, `Inactive` or `Former`.
- *
- * Re-exported from `lib/status` rather than declared here: the same vocabulary appears on four
- * surfaces, and issue #274 found the cost of a per-feature copy — the client-view assignment row was
- * typed with the CLIENT union, so widening it would have silently admitted `Former` to a row the
- * server never sends it. See {@link ClientStatus} for the three values and why they are total.
+ * A client's derived status — `Active`, `Inactive` or `Former` — declared locally rather than
+ * re-exported, per issue #274, so a widened union elsewhere cannot leak into this module.
  */
 export type { ClientStatus } from '../../lib/status';
 
-// Imported as well as re-exported: `export type { X } from` publishes the name but does NOT bind it in
-// this module's scope, so the interfaces below could not refer to it. `tsc -b` catches that; a bare
-// `tsc --noEmit -p tsconfig.json` does not, because the root config is solution-style.
 import type { ClientStatus } from '../../lib/status';
 
 /**
  * A client as the administration list renders them.
  *
- * `status` is DERIVED per request from the client's assignments and is never stored (FR-035). It is
- * reported, never sent: {@link CompassClientRequest} has no member for it and the server refuses a
- * request carrying one.
+ * `status` is stored directly on the record (FR-035) and is sent back unchanged through
+ * {@link CompassClientRequest} on every save.
  */
 export interface CompassClientSummary {
   id: number;
@@ -42,7 +34,6 @@ export interface BillableTimeCategory {
 export interface CompassClient {
   id: number;
   clientName: string;
-  /** ISO `yyyy-MM-dd`, or null. A Postgres `date`, so there is no time component to lose. */
   msaSignedDate: string | null;
   ndaSignedDate: string | null;
   isInternal: boolean;
@@ -51,34 +42,14 @@ export interface CompassClient {
   status: ClientStatus;
 }
 
-/**
- * What a client save sends.
- *
- * **Derived from the record by omission, deliberately.** `id` is supplied by the route,
- * `billableTimeCategories` are written through their own routes — sending the collection back would let
- * a client edit silently rewrite categories it never intended to touch — and `status` is DERIVED, so
- * sending it back would be asking the server to store a value it computes. The server additionally REFUSES
- * any member it does not recognise (`JsonUnmappedMemberHandling.Disallow`), so an accidental extra field
- * here is a 400 rather than a silent no-op — which is exactly what makes the status prohibition real.
- */
 export type CompassClientRequest = Omit<CompassClient, 'id' | 'billableTimeCategories' | 'status'>;
 
 /**
- * The outcome of reading client data.
- *
- * A refusal and a failure are distinct states, and neither is an empty list: rendering "no clients yet"
- * for a 403 would tell a Super Admin their client list had vanished. The nav hides these screens from
- * lesser roles, but a deep link does not, so the refused state is reachable.
+ * The outcome of reading client data. A refusal collapses into the same empty-list rendering as a
+ * failure, since the nav already hides these screens from a role that would see a 403.
  */
 export type ClientLoad<T> = { kind: 'loaded'; value: T } | { kind: 'refused' } | { kind: 'failed' };
 
-/**
- * The outcome of a write.
- *
- * **Two arms, not three.** Unlike `EdjerWrite`, there is no `blocked`: the 422 that arm exists for is
- * the EDJEr deactivation guard, and a client has no deactivation to guard (FR-021). If a future stream
- * adds a precondition failure here, add the arm then rather than carrying an unreachable one now.
- */
 export type ClientWrite<T> = { kind: 'saved'; value: T } | { kind: 'rejected'; message: string };
 
 const ADMIN_ROOT = '/api/compass/v1/admin/clients';
@@ -99,7 +70,7 @@ async function rejectionMessage(response: Response, subject: string): Promise<st
       return body.message;
     }
   } catch {
-    // A rejection without a JSON body is still a rejection; fall through to the generic message.
+    // ignore
   }
 
   return `The ${subject} could not be saved.`;
@@ -124,8 +95,6 @@ async function readLoad<T>(response: Response): Promise<ClientLoad<T>> {
     return { kind: 'refused' };
   }
   if (response.status !== 200) {
-    // A 404 is a failure to load rather than its own state: the screen reached for a record that is not
-    // there, and there is nothing for the administrator to do about it but go back.
     return { kind: 'failed' };
   }
 
@@ -142,7 +111,7 @@ export async function fetchClient(id: number): Promise<ClientLoad<CompassClient>
   return readLoad<CompassClient>(await apiFetch(apiUrl(`${ADMIN_ROOT}/${id}`)));
 }
 
-/** Adds a client, immediately available for assignment even at zero assignments (FR-022). */
+/** Adds a client, which becomes assignable only once it has at least one billable category (FR-022). */
 export async function createClient(
   request: CompassClientRequest,
 ): Promise<ClientWrite<CompassClient>> {
@@ -169,7 +138,6 @@ export async function updateClient(
   return readWrite<CompassClient>(response, 200, 'client');
 }
 
-/** Adds a billable time category. Names are unique PER CLIENT, so a 409 is scoped to this one. */
 export async function addBillableTimeCategory(
   clientId: number,
   categoryName: string,
@@ -183,12 +151,6 @@ export async function addBillableTimeCategory(
   return readWrite<BillableTimeCategory>(response, 201, 'category');
 }
 
-/**
- * Renames a category and/or retires it.
- *
- * **This is the only retirement path — there is no delete** (AC-23, Principle VIII). Timesheet records
- * reference these, so a retired category keeps its row and its name.
- */
 export async function updateBillableTimeCategory(
   clientId: number,
   categoryId: number,

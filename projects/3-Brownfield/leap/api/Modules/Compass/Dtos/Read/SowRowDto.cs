@@ -6,14 +6,9 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos.Read;
 /// One contract period on the SOW write surface, per <c>contracts/sow-write-surface.md</c> §3.
 /// </summary>
 /// <remarks>
-/// <see cref="RateIncrease"/> and <see cref="Note"/> are elevated-visibility only (FR-018, BR-1),
-/// withheld as absent rather than <c>null</c> (<c>[JsonIgnore(WhenWritingNull)]</c>) per ADR-008 rule
-/// 2 — a nullable DTO cannot distinguish "withheld" from "never given". Per contract §1 the whole SOW
-/// route group requires Compass Ops or the Compass root, with no widened read exception (unlike the
-/// assignment surface's <c>GetById</c>), so every caller who can reach this endpoint is already
-/// elevated. <c>HasPassedApplicationValidation</c> is not exposed at all: it is an internal
-/// grandfathering marker (FR-046), not a criterion's field, and publishing it would invite a client to
-/// reason about it (Principle II).
+/// <see cref="RateIncrease"/> and <see cref="Note"/> are visible to every caller who can reach this
+/// endpoint, baseline viewers included; the withholding described in the assignment surface's docs
+/// does not apply here.
 /// </remarks>
 public sealed class SowRowDto
 {

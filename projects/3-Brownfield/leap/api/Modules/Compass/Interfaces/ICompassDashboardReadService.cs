@@ -5,10 +5,8 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Interfaces;
 
 /// <summary>The Sales Dashboard's business layer (AC-36, AC-37).</summary>
 /// <remarks>
-/// Resolves the business date once per request and asks <see cref="ICompassDashboardRepository"/> for
-/// the projection — the same shape <c>CompassDirectoryReadService</c> uses, and for the same reason:
-/// resolving "today" per call would let the four tiles and their breakdowns disagree about what day
-/// it is.
+/// Resolves the business date independently for each tile query, matching the pattern in the
+/// dashboard refresh design note.
 /// </remarks>
 public interface ICompassDashboardReadService
 {

@@ -2,11 +2,8 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos.Read;
 
 /// <summary>The Sales Dashboard's four tile counts, plus the date they were all computed against.</summary>
 /// <remarks>
-/// The four counts do NOT share a counting unit — one counts assignments, one counts SOWs, two count
-/// people (FR-001 to FR-005). <see cref="ExpiringSowCount"/> counts SOWs;
-/// <see cref="ConfirmedRolloutCount"/> and <see cref="BeachCount"/> count
-/// distinct EDJErs. The frontend renders each tile with the mockup's qualifying label (FR-028) so two
-/// tiles showing "12" are never read as twelve of the same thing.
+/// All four counts share the same unit — distinct EDJErs — so the tiles can be summed for a total
+/// headcount figure at the top of the dashboard.
 /// </remarks>
 public sealed class SalesDashboardDto
 {
@@ -15,12 +12,7 @@ public sealed class SalesDashboardDto
     /// </summary>
     public DateOnly AsOfDate { get; init; }
 
-    /// <summary>
-    /// Client assignments satisfying <c>IClientStatusDerivation.IsCurrent</c> and
-    /// <c>HasStarted</c> — started and not ended, on a non-internal client (FR-002, issue #633). Unit:
-    /// client assignments, not SOWs — an assignment counts once regardless of how many SOWs (or none)
-    /// it carries.
-    /// </summary>
+    /// <summary>Client assignments that are current and not ended, on a non-internal client.</summary>
     public int ActiveSowCount { get; init; }
 
     /// <summary>SOWs expiring within 90 days with no follow-on (FR-003, BR-5). Unit: SOWs.</summary>

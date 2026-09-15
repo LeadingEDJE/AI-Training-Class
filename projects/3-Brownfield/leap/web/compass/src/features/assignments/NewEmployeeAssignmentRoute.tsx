@@ -5,14 +5,6 @@ import { NewAssignmentPage } from './NewAssignmentPage';
 import { useInvoiceFrequencyOptions } from './useInvoiceFrequencyOptions';
 import { useCreateAssignment } from './useAssignments';
 
-/**
- * The "new assignment" screen reached from an EDJEr's own record
- * (`/compass/team-directory/$employeeId/assignments/new`, AC-1, AC-2). Reuses
- * `useEmployeeDetail` purely for the EDJEr's display name — no new endpoint needed for that.
- *
- * Serves two origins by the same path — the Team Directory record and the EDJEr admin form — so
- * `?from=admin` decides the trail, and travels onward to the assignment this creates.
- */
 export function NewEmployeeAssignmentRoute() {
   const { employeeId } = useParams({ from: '/team-directory/$employeeId/assignments/new' });
   const { from } = useSearch({ from: '/team-directory/$employeeId/assignments/new' });

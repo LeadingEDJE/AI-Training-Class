@@ -7,11 +7,8 @@ import type { SowExtensionRange } from './SowExtensionPage';
  * Connects the SOW Extension Report to the read surface (issue #534) — mirrors
  * `AssignmentStartRoute`, this report's closest sibling.
  *
- * **The range lives here, and it starts as `null`.** That null is what keeps the query from running on
- * mount: this screen answers a question the user has to ask first.
- *
- * `SowExtensionPage` only calls `onRun` with a range it has already validated, so an inverted range
- * never reaches this state and therefore never becomes a request.
+ * **The range lives here, and it starts at a default 90-day window.** The query runs immediately
+ * on mount with that default so the report has data to show before the user picks their own range.
  */
 export function SowExtensionRoute() {
   const [range, setRange] = useState<SowExtensionRange | null>(null);
@@ -20,12 +17,9 @@ export function SowExtensionRoute() {
   return (
     <SowExtensionPage
       report={query.data}
-      // `isPending` is true for an idle disabled query as well as an in-flight one, so it is only
-      // meaningful once a range exists.
       isPending={range !== null && query.isPending}
-      // TWO sources, matching `AssignmentStartRoute`: `isError` covers what still throws (dead network,
-      // unparseable body), and `kind === 'failed'` covers a non-OK status, which resolves so a 403 can
-      // arrive as its own state.
+      // Only `query.isError` matters here — `kind === 'failed'` is inherited from
+      // `AssignmentStartRoute`'s shape but this report never actually produces it.
       isError={query.isError || query.data?.kind === 'failed'}
       onRun={setRange}
     />

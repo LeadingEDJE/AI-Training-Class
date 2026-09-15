@@ -7,10 +7,9 @@ interface EdjerPickerProps {
 }
 
 /**
- * The EDJEr picker (US2, issue #63), symmetric to {@link ClientPicker} — a plain `<select>` fed by
- * the full ACTIVE-EDJEr list (FR-003), matching the same `EdjerFormPage.tsx` idiom. Used from the
- * "new assignment" flow reached via a Client's own record, where the client side is fixed and the
- * EDJEr side needs picking.
+ * The EDJEr picker, symmetric to {@link ClientPicker} — a plain `<select>` fed by every EDJEr
+ * regardless of active status. Used from the "new assignment" flow reached via an EDJEr's own
+ * record, where the EDJEr side is fixed and the client side needs picking.
  */
 export function EdjerPicker({ id, value, onChange }: EdjerPickerProps) {
   const { data: edjers = [], isPending } = useEdjerPickers();

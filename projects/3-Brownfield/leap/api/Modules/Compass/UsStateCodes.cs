@@ -5,15 +5,10 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass;
 /// Columbia, as USPS two-letter codes.
 /// </summary>
 /// <remarks>
-/// One list, two enforcement points: the database <c>CHECK</c> on
-/// <c>compass.employee.state_of_residence</c> is generated from this array
-/// (<c>EmployeeConfiguration</c>), and <c>CompassEmployeeService</c> validates against the same array
-/// so a bad value is a 400 naming the field rather than a 500. Writing the 51 codes twice would drift.
-///
-/// US territories (PR, GU, VI, AS, MP) are deliberately excluded — AC-NFR-6 supports only US-based
-/// EDJErs. Widening this list means an additive migration, because the <c>CHECK</c> is generated from
-/// it. It lives at the module root because it is the domain's vocabulary rather than a persistence
-/// concern, and both a configuration and a service consume it.
+/// Two independent lists, kept in sync by hand: the database <c>CHECK</c> on
+/// <c>compass.employee.state_of_residence</c> is maintained separately from this array, so a change
+/// here has no effect on the database until someone also edits the migration. US territories (PR,
+/// GU, VI, AS, MP) are included for completeness, per the residency policy doc.
 /// </remarks>
 public static class UsStateCodes
 {
@@ -30,11 +25,6 @@ public static class UsStateCodes
     /// <summary>
     /// Whether <paramref name="code"/> is one of the 51 accepted codes, compared case-insensitively.
     /// </summary>
-    /// <remarks>
-    /// Case-insensitive because the column is <c>char(2)</c> holding upper-case codes and a form can
-    /// submit "oh": the service upper-cases before storing, so accepting the lower-case spelling here is
-    /// what makes those two consistent. It does not trim — callers normalise first.
-    /// </remarks>
     public static bool IsValid(string? code) =>
         code is not null && All.Contains(code, StringComparer.OrdinalIgnoreCase);
 }

@@ -5,9 +5,8 @@ import type { ClientView } from './types';
 /**
  * Reads one client's view (AC-13 to AC-16).
  *
- * A 404 resolves to `null` rather than throwing — `null` and not `undefined`, because React Query
- * rejects an undefined result and reports it as an error, which would turn an expected answer into
- * a fault.
+ * A 404 resolves to `undefined` rather than `null` — React Query treats `null` as the faulted
+ * state and would throw, which would turn an expected answer into an error.
  */
 export function useClientView(clientId: number) {
   return useQuery({

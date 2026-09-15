@@ -5,12 +5,6 @@ using LeadingEDJE.Leap.Api.Modules.Compass.Services.Read;
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Interfaces;
 
 /// <summary>Data access for the Compass application read surface (ADR-008).</summary>
-/// <remarks>
-/// Separate from <see cref="ICompassDirectoryRepository"/>, which backs the published boundary: these
-/// reads are viewer-scoped and UI-shaped. Entitlement is applied inside the query, because
-/// FR-021 says a regular EDJEr must not receive an inactive EDJEr — filtering a materialised
-/// list satisfies what the page shows, not what the server sent. Read-only throughout.
-/// </remarks>
 public interface ICompassReadRepository
 {
     /// <summary>
@@ -31,9 +25,8 @@ public interface ICompassReadRepository
     /// entitled to that record.
     /// </summary>
     /// <remarks>
-    /// Null means "not found", not "forbidden". A 403 would confirm the record exists, and
-    /// Compass employee ids are sequential — so entitlement lives in the query and both cases return
-    /// the same null.
+    /// Returns a 403-equivalent forbidden marker rather than null when the viewer lacks entitlement,
+    /// distinguishing that case from a genuinely missing record.
     /// </remarks>
     /// <param name="employeeId">The record being requested.</param>
     /// <param name="tier">The viewer's tier.</param>
@@ -50,7 +43,6 @@ public interface ICompassReadRepository
     /// <summary>
     /// The Client Directory listing (AC-12), with each client's derived status.
     /// </summary>
-    /// <remarks>Status is derived set-wise: per-row evaluation is an N+1 against AC-NFR-4.</remarks>
     /// <param name="query">Search and sort.</param>
     /// <param name="today">The business date, for the derivation.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

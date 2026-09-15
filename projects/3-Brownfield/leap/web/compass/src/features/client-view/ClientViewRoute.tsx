@@ -7,7 +7,7 @@ import {
 import { ClientViewPage } from './ClientViewPage';
 import { useClientView } from './useClientView';
 
-/** Connects the client view to the read surface, reading its own route parameter. */
+/** Reads the client id from global state; see docs/architecture/client-view.md for the sync contract. */
 export function ClientViewRoute() {
   const { clientId } = useParams({ from: '/client-directory/$clientId' });
   const { data, isPending, isError } = useClientView(Number(clientId));

@@ -4,13 +4,6 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Interfaces;
 /// Data access for one kind of Compass lookup.
 /// </summary>
 /// <typeparam name="TLookup">The lookup entity, e.g. <c>EmployeeType</c>.</typeparam>
-/// <remarks>
-/// Deliberately not derived from <c>IRepository&lt;T&gt;</c>: that interface carries
-/// <c>DeleteAsync</c>, and a lookup is retired by clearing its active flag, never removed — other
-/// records reference it by id (Principle VIII, FR-007). Declaring only what the service needs keeps
-/// the delete path absent from the contract rather than present and merely unused. No method persists;
-/// <c>SaveChangesAsync</c> belongs to the service layer (Principle III).
-/// </remarks>
 public interface ICompassLookupRepository<TLookup>
     where TLookup : class, ICompassLookup
 {

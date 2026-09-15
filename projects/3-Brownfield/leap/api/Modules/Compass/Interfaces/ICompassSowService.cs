@@ -8,14 +8,6 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Interfaces;
 /// Recording and editing contract periods (SOWs) under a client assignment, on the Ops-or-Super-Admin
 /// application write surface (<c>contracts/sow-write-surface.md</c>).
 /// </summary>
-/// <remarks>
-/// Not to be confused with <see cref="ICompassSowMigrationService"/>. That one is create-and-read
-/// only, gated by the Compass root, and exists to let the TPS migration write and verify
-/// <see cref="SowType.LegacyMigrated"/> rows under the identity-gated bypass (Principle VIII). This
-/// one is the Ops-or-root day-to-day surface with the full FR-019/FR-020 validation and no bypass of
-/// any kind. The two stay separate on purpose — the bypass must not live in the surface reachable
-/// from a browser.
-/// </remarks>
 public interface ICompassSowService
 {
     /// <summary>Every contract period under one assignment (FR-014).</summary>

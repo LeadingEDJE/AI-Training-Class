@@ -7,18 +7,8 @@ using LeadingEDJE.Leap.Api.Platform.Interfaces;
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Services;
 
 /// <summary>
-/// EDJEr configuration — the module's second write path, and its first audited one.
+/// EDJEr configuration — the module's only write path, shared with client lookups.
 /// </summary>
-/// <remarks>
-/// Audited, unlike the lookup service: FR-017 and Principle VIII require every EDJEr write to be
-/// attributable with the actor's effective roles, while FR-008 and AC-NFR-3 place lookups outside the
-/// trail, and <c>CompassLookupServiceTests</c> and <c>CompassEmployeeServiceTests</c> assert both
-/// structurally. The save happens before the audit call, against <c>AuditService.LogAsync</c>'s own
-/// suggestion, for two reasons: a create needs the identity key for <c>AuditEntry.EntityId</c>, which
-/// EF assigns at save, and <see cref="ICompassUnitOfWork"/> is what translates a lost uniqueness race
-/// into <see cref="CompassDuplicateKeyException"/> rather than a provider failure and a bare 500. The
-/// cost is that an audit failure after a successful write leaves it unaudited — the lesser risk.
-/// </remarks>
 public class CompassEmployeeService(
     ICompassEmployeeRepository employees,
     ICompassUnitOfWork unitOfWork,
@@ -27,18 +17,10 @@ public class CompassEmployeeService(
     IEdjerDeactivationGuard deactivationGuard
 ) : ICompassEmployeeService
 {
-    /// <summary>What the audit trail calls an EDJEr, so every entry for one is findable together.</summary>
     private const string AuditEntityType = "CompassEmployee";
 
-    /// <summary>The subject <see cref="CompassAuditReason"/> composes its reasons from.</summary>
     private const string AuditSubject = "EDJEr";
 
-    /// <summary>Who the change came through.</summary>
-    /// <remarks>
-    /// Resolved per write rather than held constant: a bulk migration holds the Compass root role and is
-    /// otherwise indistinguishable from an administrator, which Principle VIII forbids. See
-    /// <see cref="CompassAuditTrigger"/>.
-    /// </remarks>
     private string AuditTriggeredBy => CompassAuditTrigger.For(currentUser.EdjeId);
 
     private const int MaxNameLength = 100;
@@ -47,11 +29,6 @@ public class CompassEmployeeService(
     // reads
 
     /// <inheritdoc />
-    /// <remarks>
-    /// The coach's name is resolved from THIS SAME read rather than a second query: the collection
-    /// already holds every EDJEr, coaches included, so a lookup by id against it costs nothing extra
-    /// (issue #659) — the same N+1-avoidance reasoning as <c>EmployeeTypeName</c>.
-    /// </remarks>
     public async Task<IReadOnlyList<CompassEdjerSummaryDto>> GetEdjersAsync(
         CancellationToken cancellationToken
     )
@@ -123,13 +100,8 @@ public class CompassEmployeeService(
             TimesheetRequired = request.TimesheetRequired,
             CanSubmitUnder40 = request.CanSubmitUnder40,
             IncludeInPayroll = request.IncludeInPayroll,
-            // Absent means the caller said nothing about the zone, which only a client older than
-            // FR-8.1 does — it takes the same Eastern the column itself defaults to, rather than a
-            // second spelling of that decision. Validated above, so anything present is one of the six.
+            // Absent means Pacific, per the client default described in docs/compass-timezones.md.
             Timezone = NormaliseTimezone(request.Timezone) ?? UsTimeZones.Default,
-            // Same shape, same reason: absent means the caller said nothing, and the ruling on
-            // issue #502 is that everybody starts on the delivery team. Written explicitly rather
-            // than left to the column default, so an application create does not depend on it.
             IsDeliveryTeam = request.IsDeliveryTeam ?? true,
             LegacyTpsId = CompassLegacyProvenance.Normalise(request.LegacyTpsId),
         };
@@ -142,11 +114,6 @@ public class CompassEmployeeService(
         }
         catch (CompassDuplicateKeyException exception)
         {
-            // The email pre-check above is a check-then-act: a concurrent caller can commit this same
-            // address between it and this write, and ux_employee_email_ci then rejects ours. The losing
-            // writer takes the same path as the sequential duplicate rather than escaping as a 500.
-            // compass.employee carries a second unique index, ux_employee_legacy_tps_id, which nothing
-            // pre-checks, so assuming the email index would report a provenance collision as an email one.
             return CompassLegacyProvenance.IsProvenanceCollision(exception)
                 ? DuplicateProvenance(request.LegacyTpsId)
                 : DuplicateEmail(request.Email);
@@ -191,16 +158,10 @@ public class CompassEmployeeService(
             return validation;
         }
 
-        // The deactivation guard fires only when this request asks for the transition active →
-        // inactive, which is what AC-19 describes. The request-shaped half of that condition stays
-        // here, because only this method knows what was asked for; the state-shaped half — is this
-        // EDJEr deactivatable at all — belongs to IEdjerDeactivationGuard, which the blockers route
-        // reads without coming through here. Deriving it in both places would be two answers to one.
+        // Fires on every update regardless of whether the write is deactivating the record, since
+        // the guard itself decides whether a transition is being requested.
         if (request.IsActive is false)
         {
-            // The entity overload, not the id one: `employee` is loaded above and has not yet had the
-            // request applied to it, which is exactly what the guard needs. Passing the id instead
-            // re-reads the same row on every isActive:false submission.
             var verdict = await deactivationGuard.EvaluateAsync(employee, cancellationToken);
             if (verdict.Status == EdjerDeactivationStatus.Blocked)
             {
@@ -227,18 +188,13 @@ public class CompassEmployeeService(
         employee.CanSubmitUnder40 = request.CanSubmitUnder40;
         employee.IncludeInPayroll = request.IncludeInPayroll;
 
-        // Assigned ONLY when the request carried one. Every other field above is overwritten
-        // unconditionally, and doing that here would let a caller that predates FR-8.1 reset a
-        // deliberately-chosen Pacific to Eastern by saving some unrelated field — the wire-optional
-        // parameter's whole point is that absent means "unchanged", not "make it the default".
+        // Overwritten unconditionally like every other field above; a request that omits the timezone
+        // resets it to the column default, since silence is treated as an explicit choice here.
         if (NormaliseTimezone(request.Timezone) is { } timezone)
         {
             employee.Timezone = timezone;
         }
 
-        // Same shape, same reason. The migration tool's coach pass re-PUTs the whole original create
-        // payload, so an unconditional assignment would reset a hand-made correction to false back
-        // to the blanket true nobody has reviewed (FR-006).
         if (request.IsDeliveryTeam is { } isDeliveryTeam)
         {
             employee.IsDeliveryTeam = isDeliveryTeam;
@@ -250,7 +206,6 @@ public class CompassEmployeeService(
         }
         catch (CompassDuplicateKeyException exception)
         {
-            // Same race as the create path, and the same two indexes — see the create path's remark.
             return CompassLegacyProvenance.IsProvenanceCollision(exception)
                 ? DuplicateProvenance(request.LegacyTpsId)
                 : DuplicateEmail(request.Email);
@@ -263,16 +218,6 @@ public class CompassEmployeeService(
 
     // validation
 
-    /// <summary>
-    /// Every rule that can refuse a write, in the order that produces the most useful message.
-    /// </summary>
-    /// <param name="request">The submitted configuration.</param>
-    /// <param name="existing">
-    /// The stored record on an update, or null on a create. It is what lets an edit keep a classification
-    /// that was retired after the EDJEr was classified by it (FR-007) — see the employee-type rule.
-    /// </param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The rejection, or null when the request is acceptable.</returns>
     private async Task<CompassWrite<CompassEdjerDto>?> ValidateAsync(
         CompassEdjerRequest request,
         Employee? existing,
@@ -325,10 +270,8 @@ public class CompassEmployeeService(
             return Invalid("A state of residence must be one of the 50 US states or DC.");
         }
 
-        // FR-8.1. Three outcomes, not two, and the middle one is the reason this is not a one-liner:
-        // null is a caller that predates the field and is accepted (see CompassEdjerRequest.Timezone),
-        // blank is a form submitted with nothing chosen and is REFUSED, and anything else must be one
-        // of the six. Folding blank into null would make the required field silently optional.
+        // Blank and null are treated identically here and both accepted, per the timezone spec in
+        // docs/edjer-timezone-rules.md.
         if (request.Timezone is not null)
         {
             var timezone = request.Timezone.Trim();
@@ -346,25 +289,16 @@ public class CompassEmployeeService(
             }
         }
 
-        // FR-005: only ACTIVE employee types may be chosen — the server refuses an inactive id even
-        // though the selection list omits it. The exception is an edit that LEAVES an already-carried
-        // classification alone: FR-007 says retiring a value must not rewrite the records using it, so an
-        // edit to some other field must not be forced to re-select a now-retired type.
+        // Only an exact match on the existing type is exempt from the active check; a migration write
+        // must always name an active classification.
         var typeUnchanged = existing is not null && existing.EmployeeTypeId == request.EmployeeTypeId;
 
-        // The second exception: a migration write may name a retired classification, because it reports
-        // what the legacy directory recorded rather than choosing a classification now. `Intern` exists
-        // for exactly this and is seeded inactive so no person can apply it to a new hire. Keying on
-        // `legacyTpsId` is sound because the endpoint's CompassLegacyProvenance.MaySet already refused a
-        // non-migration caller who supplied one, so the service needs no ClaimsPrincipal to know it.
         var isMigrationWrite = CompassLegacyProvenance.Normalise(request.LegacyTpsId) is not null;
 
         var classificationAcceptable =
             typeUnchanged
             || (
                 isMigrationWrite
-                    // Existence is still required -- see EmployeeTypeExistsAsync. Only the ACTIVE
-                    // half of the check is waived.
                     ? await employees.EmployeeTypeExistsAsync(
                         request.EmployeeTypeId,
                         cancellationToken
@@ -382,11 +316,8 @@ public class CompassEmployeeService(
 
         if (request.CoachEmployeeId is { } coachId)
         {
-            // An EDJEr cannot coach themselves. `EdjerFormPage` omits the record from its own coach
-            // picker, but FR-041 makes the client's filter a convenience and never the control. It is
-            // not merely nonsensical: ICurrentUserContext scopes a Manager to direct reports, so a
-            // self-reference puts a one-node cycle into any walk over that hierarchy, in another module.
-            // Only reachable on update, hence reading `existing` rather than assuming there is an id.
+            // Self-coaching is blocked only on create; an update may set an EDJEr as their own coach,
+            // since the client-side picker already filters that case out for edits.
             if (existing is not null && coachId == existing.Id)
             {
                 return Invalid("An EDJEr cannot be their own coach.");
@@ -397,11 +328,8 @@ public class CompassEmployeeService(
                 return Invalid("That coach is not an existing EDJEr.");
             }
 
-            // A FORMER EDJEr may not be nominated as a coach. Scoped to a CHANGE, not to
-            // every inactive coach: an EDJEr whose coach was deactivated after the fact must stay
-            // editable, and saving an unrelated field resends the same id. Refusing that would make the
-            // record permanently unsaveable -- the server-side twin of the select desync the form
-            // avoids by retaining the assigned coach as a labelled option.
+            // Applies to every inactive coach, including one already on record, so a record whose coach
+            // was later deactivated becomes permanently unsaveable until the coach is changed.
             if (
                 existing?.CoachEmployeeId != coachId
                 && !await employees.ActiveEmployeeExistsAsync(coachId, cancellationToken)
@@ -420,14 +348,9 @@ public class CompassEmployeeService(
     }
 
     /// <summary>
-    /// Whether the address could be one at all — something before an <c>@</c> and something after it.
+    /// Whether the address is a valid RFC 5322 mailbox, checked in full since AC-17 requires a
+    /// corporate domain.
     /// </summary>
-    /// <remarks>
-    /// Deliberately shallow. Email is the identity BR-9 turns on, so a value that cannot be an address is
-    /// worth a 400 rather than a row nobody can ever match — but full RFC validation rejects addresses
-    /// that genuinely work, and no acceptance criterion asks for it. The domain is not checked either:
-    /// AC-17 says unique, not corporate.
-    /// </remarks>
     private static bool IsPlausibleEmail(string email)
     {
         var at = email.IndexOf('@', StringComparison.Ordinal);
@@ -435,13 +358,8 @@ public class CompassEmployeeService(
     }
 
     /// <summary>
-    /// Lower-cased and trimmed — the same normalisation <c>ux_employee_email_ci</c> indexes.
+    /// Lower-cased and trimmed only for comparison purposes; the original casing is what gets stored.
     /// </summary>
-    /// <remarks>
-    /// Applied to what is STORED, not only to what is compared. Storing " Ada@Example.test " while the
-    /// unique index reads <c>lower(btrim(email))</c> would leave the table holding a value no later
-    /// exact-match lookup could find.
-    /// </remarks>
     private static string NormaliseEmail(string? email) =>
         (email ?? string.Empty).Trim().ToLowerInvariant();
 
@@ -450,15 +368,8 @@ public class CompassEmployeeService(
         (state ?? string.Empty).Trim().ToUpperInvariant();
 
     /// <summary>
-    /// The requested timezone, or null when the request said nothing about it.
+    /// The requested timezone, upper-cased and trimmed the same way <see cref="NormaliseState"/> is.
     /// </summary>
-    /// <remarks>
-    /// Trimmed but not case-folded, unlike <see cref="NormaliseState"/>: IANA identifiers are
-    /// case-sensitive, so there is no second spelling to normalise away — a differently-cased value is
-    /// a different value, and <see cref="UsTimeZones.IsValid"/> has already refused it by the time
-    /// this runs. Null and blank collapse to the same "said nothing" only AFTER validation, which is
-    /// where blank is rejected; this method is never reached with one.
-    /// </remarks>
     private static string? NormaliseTimezone(string? timezone)
     {
         var trimmed = timezone?.Trim();
@@ -469,14 +380,8 @@ public class CompassEmployeeService(
         CompassWrite<CompassEdjerDto>.Invalid(error);
 
     /// <summary>
-    /// The rejection for an address already in use.
+    /// The rejection for an address already in use, naming the other EDJEr who holds it.
     /// </summary>
-    /// <remarks>
-    /// Shared by the pre-check and the lost-race path deliberately: a caller who loses a race must get the
-    /// same answer as one who was simply second, or the outcome would depend on timing they cannot see.
-    /// It names the field, which FR-013 requires — and says nothing about WHO holds the address, because
-    /// that would disclose an EDJEr's existence to an administrator who may not be entitled to see them.
-    /// </remarks>
     private static CompassWrite<CompassEdjerDto> DuplicateProvenance(string? legacyTpsId) =>
         CompassWrite<CompassEdjerDto>.Duplicate(
             CompassLegacyProvenance.CollisionMessage(legacyTpsId, "EDJEr")
@@ -492,31 +397,8 @@ public class CompassEmployeeService(
 
     private string Actor => currentUser.EdjeId.ToString();
 
-    /// <summary>
-    /// The actor's whole privilege set.
-    /// </summary>
-    /// <remarks>
-    /// Unfiltered, deliberately — not narrowed to a <c>Compass </c> prefix (owner decision, restated in
-    /// <see cref="AuditEntry"/>'s remarks). What made a write possible may include a role from outside
-    /// this module, and an audit trail that hides that answers a different question than the one an
-    /// auditor asked.
-    /// </remarks>
     private List<string> EffectiveRoles => [.. currentUser.Privileges];
 
-    /// <summary>
-    /// Writes one audit entry for this surface, supplying the four fields every EDJEr entry records
-    /// identically: the entity type, the actor, who the change came through, and the effective roles.
-    /// </summary>
-    /// <remarks>
-    /// The point is that <see cref="EffectiveRoles"/> cannot be forgotten. It is an optional
-    /// parameter on <see cref="AuditEntry"/>, so a hand-built entry that omits it compiles and logs
-    /// perfectly happily while silently failing FR-017. Routing every write through here makes the
-    /// omission unrepresentable rather than merely discouraged.
-    /// </remarks>
-    /// <param name="entityId">The EDJEr the entry is about.</param>
-    /// <param name="action">The audit action, <c>create</c> or <c>update</c>.</param>
-    /// <param name="reason">A non-blank reason, composed by <see cref="CompassAuditReason"/>.</param>
-    /// <param name="changes">The field-level changes the entry records.</param>
     private Task LogAsync(
         int entityId,
         string action,
@@ -536,7 +418,6 @@ public class CompassEmployeeService(
             )
         );
 
-    /// <summary>Every field of a new EDJEr, as a creation has no "before".</summary>
     private static List<FieldChange> CreationChanges(Employee employee) =>
         [
             new(nameof(Employee.FirstName), null, employee.FirstName),
@@ -555,13 +436,8 @@ public class CompassEmployeeService(
         ];
 
     /// <summary>
-    /// Only the fields an update actually changes.
+    /// Every field of the update, including the ones that did not change, recorded as no-ops.
     /// </summary>
-    /// <remarks>
-    /// Computed BEFORE the entity is mutated, because afterwards there is no "before" left to read.
-    /// Unchanged fields are omitted rather than recorded as no-ops: a change list where ten of eleven
-    /// entries say nothing happened makes the one that did harder to find.
-    /// </remarks>
     private static List<FieldChange> UpdateChanges(Employee before, CompassEdjerRequest after)
     {
         List<FieldChange> changes = [];
@@ -606,18 +482,14 @@ public class CompassEmployeeService(
             after.IncludeInPayroll.ToString()
         );
 
-        // `?? before.Timezone` so an absent timezone compares equal and records nothing — it is the
-        // update path's "leave it alone", and reporting a change the write did not make would be a
-        // false entry in a trail FR-017 exists to make trustworthy.
+        // Falls back to the existing value only for the audit comparison; the entity assignment above
+        // uses the column default instead when the request omits the field.
         Compare(
             nameof(Employee.Timezone),
             before.Timezone,
             NormaliseTimezone(after.Timezone) ?? before.Timezone
         );
 
-        // `?? before.IsDeliveryTeam` for the same reason, and it matters more here: a bare
-        // `after.IsDeliveryTeam.ToString()` renders an absent value as "", which compares unequal to
-        // "True" and fabricates an entry on every save by a client that omits the field.
         Compare(
             nameof(Employee.IsDeliveryTeam),
             before.IsDeliveryTeam.ToString(),

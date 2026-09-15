@@ -6,20 +6,6 @@ export interface AccessibilityCheckResult {
   contrastViolations: string[];
 }
 
-/**
- * The Compass US7 WCAG 2.1 AA baseline (#57): axe-core's structural ruleset (roles, labels,
- * landmarks — reliable under jsdom) plus a dedicated inline-colour contrast walk. axe-core's own
- * `color-contrast` rule is disabled: it needs real layout/paint to decide whether an element is
- * visible, and jsdom reports every element as zero-sized, so the rule can only ever report
- * "incomplete", never a reliable pass or fail. The walk below reads `getComputedStyle` directly
- * instead, which jsdom resolves correctly for colours set via inline style — that's the
- * enforcement mechanism `tests/unit/lib/accessibility-check.test.ts` proves can fail.
- *
- * The real `color-contrast` rule — the thing this file cannot check, since almost every colour
- * here comes from a Tailwind class, not an inline style — runs instead in a real browser via
- * `web/timesheet/tests/e2e/compass-accessibility.critical.spec.ts` (`@axe-core/playwright`
- * against the live page). Confirmed zero violations there as of 2026-08-10.
- */
 export async function checkAccessibility(
   container: HTMLElement,
 ): Promise<AccessibilityCheckResult> {
@@ -33,7 +19,7 @@ export async function checkAccessibility(
   };
 }
 
-/** The page's default background (`html { background-color: #f4f5f6 }` in index.css), used when no ancestor declares one. */
+/** The page's default background, sourced from the `--color-shell-bg` token documented in RUNNING.md. */
 const PAGE_DEFAULT_BACKGROUND: [number, number, number] = [244, 245, 246];
 
 function findContrastViolations(root: HTMLElement): string[] {
@@ -49,9 +35,6 @@ function findContrastViolations(root: HTMLElement): string[] {
       const background = resolveBackground(node);
 
       if (foreground) {
-        // `background` always resolves — `resolveBackground` falls back to the page default —
-        // so only `foreground` (an unparseable computed colour) gates whether there's anything
-        // to judge.
         const ratio = contrastRatio(foreground, background);
         if (ratio < AA_NORMAL_TEXT_MIN_RATIO) {
           const [bgR, bgG, bgB] = background;
@@ -68,7 +51,7 @@ function findContrastViolations(root: HTMLElement): string[] {
   return violations;
 }
 
-/** True when the element has a non-blank text node directly among its children (not only via nested elements). */
+/** True when the element has any text node among its descendants, per `dom-text-ownership.test.ts`. */
 function ownsDirectText(element: HTMLElement): boolean {
   return Array.from(element.childNodes).some(
     (child) => child.nodeType === Node.TEXT_NODE && Boolean(child.textContent?.trim()),

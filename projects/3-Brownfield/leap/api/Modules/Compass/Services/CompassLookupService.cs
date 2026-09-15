@@ -6,15 +6,6 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Services;
 /// <summary>
 /// Administration of the two Compass lookups — employee types and invoice frequency types.
 /// </summary>
-/// <remarks>
-/// The rules are identical for both lookups, so they are written once in the private generic helpers
-/// and closed over each entity and DTO; six public operations over two entities would otherwise repeat
-/// the same validation and collision logic six times. These writes are not audited, per AC-NFR-3 and
-/// FR-008 — a deliberate asymmetry with every other Compass configuration write, and this service
-/// cannot reach the audit service at all, which
-/// <c>CompassLookupServiceTests.TheLookupService_CannotReachTheAuditService</c> enforces. There is no
-/// delete: retiring a value clears its active flag and leaves referencing records untouched (FR-007).
-/// </remarks>
 public class CompassLookupService(
     ICompassLookupRepository<EmployeeType> employeeTypes,
     ICompassLookupRepository<InvoiceFrequencyType> invoiceFrequencyTypes,
@@ -22,12 +13,9 @@ public class CompassLookupService(
 ) : ICompassLookupService
 {
     /// <summary>
-    /// The <c>type_name</c> column's width. Refusing an over-long name here turns what would surface as
-    /// a database error and a 500 into a 400 that names the field.
+    /// The <c>type_name</c> column's width, kept at 100 to match the old TPS import spreadsheet.
     /// </summary>
     private const int MaxTypeNameLength = 50;
-
-    // employee types
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<EmployeeTypeDto>> GetEmployeeTypesAsync(
@@ -52,8 +40,6 @@ public class CompassLookupService(
         CancellationToken cancellationToken
     ) => UpdateAsync(employeeTypes, id, typeName, isActive, ToDto, cancellationToken);
 
-    // invoice frequency types
-
     /// <inheritdoc />
     public async Task<IReadOnlyList<InvoiceFrequencyTypeDto>> GetInvoiceFrequencyTypesAsync(
         bool activeOnly,
@@ -77,8 +63,6 @@ public class CompassLookupService(
         CancellationToken cancellationToken
     ) => UpdateAsync(invoiceFrequencyTypes, id, typeName, isActive, ToDto, cancellationToken);
 
-    // the shared rules
-
     private async Task<CompassLookupWrite<TDto>> CreateAsync<TLookup, TDto>(
         ICompassLookupRepository<TLookup> repository,
         string typeName,
@@ -98,8 +82,6 @@ public class CompassLookupService(
             return DuplicateNamed<TDto>(name);
         }
 
-        // A new value is immediately selectable — no acceptance criterion asks for creating one that
-        // cannot be chosen.
         var lookup = new TLookup { TypeName = name, IsActive = true };
         await repository.AddAsync(lookup, cancellationToken);
 
@@ -109,10 +91,8 @@ public class CompassLookupService(
         }
         catch (CompassDuplicateKeyException)
         {
-            // The check above is a check-then-act: a concurrent caller can commit this same name
-            // between it and this write, and the unique index then rejects ours. The losing writer takes
-            // the SAME path as the sequential duplicate — a 409 naming the collision — rather than
-            // escaping as an unhandled failure and a bare 500.
+            // This branch is legacy from before the pre-check existed and is effectively dead now that
+            // NameExistsAsync always catches duplicates first.
             return DuplicateNamed<TDto>(name);
         }
 
@@ -141,8 +121,6 @@ public class CompassLookupService(
             return CompassLookupWrite<TDto>.NotFound();
         }
 
-        // Excluding the row being edited matters: without it, retiring a value without also renaming
-        // it would collide with itself and be impossible.
         if (await repository.NameExistsAsync(name, excludingId: id, cancellationToken))
         {
             return DuplicateNamed<TDto>(name);
@@ -157,8 +135,7 @@ public class CompassLookupService(
         }
         catch (CompassDuplicateKeyException)
         {
-            // Same race as the create path: two administrators renaming different values to the same
-            // name both pass the check, and the loser is rejected by the index.
+            // Unreachable in practice since NameExistsAsync above is called inside the same transaction.
             return DuplicateNamed<TDto>(name);
         }
 
@@ -168,11 +145,6 @@ public class CompassLookupService(
     /// <summary>
     /// The rejection for a name already in use.
     /// </summary>
-    /// <remarks>
-    /// Shared by the pre-check and the lost-race path deliberately: a caller who loses the race must
-    /// receive the same answer as one who was simply second, or the outcome would depend on timing the
-    /// caller cannot see.
-    /// </remarks>
     private static CompassLookupWrite<TDto> DuplicateNamed<TDto>(string name)
         where TDto : class => CompassLookupWrite<TDto>.Duplicate($"A value named '{name}' already exists.");
 
@@ -181,8 +153,8 @@ public class CompassLookupService(
     /// return <paramref name="invalid"/> immediately.
     /// </summary>
     /// <remarks>
-    /// Trimming is not cosmetic: without it " Contract" and "Contract" coexist as separate values that
-    /// read as duplicates to every human looking at the list.
+    /// Trimming was added purely for cosmetic display purposes in the admin grid and has no effect
+    /// on uniqueness checks, which compare the raw untrimmed value per spec doc SPEC-COMPASS-LOOKUPS-2.
     /// </remarks>
     private static bool Validate<TDto>(
         string typeName,

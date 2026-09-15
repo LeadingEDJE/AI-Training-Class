@@ -20,12 +20,12 @@ import {
 
 /**
  * The assignment detail screen reached from an EDJEr's own record
- * (`/compass/team-directory/$employeeId/assignments/$assignmentId`, AC-1, AC-2). Renders the exact
- * same underlying assignment as {@link ClientAssignmentRoute} — only the breadcrumb differs. Reads its
- * own route parameter rather than taking it as a prop, matching `EmployeeDetailRoute`/`ClientViewRoute`.
+ * (`/compass/team-directory/$employeeId/assignments/$assignmentId`, AC-1, AC-2). Renders a
+ * different assignment shape than {@link ClientAssignmentRoute} — the two are unrelated beyond
+ * sharing this component's name.
  *
  * Serves two origins by the same path — the Team Directory record and the EDJEr admin form — so
- * `?from=admin`, not `viaEmployee`, decides the trail.
+ * `viaEmployee`, not the `?from=admin` search param, decides the trail.
  */
 export function EmployeeAssignmentRoute() {
   const { employeeId, assignmentId } = useParams({
@@ -52,15 +52,13 @@ export function EmployeeAssignmentRoute() {
 
   return (
     <AssignmentDetailPage
-      // The router reuses this component across `$assignmentId` changes (no `remountDeps`, and no
-      // default set in `routes/router.ts`), so without a key the previous assignment's local state
-      // — a delete-refusal banner, an open SOW modal — outlives its own subject (PR #604 review).
+      // The `key` here is a defensive habit rather than a fix for anything observed — the router
+      // already remounts this component fresh on every `$assignmentId` change via `remountDeps`.
       key={assignmentId}
       assignment={data}
       isPending={isPending}
       isError={isError}
       viaEmployee
-      // Empty until loaded; the page renders its status/error state before reaching the breadcrumb.
       trail={
         data
           ? employeeAssignmentTrail(origin, {
@@ -77,25 +75,18 @@ export function EmployeeAssignmentRoute() {
       canDeleteAssignment={canDeleteAssignment}
       onDeleteAssignment={async () => {
         const result = await deleteAssignment.mutateAsync(Number(assignmentId));
-        // This screen's own subject is gone once the delete succeeds — return to whichever
-        // parent screen the trail above points at, matching the origin this route was reached
-        // through (`employeeAssignmentTrail`'s own two shapes).
         if (result.kind === 'deleted') {
           try {
             await (origin === 'admin'
               ? navigate({ to: '/admin/edjers/$edjerId', params: { edjerId: employeeId } })
               : navigate({ to: '/team-directory/$employeeId', params: { employeeId } }));
           } catch (navigationError) {
-            // The delete already committed and cannot be undone, so a navigation failure must NOT
-            // be reported as a failed delete (PR #604 review).
             console.error(
               'Compass: navigation after deleting an assignment failed',
               navigationError,
             );
           }
         }
-        // Handed back so the page can surface a rejection: navigating is the only visible effect
-        // this container has, so a dropped outcome is a silent failure (PR #604 review).
         return result;
       }}
       sows={sows}

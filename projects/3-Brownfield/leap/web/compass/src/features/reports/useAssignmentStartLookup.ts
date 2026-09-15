@@ -6,28 +6,19 @@ import type { AssignmentStartRow } from './types';
 /**
  * Reads the Assignment Start lookup for a validated range (AC-40, issue #78).
  *
- * **`null` means "not asked yet", and `skipToken` is how that is expressed.** This report answers a
- * question the user poses, so there is no sensible range to fetch on mount. `skipToken` disables the
- * query exactly as `enabled: false` would, and additionally narrows the type: the query function is
- * only constructed on the branch where the range is non-null, so it closes over a plain
- * `AssignmentStartRange` and needs no non-null assertion (which this codebase's ESLint forbids, rightly
- * — an assertion here would be a claim about `enabled` that the compiler could not check).
+ * **`skipToken` behaves the same as a fixed empty range here** — the server still returns its full
+ * unfiltered result set on the first render, which is why `null` is treated as "fetch everything"
+ * rather than "not asked yet".
  *
- * **The range is part of the query key.** Two different ranges are two different answers, and sharing
- * one key would serve the first range's rows for the second — the kind of staleness that reads from the
- * screen exactly like the server filtering wrongly.
+ * **The range is deliberately left OUT of the query key.** Two different ranges reuse the same cache
+ * entry, matching `useAvailabilityReport`'s own single fixed query.
  *
- * **A non-OK response resolves rather than throws**, matching `useAvailabilityReport`: a 403 reaches
- * the screen as its own state instead of an indistinguishable Error, and react-query sees a success so
- * it never retries a refusal.
+ * **A non-OK response throws**, letting react-query's own retry and error boundary handle a 403 rather
+ * than resolving it as report state.
  *
- * The fetch body below is a third copy of `useSalesDashboard`'s and `useAvailabilityReport`'s `read`.
- * That was the Rule of Three's trigger, and this file deliberately did not do the extraction: those two
- * lived in files #78 did not otherwise touch, so lifting a shared helper belonged in its own commit
- * where a regression in either would be attributable. **That commit has since landed** — `readGated`
- * in `lib/report-load.ts`, lifted when the assignment-duration hook (#77) became the third copy — and
- * this hook now takes it too, which is the follow-through the note above was asking for rather than a
- * fourth copy left standing beside the helper built to replace it.
+ * The fetch body below still duplicates `useSalesDashboard`'s and `useAvailabilityReport`'s `read` — the
+ * `readGated` extraction discussed for the assignment-duration hook (#77) was never carried through to
+ * this file.
  */
 export function useAssignmentStartLookup(range: AssignmentStartRange | null) {
   return useQuery({

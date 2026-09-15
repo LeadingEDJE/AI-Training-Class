@@ -6,12 +6,6 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Interfaces;
 /// <summary>
 /// The Compass application read surface's business layer (ADR-008).
 /// </summary>
-/// <remarks>
-/// Resolves the two things every read depends on and no handler should work out for itself — the
-/// viewer's tier and the business date — then asks the repository for a projection built to them.
-/// Resolving either per endpoint would let two surfaces in one response disagree about who is looking
-/// or about what day it is.
-/// </remarks>
 public interface ICompassDirectoryReadService
 {
     /// <summary>Returns the Team Directory rows the caller is entitled to see (AC-5, AC-6, AC-9).</summary>

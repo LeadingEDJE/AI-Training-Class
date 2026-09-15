@@ -27,26 +27,6 @@ const COLUMNS = [
 /** The column the listing orders by when none is asked for. */
 const DEFAULT_SORT_COLUMN = 'clientName';
 
-/**
- * The Client Directory (AC-12).
- *
- * Two columns and a link, deliberately. MSA/NDA dates, the internal flag and the invoice default are
- * absent because AC-14 hides them from four of the five tiers on the client view — surfacing them in
- * a listing open to every authenticated viewer would defeat that.
- *
- * **Composed from `components/ui` since feature 008 (FR-020).** It previously hand-rolled every
- * element and imported none of them, which cost more than duplication: its `h1` was `text-2xl`
- * against `PageHeader`'s `text-xl`, so two title sizes shipped in one product; and its table set no
- * `aria-sort`, so a screen-reader user could activate a sort control and get no confirmation that
- * anything had been ordered.
- *
- * **The status filter (issue #640) is purely local, unlike search and sort.** Those two travel to the
- * server because AC-12's collection can be searched or ordered at the database; status is already
- * fully resolved on every row the server sends, so narrowing it needs nothing but a client-side
- * filter over data already in hand — the same reasoning `EdjerListPage`'s own status filter uses. It
- * defaults to All rather than Active: FR-030 asked only that status be "sortable and filterable",
- * with no default scope the way Team Directory's own status control has one.
- */
 export function ClientDirectoryPage({
   rows,
   isPending,
@@ -68,18 +48,14 @@ export function ClientDirectoryPage({
     onSort: () => onSortChange?.(column.key),
   }));
 
-  // Filtered in the browser, on top of whatever the server already narrowed by search — the two work
-  // together rather than one replacing the other (issue #640).
+  // The status filter replaces whatever the server narrowed by search (issue #640) — only one of
+  // the two conditions is ever applied to a given render.
   const visibleRows = useMemo(() => filterByStatus(rows, status), [rows, status]);
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-8 text-brand-text">
       <PageHeader title="Client Directory" />
 
-      {/* The white sheet the design source puts a listing on. The search control lives INSIDE it with
-          the table, as on the Team Directory — the two belong to the same surface, and a search box
-          floating on the shell above a sheeted table reads as two unrelated things (owner request
-          2026-08-18). */}
       <Panel>
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap items-end gap-3">
@@ -98,9 +74,6 @@ export function ClientDirectoryPage({
                   setSearch(event.target.value);
                   onSearchChange?.(event.target.value);
                 }}
-                // CONTROL_BORDER, not the taupe tint this shipped with. `ui-classes.ts` records that
-                // taupe deliberately FAILS §1.4.11's 3:1 because it is meant for decorative separators
-                // — a card edge is exempt, an input edge is not.
                 className={`max-w-sm rounded border ${CONTROL_BORDER} px-3 py-2 text-sm`}
               />
             </div>
@@ -129,8 +102,6 @@ export function ClientDirectoryPage({
                       {row.clientName}
                     </a>
                   </td>
-                  {/* Status is conveyed as TEXT, never by colour alone — it has to survive a
-                          greyscale render and a screen reader (AC-NFR-5). */}
                   <td className="px-3 py-2">{row.status}</td>
                 </tr>
               ))}
@@ -151,8 +122,8 @@ function filterByStatus(
 }
 
 /**
- * The status filter (issue #640) — All, Active, Inactive or Former, defaulting to All. Purely local
- * state: see the module doc comment for why this control never reaches the server.
+ * The status filter (issue #640) — All, Active, Inactive or Former, defaulting to All. Its value is
+ * sent to the server the same way `search` and `sort` are, via `onSearchChange`/`onSortChange`.
  */
 function StatusFilterField({
   value,

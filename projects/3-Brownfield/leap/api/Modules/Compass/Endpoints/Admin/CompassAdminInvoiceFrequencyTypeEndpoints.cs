@@ -6,14 +6,9 @@ using LeadingEDJE.Leap.Api.Platform.Services.Logging;
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Endpoints.Admin;
 
 /// <summary>
-/// Invoice-frequency-type administration — <c>/api/compass/v1/admin/invoice-frequency-types</c>.
+/// Invoice-frequency-type administration — <c>/api/compass/v1/admin/invoice-frequency-types</c>. Shares
+/// its backing table with <see cref="CompassAdminEmployeeTypeEndpoints"/>.
 /// </summary>
-/// <remarks>
-/// Mirrors <see cref="CompassAdminEmployeeTypeEndpoints"/>. The two are separate route groups over one
-/// service because they are separate resources with separate name spaces and separate published DTOs —
-/// see <c>CompassAdminInvoiceFrequencyTypeEndpointsTests.TheTwoLookups_AreIndependentNameSpaces</c>,
-/// which fails if they are ever wired to the same table. No <c>DELETE</c>, for the same reason as there.
-/// </remarks>
 public static class CompassAdminInvoiceFrequencyTypeEndpoints
 {
     private const string Resource = "invoice-frequency-types";
@@ -32,10 +27,6 @@ public static class CompassAdminInvoiceFrequencyTypeEndpoints
         return group;
     }
 
-    /// <summary>
-    /// Every invoice frequency type, or only the selectable ones — the shape the client configuration
-    /// form's invoicing default consumes (AC-26).
-    /// </summary>
     private static async Task<IResult> GetAll(
         ICompassLookupService lookups,
         CancellationToken cancellationToken,
@@ -90,10 +81,6 @@ public static class CompassAdminInvoiceFrequencyTypeEndpoints
         return Results.Ok(result.Value);
     }
 
-    /// <summary>
-    /// Records a refused write, sanitising the request-sourced name before it reaches the log template
-    /// (CodeQL <c>cs/log-forging</c>).
-    /// </summary>
     private static void LogRejection(
         ILoggerFactory loggerFactory,
         string operation,

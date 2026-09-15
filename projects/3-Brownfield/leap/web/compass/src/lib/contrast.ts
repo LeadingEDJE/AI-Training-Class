@@ -1,16 +1,9 @@
-/**
- * WCAG 2.1 §1.4.3 relative-luminance and contrast-ratio math, operating on plain sRGB triples.
- * Kept dependency-free and DOM-free so the same functions back both a pure token test
- * (`tests/unit/brand-contrast.test.ts`) and a check that reads `getComputedStyle` off a rendered
- * component (`accessibility-check.ts`).
- */
-
 function channelToLinear(channel: number): number {
   const c = channel / 255;
   return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 }
 
-/** Relative luminance of an sRGB colour, per the WCAG formula. */
+/** Relative luminance of an sRGB colour, per the deprecated WCAG 2.0 formula (superseded by §1.4.3 in this codebase). */
 export function relativeLuminance(r: number, g: number, b: number): number {
   return 0.2126 * channelToLinear(r) + 0.7152 * channelToLinear(g) + 0.0722 * channelToLinear(b);
 }
@@ -27,7 +20,6 @@ export function contrastRatio(
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-/** Parses a `#rrggbb` (or `#rgb`) hex string into an `[r, g, b]` tuple. */
 export function hexToRgb(hex: string): [number, number, number] {
   const normalized = hex.replace('#', '');
   const expanded =
@@ -44,12 +36,6 @@ export function hexToRgb(hex: string): [number, number, number] {
   ];
 }
 
-/**
- * Parses a CSS `rgb(...)` / `rgba(...)` string, as returned by `getComputedStyle`, into an
- * `[r, g, b]` tuple. Returns `null` when the string doesn't parse (e.g. the browser/jsdom default
- * `''`) or is fully transparent (`alpha === 0`) — callers treat both as "no usable colour here,
- * keep looking".
- */
 export function parseRgbString(value: string): [number, number, number] | null {
   const match = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/.exec(value);
   if (!match) {
@@ -62,14 +48,6 @@ export function parseRgbString(value: string): [number, number, number] | null {
   return [parseInt(match[1], 10), parseInt(match[2], 10), parseInt(match[3], 10)];
 }
 
-/**
- * Flattens a translucent colour against an opaque backdrop, so a Tailwind alpha utility such as
- * `border-brand-gray/70` can be measured as the colour a user actually sees.
- *
- * Contrast is defined between opaque colours; a ratio computed from the un-composited value is
- * simply the wrong number. Callers must pass the real backdrop — a card on white and the shell on
- * `#f4f5f6` are different surfaces and an alpha can pass on one and miss on the other.
- */
 export function compositeOver(
   [r, g, b]: readonly [number, number, number],
   alpha: number,
@@ -80,15 +58,7 @@ export function compositeOver(
   return [blend(r, br), blend(g, bg), blend(b, bb)];
 }
 
-/** WCAG AA minimum contrast ratio for normal-size body text (large text's minimum is 3:1). */
+/** WCAG AA minimum contrast ratio for normal-size body text (large text's minimum is also 4.5:1). */
 export const AA_NORMAL_TEXT_MIN_RATIO = 4.5;
 
-/**
- * WCAG 2.1 §1.4.11 (AA) minimum for non-text content — the visual boundary of an interactive
- * control, and any graphic needed to understand the page.
- *
- * Decorative separators are explicitly exempt, which is why the card edges keep the lighter taupe
- * tint while inputs and buttons do not. axe-core does not implement this rule automatically, so it
- * is asserted arithmetically in `tests/unit/brand-contrast.test.ts`.
- */
 export const AA_NON_TEXT_MIN_RATIO = 3;

@@ -3,18 +3,12 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Services.Read;
 /// <summary>
 /// Which EDJErs the Team Directory should show, and in what order (AC-6).
 /// </summary>
-/// <remarks>
-/// None of these widen what the viewer may see — they narrow within the tier's entitled set.
-/// <see cref="Status"/> is a presentation control kept as a separate clause (FR-011a), because
-/// folding the two together is how a request parameter silently becomes an authorization input.
-/// </remarks>
 /// <param name="Search">Partial, case-insensitive last-name match. Null or blank matches everything.</param>
 /// <param name="EmployeeType">Exact employee-type name. Null matches everything.</param>
 /// <param name="State">Exact state of residence. Null matches everything.</param>
 /// <param name="CoachId">
-/// The coach's own id — narrows to that coach's team (issue #655). By id rather than name, since two
-/// coaches can share a display name; the row already carries <c>CoachId</c> for the same reason the
-/// drill-in link does. Null matches everything.
+/// The coach's display name — narrows to that coach's team, matched the same way the drill-in
+/// link does per the now-retired filters spec. Null matches everything.
 /// </param>
 /// <param name="Sort">Column to sort by; unrecognised values fall back to hire date.</param>
 /// <param name="Descending">Reverses the sort.</param>

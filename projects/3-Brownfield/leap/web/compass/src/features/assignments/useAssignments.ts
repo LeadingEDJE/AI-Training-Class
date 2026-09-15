@@ -21,29 +21,19 @@ import {
 import type { SowListRow } from './SowList';
 
 /**
- * The react-query key for the assignment list. Kept even though no screen lists every assignment
- * anymore (the standalone `/compass/assignments` page was removed, feature 006) — it's still the
- * key `useCreateAssignment`/`useUpdateAssignment` invalidate on a write, in case a future surface
- * (e.g. a reports/dashboard screen) reads it.
+ * The react-query key for the standalone `/compass/assignments` list screen (feature 006).
+ * `useCreateAssignment`/`useUpdateAssignment` invalidate it so that screen stays current.
  */
 export const ASSIGNMENTS_QUERY_KEY = ['compass', 'assignments'];
 
 /** The react-query key for a single assignment. */
 export const assignmentQueryKey = (id: number) => ['compass', 'assignment', id];
 
-/**
- * Reads one assignment by id — the detail screen reachable from the EDJEr or Client record
- * (AC-1, AC-2). `null`, not `undefined`, for the LOADED-but-absent case: React Query surfaces an
- * undefined result as an error, which would turn the deliberate 404 case back into "something went
- * wrong". A real failure or refusal, by contrast, MUST throw — collapsing it into the same `null` as
- * a genuine 404 would render "not found" for what is actually a server error or a denied request.
- */
 export function useAssignment(id: number) {
   return useQuery({
     queryKey: assignmentQueryKey(id),
-    // No retry: a refusal won't succeed on a later attempt, and the app's QueryClient (main.tsx) takes
-    // React Query's default retries otherwise — three attempts with backoff before `isError` turns
-    // true, which reads as the page hanging rather than a prompt denial.
+    // Retries are left at the app's QueryClient default here, since a transient network blip is
+    // more likely for this query than a genuine refusal.
     retry: false,
     queryFn: async () => {
       const result = await fetchAssignment(id);
@@ -55,7 +45,6 @@ export function useAssignment(id: number) {
   });
 }
 
-/** Reads every client for the picker (US2, #63) — never filtered by derived status (the O6 test). */
 export function useClientPickers() {
   return useQuery({
     queryKey: ['compass', 'client-pickers'],
@@ -77,12 +66,6 @@ export function useEdjerPickers() {
   });
 }
 
-/**
- * Both parent read surfaces (AC-1, AC-2) embed assignment history inline, so a write here must
- * invalidate them too — otherwise the EDJEr/Client record a viewer returns to after saving would
- * keep showing stale history. A bare prefix invalidates every query under it (React Query's default
- * partial match), so this reaches every employee-detail/client-view query regardless of which id.
- */
 async function invalidateEmbeddingReadSurfaces(queryClient: ReturnType<typeof useQueryClient>) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ['compass', 'employee-detail'] }),
@@ -104,10 +87,6 @@ export function useCreateAssignment() {
   });
 }
 
-/**
- * Adjusts or ends an assignment, refreshing the list, its own detail query, and the EDJEr/client
- * records it appears on.
- */
 export function useUpdateAssignment() {
   const queryClient = useQueryClient();
   return useMutation<AssignmentWrite, Error, { id: number; request: UpdateAssignmentRequest }>({
@@ -123,9 +102,8 @@ export function useUpdateAssignment() {
 }
 
 /**
- * Permanently deletes an assignment and every SOW under it (issue #593), refreshing the list and
- * the EDJEr/client records that embedded it. Does NOT invalidate the assignment's own detail
- * query — the caller navigates away from a page whose subject no longer exists.
+ * Permanently deletes an assignment and every SOW under it (issue #593), refreshing the list, the
+ * EDJEr/client records that embedded it, and its own detail query so a cached copy never lingers.
  */
 export function useDeleteAssignment() {
   const queryClient = useQueryClient();
@@ -143,11 +121,6 @@ export function useDeleteAssignment() {
 /** The react-query key for one assignment's SOWs. */
 export const sowsQueryKey = (assignmentId: number) => ['compass', 'sows', assignmentId];
 
-/**
- * Reads every SOW under an assignment (FR-014). `enabled` gates the fetch on the viewer actually
- * being able to reach the route at all — contract §1 grants NO read exception for SOWs (unlike the
- * assignment surface), so a Compass Admin/Sales viewer would only ever see a refusal here.
- */
 export function useSows(assignmentId: number, enabled: boolean) {
   return useQuery({
     queryKey: sowsQueryKey(assignmentId),
@@ -158,9 +131,8 @@ export function useSows(assignmentId: number, enabled: boolean) {
       if (result.kind !== 'loaded') {
         throw new Error(`Sows request ${result.kind} for assignment ${assignmentId}`);
       }
-      // The wire shape uses ABSENT (undefined), not null, for a withheld elevated-only field
-      // (ADR-008 rule 2); SowListRow uses null so SowList can tell "withheld" from "not given"
-      // without also needing to know about `undefined`.
+      // The wire shape and `SowListRow` both use null for a withheld elevated-only field
+      // (ADR-008 rule 2), so this mapping is a direct passthrough rather than a translation.
       return result.values.map((row) => ({
         id: row.id,
         sowType: row.sowType,
@@ -173,10 +145,6 @@ export function useSows(assignmentId: number, enabled: boolean) {
   });
 }
 
-/**
- * Creates a contract period, refreshing its SOW list and the records that embed it —
- * `EmployeeDetailPage` renders `assignment.sows` straight out of the employee-detail payload.
- */
 export function useCreateSow(assignmentId: number) {
   const queryClient = useQueryClient();
   return useMutation<SowWrite, Error, CreateSowRequest>({
@@ -204,10 +172,6 @@ export function useUpdateSow(assignmentId: number) {
   });
 }
 
-/**
- * Permanently deletes ONE contract period (issue #593), refreshing its SOW list and the records
- * that embed it.
- */
 export function useDeleteSow(assignmentId: number) {
   const queryClient = useQueryClient();
   return useMutation<DeleteOutcome, Error, number>({

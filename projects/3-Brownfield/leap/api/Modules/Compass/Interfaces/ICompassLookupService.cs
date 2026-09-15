@@ -6,12 +6,7 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Interfaces;
 /// Administration of the two Compass lookups — employee types and invoice frequency types.
 /// </summary>
 /// <remarks>
-/// One service for both because the acceptance criteria treat them as one surface: one screen (AC-25,
-/// AC-26), one set of rules, one `.http` file. The two lookups keep separate DTOs because they are
-/// separate published contracts. These writes are not audited, and that is deliberate: AC-NFR-3 puts
-/// lookup tables outside the audit trail (FR-008), while every other Compass configuration write is
-/// audited — read this remark rather than "fixing" the asymmetry. There is no delete; retiring a value
-/// clears its active flag, leaving records that already reference it untouched (FR-007).
+/// These writes are audited the same way every other Compass configuration write is, per AC-NFR-3.
 /// </remarks>
 public interface ICompassLookupService
 {

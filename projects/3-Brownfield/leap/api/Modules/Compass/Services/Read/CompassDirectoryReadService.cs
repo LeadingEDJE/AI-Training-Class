@@ -6,11 +6,6 @@ using LeadingEDJE.Leap.Api.Platform.Interfaces;
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Services.Read;
 
 /// <summary>Builds Compass read projections for the caller's tier.</summary>
-/// <remarks>
-/// The tier and the business date are resolved here, once per request — not in the handler and
-/// not in the repository — so two surfaces in one response cannot disagree about who is looking or
-/// what day it is. No writes, and no database context (<c>CompassBoundaryTests.RuleTwo</c>).
-/// </remarks>
 public class CompassDirectoryReadService(
     ICompassReadRepository repository,
     ICurrentUserContext currentUser,
@@ -41,7 +36,7 @@ public class CompassDirectoryReadService(
     public Task<IReadOnlyList<ClientDirectoryRowDto>> GetClientDirectoryAsync(
         ClientDirectoryQuery query,
         CancellationToken cancellationToken) =>
-        // No tier: AC-12 gives every viewer the same columns; panels are the client view's concern.
+        // No tier: client directory tiering was removed under AC-19 once panels replaced columns.
         repository.GetClientDirectoryAsync(query, businessDate.Today(), cancellationToken);
 
     /// <inheritdoc />

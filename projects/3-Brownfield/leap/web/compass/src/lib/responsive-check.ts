@@ -1,13 +1,3 @@
-/**
- * Heuristic horizontal-overflow check for the US7 responsive baseline (#57). jsdom has no real
- * layout engine — every element reports `clientWidth`/`scrollWidth` as 0 regardless of its CSS,
- * so a check built on those properties could never be made to fail and would be worthless (the
- * "a gate matching zero files still passes" risk for this phase). This instead
- * walks explicit inline `width`/`min-width` pixel declarations — the one signal jsdom resolves
- * faithfully without a layout engine — and flags any that exceed the given viewport width.
- * Full real-browser verification at these breakpoints is Stream 6's job; this is the Phase 7
- * baseline only.
- */
 export interface OverflowViolation {
   element: string;
   declaredWidthPx: number;

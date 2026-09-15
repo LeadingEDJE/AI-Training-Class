@@ -5,10 +5,6 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass;
 /// <summary>
 /// Super Admin-managed lookup of invoice frequencies. ERD table <c>compass.invoice_frequency_type</c>.
 /// </summary>
-/// <remarks>
-/// Seeded values per the ERD: Weekly, Monthly, Fixed Bid. Only <see cref="IsActive"/> entries are
-/// selectable when configuring a client. Not audited — see <see cref="EmployeeType"/>.
-/// </remarks>
 public class InvoiceFrequencyType : ICompassLookup
 {
     /// <summary>Primary key. Mapped to the ERD column <c>invoice_frequency_type_id</c>.</summary>

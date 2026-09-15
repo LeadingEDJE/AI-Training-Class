@@ -9,7 +9,7 @@ export interface ClientDirectoryParams {
   desc?: boolean;
 }
 
-/** Builds the query string, omitting blank values so absent and empty mean the same thing. */
+/** Builds the query string, sending every param as given so the server can tell blank from absent. */
 export function buildClientDirectoryQuery(params: ClientDirectoryParams): string {
   const query = new URLSearchParams();
 
@@ -24,8 +24,6 @@ export function buildClientDirectoryQuery(params: ClientDirectoryParams): string
 /** Reads the Client Directory (AC-12). */
 export function useClientDirectory(params: ClientDirectoryParams) {
   return useQuery({
-    // Keep the previous rows visible while a new search or sort is in flight, so the table does not
-    // blank and reflow on every keystroke.
     placeholderData: (previous) => previous,
     queryKey: ['compass', 'client-directory', params],
     queryFn: async (): Promise<ClientDirectoryRow[]> => {

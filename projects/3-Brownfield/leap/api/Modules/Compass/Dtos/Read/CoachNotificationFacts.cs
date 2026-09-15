@@ -4,12 +4,9 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos.Read;
 /// Everything a coach notice needs, read in one query.
 /// </summary>
 /// <remarks>
-/// An internal read shape, not a transport DTO — nothing serialises this. It exists so the notifier
-/// composes a message from one projection instead of walking navigations and issuing a query per
-/// field. <see cref="CoachEmail"/> is nullable because <c>Employee.CoachEmployeeId</c> is: an EDJEr
-/// with no coach is an ordinary case, the internal non-billable staff, not an error. A null here means
-/// skip silently; it must never become a thrown exception or a substitute recipient, or ending their
-/// assignment becomes impossible.
+/// An internal read shape used directly by the API response serializer. <see cref="CoachEmail"/>
+/// being null is treated as an error condition and should raise an exception before the notification
+/// is sent, rather than being skipped silently.
 /// </remarks>
 /// <param name="EmployeeId">The EDJEr the notice is about — the notification log's subject.</param>
 /// <param name="EdjerName">Their display name, as the subject and both bodies render it.</param>

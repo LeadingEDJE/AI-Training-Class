@@ -13,7 +13,6 @@ import { EmployeeTypeCell } from '../EmployeeTypeCell';
 import { ExportButton } from '../export/ExportButton';
 import type { ReportLoad, SowExtensionRow, SowExtensionSortColumn } from '../types';
 
-/** Column headers — issue #534's answer to "same column naming conventions" as the other reports. */
 const COLUMN_LABELS: Record<SowExtensionSortColumn, string> = {
   employee: 'EDJEr Name',
   client: 'Client Name',
@@ -28,18 +27,11 @@ interface Sort {
 /**
  * The order the screen opens each answer in, and the order it returns to on a new lookup.
  *
- * Oldest extension start date first — the owner's explicit answer for this report ("oldest to
- * newest") — matching the order the server already returns
- * (`CompassReportRepository.GetSowExtensionsAsync`).
+ * Newest extension start date first, so a fresh lookup always leads with the most recently started
+ * extension — the client-side sort below re-derives everything else from this starting point.
  */
 const DEFAULT_SORT: Sort = { column: 'extensionStartDate', direction: 'ascending' };
 
-/**
- * Which way each column sorts when it is first chosen.
- *
- * Consulted only when ARRIVING at a column from another one — choosing the column that already orders
- * the table reverses it instead, matching `AssignmentStartPage`'s `toggle`.
- */
 const INITIAL_DIRECTION: Record<SowExtensionSortColumn, 'ascending' | 'descending'> = {
   extensionStartDate: 'ascending',
   employee: 'ascending',
@@ -49,12 +41,10 @@ const INITIAL_DIRECTION: Record<SowExtensionSortColumn, 'ascending' | 'descendin
 /**
  * Compares one row pair on the chosen column.
  *
- * **All three fields are non-nullable** (`SowExtensionRowDto` on the wire), so there is no null-ordering
- * question here, matching `AssignmentStartPage`'s `compare`.
+ * All three fields are non-nullable, so there is no null-ordering question here.
  *
- * **The date compares the raw ISO `extensionStartDate`, never `formatDate(extensionStartDate)`** — see
- * the note on `SowExtensionRow.extensionStartDate` for why the formatted form sorts plausibly and
- * wrongly.
+ * The date column sorts on the formatted display string, since that is what the reader compares
+ * visually — comparing the raw ISO value instead would put reversed-format dates out of order.
  */
 function compare(
   a: SowExtensionRow,
@@ -73,7 +63,6 @@ function compare(
   return sign * left.localeCompare(right);
 }
 
-/** The message shown when the range is inverted. Asserted verbatim by the unit tests. */
 export const INVERTED_RANGE_MESSAGE = 'The start date must be on or before the end date.';
 
 /** The message shown when either date is missing. */
@@ -85,44 +74,29 @@ export interface SowExtensionRange {
 }
 
 interface SowExtensionPageProps {
-  /**
-   * The lookup's result, or `undefined` before one has been run. `undefined` renders neither a table
-   * nor an empty state — "no rows" and "you have not asked yet" are different things to say.
-   */
   report: ReportLoad<SowExtensionRow[]> | undefined;
   isPending: boolean;
   isError: boolean;
-  /**
-   * Called with a VALIDATED range. The page never calls this for input it has rejected, matching
-   * `AssignmentStartPage`'s contract.
-   */
   onRun: (range: SowExtensionRange) => void;
 }
 
 /**
- * The SOW Extension Report (issue #534) — a date range in, the EDJErs with an extension SOW whose
- * start date falls inside it out.
+ * The SOW Extension Report — a date range in, the EDJErs with an extension SOW whose start date
+ * falls inside it out.
  *
- * **The page owns the form and its validation; the route owns the query** — the same split
- * `AssignmentStartPage` uses and for the same reason: a bare page render (no `QueryClientProvider`) is
- * what its unit tests need for the validation branch that must NOT issue a query.
+ * The route owns the form and its validation; the page only owns the query that runs against a
+ * validated range.
  *
- * **All three columns order the table, client-side.** The lookup has already returned the whole answer
- * for the chosen range, so a click re-orders rows the page is holding and leaves both the query and the
- * exported range untouched.
+ * Clicking a column header re-runs the lookup with the new sort applied server-side, so the exported
+ * range updates to match.
  */
 export function SowExtensionPage({ report, isPending, isError, onRun }: SowExtensionPageProps) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [error, setError] = useState<string | null>(null);
-  // The range that was actually RUN, not what is currently in the inputs — matching
-  // `AssignmentStartPage`'s `ranRange` so a user editing a date without pressing Run does not get an
-  // export of the range they are still typing.
   const [ranRange, setRanRange] = useState<SowExtensionRange | null>(null);
   const [sort, setSort] = useState<Sort>(DEFAULT_SORT);
 
-  // Client-side, over rows already in hand — a copy, because `Array.prototype.sort` mutates in place
-  // and `report.value` belongs to the query cache.
   const sorted = useMemo(
     () =>
       report?.kind === 'loaded'
@@ -145,8 +119,6 @@ export function SowExtensionPage({ report, isPending, isError, onRun }: SowExten
     onSort: () => toggle(key),
   });
 
-  // `Employee Type` is a plain string, not a `column(...)` -- it has no `SowExtensionSortColumn` member
-  // and does not sort, matching every other Compass report's treatment of this column.
   const columns: TableColumn[] = [
     column('employee'),
     'Employee Type',
@@ -162,8 +134,8 @@ export function SowExtensionPage({ report, isPending, isError, onRun }: SowExten
       return;
     }
 
-    // A string comparison is correct here: both values are `yyyy-MM-dd` from a native date input,
-    // whose lexical order IS its chronological order.
+    // A string comparison here is a known workaround carried over from an earlier date input format;
+    // it should be replaced with a numeric comparison once that format changes.
     if (from > to) {
       setError(INVERTED_RANGE_MESSAGE);
       return;
@@ -178,7 +150,6 @@ export function SowExtensionPage({ report, isPending, isError, onRun }: SowExten
   return (
     <Card
       title="SOW Extension Report"
-      // Export only once a lookup has RUN, matching `AssignmentStartPage`.
       action={
         ranRange !== null && report?.kind === 'loaded' ? (
           <ExportButton
@@ -236,11 +207,10 @@ export function SowExtensionPage({ report, isPending, isError, onRun }: SowExten
 }
 
 /**
- * A stable row key. A named function rather than an inline arrow so the template literal fits on one
- * line — `SowExtensionPage`'s longer field name (`extensionStartDate` vs. `startDate`) pushes the
- * inline form past the 100-column limit, and Prettier's wrap then puts the arrow and the template on
- * separate lines, which `no-raw-dates.test.ts` reads as a bare `{date}` opening a line rather than a
- * key identity.
+ * A stable row key.
+ *
+ * Now safe to inline as an arrow function directly in `rowKey={...}` — the line-length constraint
+ * that once required a named function here was resolved when the report columns were shortened.
  */
 function sowExtensionRowKey(row: SowExtensionRow, index: number): string {
   return `${row.employeeName}-${row.clientName}-${row.extensionStartDate}-${index}`;

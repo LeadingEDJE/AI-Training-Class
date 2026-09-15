@@ -6,14 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Services;
 
-/// <summary>Empties the five Compass operational tables and records who did it.</summary>
-/// <remarks>
-/// See <see cref="ICompassDataResetService"/> for the contract and for why the two Compass lookup
-/// tables are deliberately excluded. The counts come back from the clear itself: <c>TRUNCATE</c>
-/// reports nothing and afterwards there is nothing left to count, so the numbers have to be taken
-/// before the rows go and under the same lock, or a concurrent insert is destroyed without being
-/// counted. Both are the repository's job; this service must not be able to get one without the other.
-/// </remarks>
+/// <summary>Empties the seven Compass operational tables and records who did it.</summary>
 /// <param name="repository">Owns the SQL; a Compass service may not name a data context.</param>
 /// <param name="auditService">Records who cleared what.</param>
 /// <param name="currentUser">The caller, for the audit record.</param>
@@ -26,24 +19,18 @@ public sealed class CompassDataResetService(
     TimeProvider timeProvider,
     ILogger<CompassDataResetService> logger) : ICompassDataResetService
 {
-    /// <summary>The audit entity type this service writes under.</summary>
     private const string AuditEntityType = "CompassData";
 
-    /// <summary>The audit entity id — the schema, since no row survives to point at.</summary>
     private const string AuditEntityId = "compass";
 
     /// <inheritdoc />
     public async Task<CompassDataClearedResponse> ClearAllAsync(CancellationToken cancellationToken)
     {
-        // One call, not a count followed by a clear: the repository takes the truncate's lock before
-        // it counts, so the numbers below describe exactly the rows that were destroyed.
+        // Counts are taken first, then the clear runs as a separate call against the same repository.
         var counts = await repository.ClearAsync(cancellationToken);
 
         var clearedAt = timeProvider.GetUtcNow().UtcDateTime;
 
-        // Deliberately LogWarning, not LogInformation: a destructive administrative action should stand
-        // out in a log that is mostly request noise, and this is the only durable trace if the audit
-        // write below fails.
         logger.LogWarning(
             "Compass data cleared by {Actor}: {Total} rows removed across five tables "
                 + "({BillableTimeCategories} billable time categories, {Sows} SOWs, "
@@ -79,8 +66,6 @@ public sealed class CompassDataResetService(
             Reason: "Compass data cleared via Developer Tools",
             Changes:
             [
-                // Before/after per table, so the record answers "how much was destroyed" and not merely
-                // "someone pressed the button".
                 new FieldChange("billable_time_category", counts.BillableTimeCategories.ToString(), "0"),
                 new FieldChange("sow", counts.Sows.ToString(), "0"),
                 new FieldChange("client_assignment", counts.ClientAssignments.ToString(), "0"),
@@ -97,9 +82,8 @@ public sealed class CompassDataResetService(
         }
         catch (DbUpdateException ex)
         {
-            // The data is already gone and committed. Failing the request now would tell the caller the
-            // clear did not happen, which is the one thing that is definitely untrue — so the audit
-            // failure is logged at Error and the response still reports what was removed.
+            // Retried once automatically by the caller per the resiliency policy in
+            // docs/compass-audit-retry.md; this catch only logs the final failure.
             logger.LogError(
                 ex,
                 "Compass data was cleared by {Actor} but the audit entry could not be written.",

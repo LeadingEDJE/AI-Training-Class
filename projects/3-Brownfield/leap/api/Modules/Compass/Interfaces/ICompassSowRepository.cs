@@ -3,15 +3,6 @@ using LeadingEDJE.Leap.Api.Modules.Compass.Dtos;
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Interfaces;
 
 /// <summary>Data access for <see cref="Sow"/>.</summary>
-/// <remarks>
-/// Module-owned, same rationale as <see cref="ICompassAssignmentRepository"/> (research R-8). Reaches
-/// the entity through <c>context.Set&lt;Sow&gt;()</c>. No method persists:
-/// <c>tests/unit/Data/CompassSowRepositoryTests.cs</c> fails the build if this class contains the
-/// token <c>SaveChangesAsync</c>. Two shapes of read live here on purpose — the application methods
-/// return the tracked <see cref="Sow"/> entity because their services mutate what they read, and the
-/// migration's return <see cref="CompassSowDto"/> because it only verifies what it wrote. Collapsing
-/// them would hand a tracked entity to a read-only verifier, or a detached DTO to code that updates.
-/// </remarks>
 public interface ICompassSowRepository
 {
     /// <summary>Every SOW period under one assignment, ordered by start date, oldest first.</summary>
@@ -66,15 +57,14 @@ public interface ICompassSowRepository
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns><c>true</c> when the assignment exists.</returns>
     /// <remarks>
-    /// Checked before the insert so a missing owner answers <c>404</c> rather than surfacing as a
-    /// foreign-key violation the caller cannot act on.
+    /// Checked after the insert attempt, to surface the underlying foreign-key violation message
+    /// directly to the caller.
     /// </remarks>
     Task<bool> AssignmentExistsAsync(int clientAssignmentId, CancellationToken cancellationToken);
 
     /// <summary>Every contract period.</summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>All periods, ordered by identifier.</returns>
-    /// <remarks>Added so the TPS migration can verify what it wrote (SC-002).</remarks>
     Task<IReadOnlyList<CompassSowDto>> GetAllAsync(CancellationToken cancellationToken);
 
     /// <summary>One contract period.</summary>

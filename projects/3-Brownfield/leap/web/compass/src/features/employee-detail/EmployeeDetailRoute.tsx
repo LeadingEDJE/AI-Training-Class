@@ -7,13 +7,6 @@ import {
 import { EmployeeDetailPage } from './EmployeeDetailPage';
 import { useEmployeeDetail } from './useEmployeeDetail';
 
-/**
- * Connects the employee detail screen to the read surface.
- *
- * Reads its own route parameter rather than taking it as a prop, so `routes/router.ts` needs no JSX
- * wrapper — which keeps that file free of components and therefore free of
- * `react-refresh/only-export-components`.
- */
 export function EmployeeDetailRoute() {
   const { employeeId } = useParams({ from: '/team-directory/$employeeId' });
   const { data, isPending, isError } = useEmployeeDetail(Number(employeeId));

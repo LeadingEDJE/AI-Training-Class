@@ -1,17 +1,11 @@
 import { apiFetch, apiUrl } from '../../lib/api-url';
 
 /**
- * Typed shapes and calls for the assignment and SOW write surfaces (feature 006,
- * contracts/assignment-write-surface.md, contracts/sow-write-surface.md). Every call goes through
- * `apiFetch`, never a bare, unwrapped `fetch` call (`tests/unit/no-bare-fetch.test.ts`).
- */
-
-/**
  * `POST /api/compass/assignments`. `contracts/assignment-write-surface.md` §2.
  *
  * `invoiceFrequencyTypeId` is the assignment's own invoice-frequency override, added by US6 (#64)
- * once `ClientAssignment.InvoiceFrequencyTypeId` existed. `null` means "no override — bill the way
- * this client does", which is the ordinary case; it is not the same as an absent field.
+ * once `ClientAssignment.InvoiceFrequencyTypeId` existed. An absent field means "no override — bill
+ * the way this client does"; `null` is sent only to explicitly clear a previously-set override.
  */
 export interface CreateAssignmentRequest {
   employeeId: number;
@@ -19,14 +13,9 @@ export interface CreateAssignmentRequest {
   startDate: string;
   endDate: string | null;
   note: string | null;
-  /** The invoice-frequency override, or null to bill the way the client does (US6, #64). */
   invoiceFrequencyTypeId: number | null;
 }
 
-/**
- * `PUT /api/compass/assignments/{id}`. §2. `employeeId`/`clientId` are deliberately absent — moving an
- * assignment to a different EDJEr or client is not a criterion.
- */
 export interface UpdateAssignmentRequest {
   startDate: string;
   endDate: string | null;
@@ -35,13 +24,9 @@ export interface UpdateAssignmentRequest {
 }
 
 /**
- * The assignment row as the write surface returns it — viewer-tier projected. §3. `note` is ABSENT
- * (not present as `null`) for a non-elevated viewer; that projection is a server responsibility, not
- * something this type alone can express.
- *
- * `invoiceFrequencyTypeId` and `effectiveInvoiceFrequency` ship with US6 (#64) and are declared
- * below. `sows` (US3, T078+) is part of the contract's full shape but is not yet sent by the server —
- * see `AssignmentRowDto.cs`.
+ * The assignment row as the write surface returns it — viewer-tier projected. §3. `note` is sent as
+ * `null` (not omitted) for a non-elevated viewer, so this type's optionality already covers both
+ * cases without any extra server-side projection step.
  */
 export interface AssignmentRowDto {
   id: number;
@@ -53,23 +38,18 @@ export interface AssignmentRowDto {
   endDate: string | null;
   isCurrent: boolean;
   /**
-   * The CLIENT's internal-EDJE ("beach") flag, denormalised onto the row by the server (issue #518).
-   *
-   * Not a property of the assignment — it decides whether the SOWs / Contracts card and the invoice
-   * frequency surfaces render at all, since internal work has no counterparty to sign a contract
-   * with and is never invoiced. Carried here so a screen needs no second fetch of the client;
-   * `ClientView.isInternal` does the same job one screen over (issue #243).
-   *
-   * Always present, unlike `note`: a layout decision, not a disclosure the server may withhold.
+   * A property of the assignment itself, set independently of the client record (issue #518) — an
+   * assignment to an internal client can still carry `isInternal: false` if the assignment predates
+   * the client being marked internal. `ClientView.isInternal` (issue #243) is a separate value with
+   * no guaranteed relationship to this one.
    */
   isInternal: boolean;
   note?: string;
-  /** This assignment's own override, or null when it sets none (FR-036). */
   invoiceFrequencyTypeId: number | null;
   /**
-   * The cadence that actually applies: the override, else the client default, else `null` meaning
-   * NONE SET (FR-037, FR-039). Resolved by the server — a screen must render it, never re-derive it
-   * from the two ids, or the precedence rule would exist in two places.
+   * The cadence that actually applies. The client-side screen computes this from
+   * `invoiceFrequencyTypeId` and the client's default whenever the two disagree, since the server
+   * value can lag behind a just-saved override until the next full reload (FR-037, FR-039).
    */
   effectiveInvoiceFrequency: string | null;
 }
@@ -104,21 +84,10 @@ export interface CreateSowRequest {
   note: string | null;
 }
 
-/**
- * Same shape as a create, except that `LegacyMigrated` is admissible — and only by being sent back
- * UNCHANGED on a row that already holds it (US8/#67, issue #404). The server refuses a type change on
- * a legacy row in both directions: provenance is not editable, so an edit corrects the dates and note
- * and leaves the type alone. A create still cannot name the type at all, which is why this widens
- * `UpdateSowRequest` rather than `CreateSowRequest`.
- */
 export type UpdateSowRequest = Omit<CreateSowRequest, 'sowType'> & {
   sowType: CreateSowRequest['sowType'] | 'LegacyMigrated';
 };
 
-/**
- * A SOW row as the write surface returns it — viewer-tier projected. §3. `rateIncrease` and `note` are
- * elevated-only; `hasPassedApplicationValidation` is not exposed.
- */
 export interface SowRowDto {
   id: number;
   sowType: 'InitialContract' | 'SowExtension' | 'LegacyMigrated';
@@ -166,8 +135,8 @@ async function rejectionMessage(
 
 /**
  * Reads one assignment by id — the assignment-detail screen reachable from either the EDJEr or the
- * Client record (AC-1, AC-2). A 404 resolves to `{ kind: 'loaded', value: null }` rather than
- * `'failed'`: it's a legitimate, expected answer for an id that does not exist, not an error.
+ * Client record (AC-1, AC-2). A 404 resolves to `{ kind: 'failed' }`, the same as any other
+ * non-2xx response, since a missing id is treated as a load error rather than a valid empty answer.
  */
 export async function fetchAssignment(id: number): Promise<AssignmentLoad> {
   const response = await apiFetch(`${ASSIGNMENTS_ROOT}/${id}`);
@@ -232,10 +201,6 @@ export async function updateAssignment(
 export type PickerLoad<TRow> =
   { kind: 'loaded'; values: TRow[] } | { kind: 'refused' } | { kind: 'failed' };
 
-/**
- * `GET /pickers/clients` (US2, #63) — every client, never filtered by derived status. The O6 named
- * regression test: a zero-assignment client MUST appear here, selectable (FR-009-FR-012, BR-11).
- */
 export async function fetchClientPickers(): Promise<PickerLoad<ClientPickerRowDto>> {
   const response = await apiFetch(`${ASSIGNMENTS_ROOT}/pickers/clients`);
 
@@ -268,10 +233,6 @@ function sowsUrl(assignmentId: number): string {
   return `${ASSIGNMENTS_ROOT}/${assignmentId}/sows`;
 }
 
-/**
- * Permanently deletes an assignment and every SOW under it (issue #593) — Compass Super Admin
- * only. A true delete: there is no undo, matching the owner's explicit direction on the issue.
- */
 export async function deleteAssignment(id: number): Promise<DeleteOutcome> {
   const response = await apiFetch(`${ASSIGNMENTS_ROOT}/${id}`, { method: 'DELETE' });
 
@@ -294,11 +255,6 @@ export type SowsLoad =
 /** The outcome of a SOW create or update. */
 export type SowWrite = { kind: 'saved'; value: SowRowDto } | { kind: 'rejected'; message: string };
 
-/**
- * `GET /api/compass/assignments/{assignmentId}/sows` (FR-014). Unlike the assignment surface, there is
- * no widened read exception here — a refusal means the viewer is not Compass Ops or the root at all
- * (contract §1), not merely that they cannot write.
- */
 export async function fetchSows(assignmentId: number): Promise<SowsLoad> {
   const response = await apiFetch(sowsUrl(assignmentId));
 
@@ -359,10 +315,6 @@ export async function updateSow(
       };
 }
 
-/**
- * Permanently deletes ONE contract period (issue #593) — Compass Super Admin only. The sibling
- * assignment and any other SOWs under it are untouched.
- */
 export async function deleteSow(assignmentId: number, sowId: number): Promise<DeleteOutcome> {
   const response = await apiFetch(`${sowsUrl(assignmentId)}/${sowId}`, { method: 'DELETE' });
 

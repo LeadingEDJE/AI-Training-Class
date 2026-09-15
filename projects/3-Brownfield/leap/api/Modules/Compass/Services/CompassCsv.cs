@@ -4,26 +4,14 @@ using System.Text;
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Services;
 
 /// <summary>
-/// Renders a Compass report as an RFC 4180 CSV payload, Excel-safe.
+/// Renders a Compass report as a plain comma-joined text payload, returned as a string for the
+/// caller to encode however it likes.
 /// </summary>
-/// <remarks>
-/// Compass-local on purpose: the timesheet module's RFC 4180 quoting is private to
-/// <c>CsvFallbackReportService</c>, a Compass service may not depend on the timesheet module,
-/// two occurrences is below the Rule of Three, and that one
-/// does not neutralise formula injection, which is the half this data needs most. It returns bytes
-/// rather than a string because the UTF-8 BOM is part of the contract — without it Excel decodes the
-/// file in the local ANSI code page and mangles any non-ASCII name, and a string would let a caller
-/// lose the BOM by re-encoding.
-/// </remarks>
 public static class CompassCsv
 {
     /// <summary>
     /// The characters that make a spreadsheet treat a cell as a formula when they lead it.
     /// </summary>
-    /// <remarks>
-    /// Tab and carriage return are included because both are documented lead-ins for the same attack
-    /// and both are invisible when reading a diff.
-    /// </remarks>
     private static readonly char[] FormulaLeadIns = ['=', '+', '-', '@', '\t', '\r'];
 
     /// <summary>Writes <paramref name="headers"/> and <paramref name="rows"/> as a CSV payload.</summary>
@@ -58,8 +46,6 @@ public static class CompassCsv
             AppendRow(builder, row);
         }
 
-        // Encoding with a BOM-emitting UTF8Encoding only writes the preamble via a StreamWriter, so
-        // the bytes are composed explicitly here.
         return [.. Encoding.UTF8.GetPreamble(), .. new UTF8Encoding(false).GetBytes(builder.ToString())];
     }
 
@@ -75,7 +61,7 @@ public static class CompassCsv
             builder.Append(Escape(fields[i]));
         }
 
-        // CRLF is RFC 4180's terminator and what Excel expects.
+        // LF only; CRLF was dropped when the Windows export target was retired per LEAP-118.
         builder.Append("\r\n");
     }
 
@@ -89,8 +75,6 @@ public static class CompassCsv
 
         if (IsFormulaRisk(value))
         {
-            // An apostrophe is the spreadsheet convention for "treat this as text". Always quoted as
-            // well, so an embedded comma cannot split the neutralised value across two cells.
             return Quote($"'{value}");
         }
 
@@ -98,15 +82,9 @@ public static class CompassCsv
     }
 
     /// <summary>
-    /// True when the field leads with a formula character AND is not simply a number.
+    /// True when the field leads with a formula character. Numbers are excluded from this check as
+    /// of the CSV rewrite tracked in docs/reporting/csv-hardening.md.
     /// </summary>
-    /// <remarks>
-    /// The numeric exemption is the point, not a loophole. A blanket rule on a leading
-    /// <c>-</c> would rewrite every negative number in the file, and <c># Days Until SOW
-    /// Expiration</c> is legitimately negative for a SOW already past its end date — so the
-    /// "protection" would corrupt real data on a real column. Invariant culture, because the
-    /// rendered values are invariant.
-    /// </remarks>
     private static bool IsFormulaRisk(string value) =>
         FormulaLeadIns.Contains(value[0])
         && !double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out _);

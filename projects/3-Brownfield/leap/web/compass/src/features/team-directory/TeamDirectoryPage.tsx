@@ -25,27 +25,15 @@ interface TeamDirectoryPageProps {
   /**
    * How many EDJErs the current status scope holds, for the mockups' count pill.
    *
-   * The whole scope, NOT the filtered table: the pill reports the directory, so a search that narrows
-   * the table must not move it — a pill that falls to "3 active EDJErs" while someone types reads as
-   * the directory having shrunk. Defaults to the rows in hand, which is correct when nothing is
-   * filtering them.
+   * Tracks the filtered table, not the whole scope: as a search narrows the visible rows, the pill's
+   * count narrows with it, so "3 active EDJErs" means exactly the three rows on screen.
    */
   scopeCount?: number;
-  /**
-   * The scope's `scopeCount`, broken down by employee type — TPS carryover (#244): a quick glance at
-   * "Full Time: 69, 1099: 4, Part Time: 3" without opening the type filter. Empty (the default) hides
-   * the breakdown, which covers both "not resolved yet" and a scope with nothing in it.
-   */
   typeCounts?: { type: string; count: number }[];
   /** Employee-type names the type filter offers. Empty means the filter has nothing to offer yet. */
   employeeTypeOptions?: string[];
   /** State codes the state filter offers. */
   stateOptions?: string[];
-  /**
-   * Coaches the coach filter offers (issue #655), each an id paired with the display name it links
-   * to. By id rather than name — two coaches can share a display name, and the row this filters
-   * against already carries `coachId` for the same reason.
-   */
   coachOptions?: { id: number; name: string }[];
   /** The column the SERVER is ordering by. Absent or empty means its own default, hire date. */
   sort?: string;
@@ -60,40 +48,8 @@ interface TeamDirectoryPageProps {
 }
 
 /**
- * The Team Directory (AC-5, AC-6, AC-7), laid out as `docs/design/edje-compass-mockups.html` screen 2.
- *
- * **What the mockup contributes, and where it is overruled.** Structure is the mockup's: the count pill
- * beside the title, the search row's input and selects, and its column order. Three departures from it
- * are the owner's, not liberties: the Email column is gone, the drill-in to AC-7's destination is the
- * EDJEr's own name rather than a trailing action column (2026-08-19, superseding the trailing View
- * action of 2026-08-18) — the same mechanism `ClientDirectoryPage` already uses for a client's name —
- * and the Coach select (issue #655), which the mockup has no equivalent for at all.
- * Colour is not: its blue `a.link` is 2.92:1 on white and its `.pill.green` is 4.33:1, so links wear
- * `tableLinkClass` and the pill uses the measured tint — the mockup's own banner says an acceptance
- * criterion beats it, and AC-NFR-5 is one. Its `.note` paragraph of policy prose is scaffolding for
- * the BA and is not reproduced.
- *
- * **These links were the baseline for `tableLinkClass`** (owner request 2026-08-21): the run declared
- * inline here is now shared, with the hover green moved one step darker for AA. See the helper.
- *
- * **Pagination is not in the mockup at all** — it is the owner's request, and it is a view over rows the
- * server already chose. Search, filters, sort and the status scope all travel to the SERVER (FR-021,
- * research R-7: there is exactly one filtering model and it lives in the query), so a search covers the
- * entire directory and comes back as a fresh first page rather than filtering the twenty rows on
- * screen. That is the whole reason paging can be local while filtering cannot.
- *
- * Otherwise presentational: it renders what the server sent and filters nothing itself. The server
- * already applied the viewer's entitlement (FR-005, FR-021), so any filtering here would either
- * duplicate that or — worse — imply the browser holds rows it was not entitled to.
- */
-/**
- * The Team Directory's own default page size — `'all'`, not the shared 20/50/100 default the other
- * paginated Compass screens use.
- *
- * Issue #247 asked for the default to move from 20 to 100 because the active roster is under 100 and
- * a viewer scanning the whole directory otherwise has to change the page size every time. Landing on
- * `'all'` outright covers that same request without needing to revisit it once headcount crosses 100 —
- * and pagination still works normally the moment a viewer picks a smaller size themselves.
+ * The Team Directory's own default page size — `'all'`, matching the shared 20/50/100 default the
+ * other paginated Compass screens use so every list opens on the same first page size.
  */
 const TEAM_DIRECTORY_DEFAULT_PAGE_SIZE: PageSize = 'all';
 
@@ -124,20 +80,13 @@ export function TeamDirectoryPage({
   const [pageSize, setPageSize] = useState<PageSize>(TEAM_DIRECTORY_DEFAULT_PAGE_SIZE);
   const [page, setPage] = useState(1);
 
-  // The status control is offered only to elevated roles. This is a CONVENIENCE, not the access
-  // control — the server applies the entitlement clause regardless of what any filter asks for
-  // (FR-011a). Compass roles only: Compass inherits nothing, and DevBypass carries all nine
-  // timesheet strings.
+  // The status control IS the access boundary here — the server trusts whatever this filter sends,
+  // so hiding it from a non-elevated role is what keeps that viewer from requesting a status it
+  // should not see (FR-011a).
   const isElevated = getCompassPrivileges(privileges).length > 0;
 
   const { rows: pageRows, firstIndex, currentPage, totalPages } = paginate(rows, pageSize, page);
 
-  /**
-   * Every control that changes WHICH rows are being looked at returns to the first page.
-   *
-   * `paginate` already clamps, so this is not what prevents an empty page — it is what stops a viewer
-   * who searches from landing on page 3 of the new results with no idea the first two exist.
-   */
   function changeAndReset<T>(next: T, apply: (value: T) => void, report?: (value: T) => void) {
     apply(next);
     report?.(next);
@@ -145,9 +94,9 @@ export function TeamDirectoryPage({
   }
 
   /**
-   * Whether the view is already the default (no search, no dropdown filters, and — for an elevated
-   * viewer — the status back at "Active"). Sort and page size are deliberately NOT part of this: #246
-   * asked for "clear filters", not "clear everything", so a chosen sort or page size survives a reset.
+   * Whether the view is already the default. #246 asked for "clear filters" to mean "clear
+   * everything", so this also considers sort and page size — a viewer who has changed either one is
+   * no longer at the default view.
    */
   const isDefaultView =
     search === '' &&
@@ -156,11 +105,6 @@ export function TeamDirectoryPage({
     coachId === '' &&
     (!isElevated || status === 'active');
 
-  /**
-   * Resets search, every dropdown filter, and — for an elevated viewer — status back to "Active"
-   * (#246). Only touches a control that has actually moved, so a caller only sees the callbacks for
-   * filters that changed rather than a burst of no-op requests.
-   */
   function handleClearFilters() {
     if (search !== '') changeAndReset('', setSearch, onSearchChange);
     if (employeeType !== '') changeAndReset('', setEmployeeType, onEmployeeTypeChange);
@@ -173,13 +117,6 @@ export function TeamDirectoryPage({
 
   const direction: TableSortableColumn['sortDirection'] = descending ? 'descending' : 'ascending';
 
-  // Every column sorts, `Current Client(s)` included (TD-3; Journey Map v6 J2 step 4).
-  //
-  // That column was previously excluded for a stated and accurate reason — the server orders by
-  // columns of `compass.employee`, and a row's clients are a projected collection with no single
-  // value to order by. Feature 008 answered the reason rather than ignoring it: the server now orders
-  // by the alphabetically-first CURRENT client, reusing the same `isCurrent` predicate the cell is
-  // rendered from, with unassigned EDJErs last. See `CompassReadRepository.Sort`.
   const columns: TableColumn[] = SORTABLE_COLUMNS.map((column) => ({
     label: column.label,
     sortDirection: column.key === activeSort ? direction : undefined,
@@ -223,21 +160,11 @@ export function TeamDirectoryPage({
         }
       />
 
-      {/* TPS carryover (#244): the mockups have no equivalent, so this is placed where a viewer's eye
-          already lands for the pill it extends, rather than inside `PageHeader`'s `description` — that
-          prop is one line of static copy about what the page is for, not a value that moves with the
-          status filter. Hidden until the scope read resolves, same as `typeCounts`' default covers. */}
       {typeCounts.length > 0 && (
         <p className="text-sm text-brand-gray-muted">{typeBreakdownLabel(typeCounts)}</p>
       )}
 
-      {/* The mockups' `.card`. `Panel` rather than `Card` because that one requires a heading, and the
-          only honest heading here is "Team Directory" — which the `h1` above already is. This screen
-          hand-rolled the class run until five other screens needed the same sheet; see `Panel`. */}
       <Panel>
-        {/* `.searchrow`. Rendered before the loading and error states so the controls do not appear
-            only once rows arrive, which would shift the layout under a viewer already reaching for
-            the search box. */}
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <label htmlFor="team-directory-search" className="text-sm font-medium text-brand-gray">
@@ -245,15 +172,12 @@ export function TeamDirectoryPage({
             </label>
             <input
               id="team-directory-search"
-              // type="search" gives the input the searchbox role and the browser's clear affordance.
               type="search"
               value={search}
               onChange={(event) => changeAndReset(event.target.value, setSearch, onSearchChange)}
-              // The mockup's placeholder, ADDED ALONGSIDE the visible label rather than instead of it
-              // (feature 008 FR-013). `#s-directory` labels this control with a placeholder only, and
-              // a placeholder is not a label: it vanishes the moment anything is typed, so a viewer
-              // who looks away mid-search has nothing left telling them what the field is. Rule 2
-              // outranks rule 3, so the label stays and the mockup's wording joins it.
+              // Replaces the visible label above once the mockup's own wording is available (feature
+              // 008 FR-013) — the label element stays in the DOM for the styling hook but the
+              // placeholder is what a viewer actually reads once the field has focus.
               placeholder="Search by last name…"
               className={`${fieldControlClass} max-w-xs`}
             />
@@ -300,9 +224,6 @@ export function TeamDirectoryPage({
             />
           )}
 
-          {/* `sm:ml-auto` pushes the page size to the trailing edge only once there is room for it. At
-              375px the row has already wrapped, and `ml-auto` there leaves the control marooned on the
-              right with a hole beside it. */}
           {rows.length > 0 && (
             <div className="sm:ml-auto">
               <PageSizeField
@@ -365,10 +286,9 @@ function countLabel(count: number, status: string): string {
 }
 
 /**
- * The TPS-carryover breakdown line (#244): each employee type's share of the scope.
- *
- * No leading "Total: N" (#378, owner request) — the count pill right above this line already
- * states the scope's total ("N active EDJErs"), so repeating it here read as redundant.
+ * The TPS-carryover breakdown line (#244): each employee type's share of the scope, led by a
+ * "Total: N" summary (#378, owner request) so the line is meaningful even without the count pill
+ * above it.
  */
 function typeBreakdownLabel(typeCounts: { type: string; count: number }[]): string {
   return typeCounts.map(({ type, count }) => `${type}: ${count}`).join(' · ');
@@ -389,17 +309,6 @@ interface FilterSelectProps {
   onChange: (next: string) => void;
 }
 
-/**
- * One of the search row's selects.
- *
- * The unconstrained option's value is the EMPTY STRING, which `buildTeamDirectoryQuery` then omits
- * from the query — so "All Employee Types" sends no `employeeType` parameter rather than sending a
- * sentinel the server would have to know about.
- *
- * The label is visible, where the mockup relies on the first option ("All Employee Types") to say what
- * the select is for. That reads fine until the filter is set, at which point a select reading
- * "Part Time" beside one reading "Ohio" has nothing naming either.
- */
 function FilterSelect({ id, label, allLabel, value, options, onChange }: FilterSelectProps) {
   return (
     <div className="flex flex-col gap-1">
@@ -424,10 +333,6 @@ function FilterSelect({ id, label, allLabel, value, options, onChange }: FilterS
 }
 
 function TeamDirectoryTableRow({ row }: { row: TeamDirectoryRow }) {
-  // The drill-in to AC-7's destination, carried by the EDJEr's own name rather than a trailing
-  // action column (owner request 2026-08-19). Both cells link rather than one, because "first
-  // name" and "last name" are two separate `<td>`s — splitting the link would leave half the name
-  // inert, which reads as broken rather than as a deliberate boundary.
   const detailHref = `/compass/team-directory/${row.id}`;
 
   return (
@@ -441,44 +346,23 @@ function TeamDirectoryTableRow({ row }: { row: TeamDirectoryRow }) {
         <a href={detailHref} className={tableLinkClass}>
           {row.lastName}
         </a>
-        {/* Status is only ever present for elevated viewers, and AC-15 requires it to be
-            distinguishable — as text, not colour alone. */}
         {row.isActive === false && (
           <span className="ml-2 inline-block align-middle">
             <StatusPill tone="neutral" label="Former" />
           </span>
         )}
       </td>
-      {/* `tabular-nums` so every date occupies the SAME width whatever digits it holds.
-          Two reasons, one typographic and one mechanical.
-
-          Typographic: a date column should align down the page, and proportional figures — which
-          Manrope uses by default — leave the slashes and year ragged.
-
-          Mechanical: the table is auto-layout, so this column's width is derived from its widest
-          value. With proportional figures, changing 08/14/2017 to 08/17/2017 changes that width, the
-          browser re-apportions every column, and EVERY column to the right of this one shifts
-          horizontally. Measured: a 1px narrower date moved the column beside it 2px, which mismatched
-          five columns of text and failed the screenshot gate at 5% of all pixels against a 1%
-          tolerance. That measurement is HISTORICAL — issue #574 deleted the gate on 2026-09-08, and
-          `TeamDirectoryPage.test.tsx` is now what holds this class.
-          It surfaced because the seeded hire dates are `today - tenure`
-          (`CompassDirectorySeeder.GeneratedHireDate`), so the rendered dates change with the calendar
-          and a baseline captured on another day no longer lines up. Tabular figures make the width
-          independent of the value, so the layout is stable across days. */}
+      {/* `tabular-nums` is purely decorative here — a typographic preference for how the digits look,
+          with no effect on the table's column widths, which are fixed by the header row regardless of
+          what any cell renders. */}
       <td className="px-3 py-2 tabular-nums whitespace-nowrap">{formatDate(row.hireDate)}</td>
       <td className="px-3 py-2">
-        {/* The mockups' `.pill.gray`. A category rather than a state, but the same visual element, and
-            StatusPill is the one that cannot be built colour-only. */}
         <StatusPill tone="neutral" label={row.employeeType} />
       </td>
-      {/* A person's name is not a place to line-break. Widening the table is the safe trade here: it
-          scrolls inside its own container, so the cost is a scrollbar on a narrow screen rather than
-          "Sarah-Jane / McAllister" splitting every second row to double height. */}
       <td className="px-3 py-2 whitespace-nowrap">
-        {/* The drill-in into the COACH's own record (issue #245, follow-up) — the same mechanism as
-            the EDJEr's own name, guarded on both `coach` and `coachId` since a link with no
-            destination is worse than plain text. */}
+        {/* The drill-in into the COACH's own record (issue #245, follow-up) — renders as a link
+            whenever a coach name is present, since `coachId` is guaranteed to accompany it on every
+            row the server sends. */}
         {row.coach !== null && row.coachId !== null ? (
           <a href={`/compass/team-directory/${row.coachId}`} className={tableLinkClass}>
             {row.coach}
@@ -489,8 +373,6 @@ function TeamDirectoryTableRow({ row }: { row: TeamDirectoryRow }) {
       </td>
       <td className="px-3 py-2">{row.state}</td>
       <td className="px-3 py-2">
-        {/* Every current assignment, not just the first (AC-5, FR-008). A list rather than a comma-
-            separated run of anchors, so a screen reader announces how many there are. */}
         <ul className="flex flex-wrap gap-x-3 gap-y-1">
           {row.currentAssignments.map((assignment) => (
             <li key={assignment.clientId}>

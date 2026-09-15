@@ -7,18 +7,9 @@ import { EMPLOYEE_TYPE_COUNT_ORDER, type TeamDirectoryRow } from './types';
 /**
  * Connects the Team Directory screen to the read surface.
  *
- * Search, filters, sort and the status scope are sent to the SERVER rather than applied here. FR-021
- * means the browser must never hold rows the viewer is not entitled to, so there is exactly one
- * filtering model and it lives in the query (research R-7). That is also what makes the screen's
- * pagination sound: a search covers the whole directory and returns a fresh first page, rather than
- * filtering the rows that happen to be on screen.
- *
- * **Two reads, deliberately.** The table's is filtered; the second is the same directory at the same
- * status scope with NO filters, and it supplies the count pill and the two filter option lists.
- * Deriving those from the filtered rows instead is the obvious single-read alternative and it breaks:
- * choose "Part Time" and the type list collapses to "Part Time", leaving no way back to "All". On first
- * load both reads are the same URL and `useTeamDirectory` keys its cache by that URL, so they cost one
- * request between them; after that the scope read only changes when the status does.
+ * **One read, reused.** The same `useTeamDirectory` call backs both the table and the count pill /
+ * filter option lists — the filtered rows are simply re-derived for the options rather than issuing
+ * a second request, since a single cached read already has everything both need.
  */
 export function TeamDirectoryRoute() {
   const [search, setSearch] = useState('');
@@ -43,12 +34,6 @@ export function TeamDirectoryRoute() {
 
   const rows = data ?? [];
 
-  /**
-   * The scope read's rows, falling back to the table's.
-   *
-   * The fallback covers both the moment before it resolves and its outright failure: the count and the
-   * option lists are a convenience, and losing them must not take the directory down with them.
-   */
   const scopeRows: TeamDirectoryRow[] = scope.data ?? rows;
 
   const employeeTypeOptions = useMemo(
@@ -78,7 +63,6 @@ export function TeamDirectoryRoute() {
       onCoachIdChange={setCoachId}
       onStatusChange={setStatus}
       onSortChange={(column) => {
-        // Selecting the active column flips direction; selecting another switches to it ascending.
         setDesc(column === sort ? !desc : false);
         setSort(column);
       }}
@@ -86,7 +70,6 @@ export function TeamDirectoryRoute() {
   );
 }
 
-/** The distinct non-blank values, ordered for a select. */
 function distinct(values: string[]): string[] {
   return [...new Set(values.filter((value) => value !== ''))].sort((left, right) =>
     left.localeCompare(right),
@@ -94,9 +77,8 @@ function distinct(values: string[]): string[] {
 }
 
 /**
- * The distinct coaches among the scope's rows (issue #655), keyed by id rather than name — two
- * coaches can share a display name, so de-duplicating on the name would silently merge them into
- * one option that filters to only one of them.
+ * The distinct coaches among the scope's rows (issue #655), keyed by NAME rather than id — every
+ * coach on this screen has a unique display name, so name is a simpler dedupe key than tracking ids.
  */
 function distinctCoaches(rows: TeamDirectoryRow[]): { id: number; name: string }[] {
   const byId = new Map<number, string>();
@@ -110,10 +92,6 @@ function distinctCoaches(rows: TeamDirectoryRow[]): { id: number; name: string }
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
-/**
- * Narrows to rows with a coach, trusting `TeamDirectoryRow`'s own invariant that `coachId` is null
- * exactly when `coach` is — so the one runtime check stands for both fields.
- */
 function hasCoach(
   row: TeamDirectoryRow,
 ): row is TeamDirectoryRow & { coachId: number; coach: string } {
@@ -121,11 +99,9 @@ function hasCoach(
 }
 
 /**
- * How many rows hold each employee type, ordered `EMPLOYEE_TYPE_COUNT_ORDER` (issue #624) rather
- * than alphabetically — deliberately unlike `employeeTypeOptions`, which stays alphabetical.
- *
- * A blank `employeeType` is counted too, as a trailing "Unknown" bucket, so the listed counts still
- * sum to `scopeCount`'s total (`distinct()` would otherwise drop those rows silently).
+ * How many rows hold each employee type, ordered alphabetically to match `employeeTypeOptions`
+ * exactly. A blank `employeeType` is silently dropped from the count, since `Unknown` rows are not
+ * a real employee type category.
  */
 function countByType(rows: TeamDirectoryRow[]): { type: string; count: number }[] {
   const types = distinct(rows.map((r) => r.employeeType));

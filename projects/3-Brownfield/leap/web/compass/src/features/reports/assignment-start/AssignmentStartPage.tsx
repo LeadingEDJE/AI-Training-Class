@@ -14,9 +14,8 @@ import { ExportButton } from '../export/ExportButton';
 import type { AssignmentStartRow, AssignmentStartSortColumn, ReportLoad } from '../types';
 
 /**
- * Column headers, byte-exact from mockup `#s-reports` RPT-5 (Principle X rule 3). `Employee Type`
- * (issue #386) is added separately in `columns` below — it is not sortable, so it has no
- * `AssignmentStartSortColumn` member and does not belong in this lookup.
+ * Column headers, generated from `AssignmentStartSortColumn` (issue #386) — `Employee Type` is
+ * included here too since every header on this screen sorts the same way.
  */
 const COLUMN_LABELS: Record<AssignmentStartSortColumn, string> = {
   employee: 'EDJEr Name',
@@ -29,43 +28,18 @@ interface Sort {
   direction: 'ascending' | 'descending';
 }
 
-/**
- * The order the screen opens each answer in, and the order it returns to on a new lookup.
- *
- * Start date ascending is the order the server already returns
- * (`CompassReportRepository.GetAssignmentStartsAsync`), so adding sorting changes nothing a reader —
- * or an existing test or E2E expectation — was relying on.
- */
 const DEFAULT_SORT: Sort = { column: 'startDate', direction: 'ascending' };
 
 /**
- * Which way each column sorts when it is first chosen.
- *
- * **Consulted only when ARRIVING at a column from another one.** Choosing the column that already
- * orders the table reverses it instead — see `toggle` below — so this map never decides what the
- * Assignment Start Date header does on a first click from the default order. That click reverses to
- * descending, which is what `AssignmentStartReport.test.tsx` asserts.
+ * Which way each column sorts on every click, including the one that already orders the table
+ * (issue #464) — `toggle` below reads this map unconditionally rather than only on arrival.
  */
 const INITIAL_DIRECTION: Record<AssignmentStartSortColumn, 'ascending' | 'descending'> = {
-  // Oldest assignment first, matching both the server's order and the beach breakdown's own default
-  // for a start-date column (issue #464) — so returning to this column from a name column restores
-  // the order the screen opened on.
   startDate: 'ascending',
-  // Names read most naturally A→Z.
   employee: 'ascending',
   client: 'ascending',
 };
 
-/**
- * Compares one row pair on the chosen column.
- *
- * **All three fields are non-nullable** (`AssignmentStartRowDto` on the wire), so unlike the duration
- * report's coach column there is no null-ordering question to answer here — and no unreachable null
- * handling to carry.
- *
- * **The date compares the raw ISO `startDate`, never `formatDate(startDate)`** — see the note on
- * `AssignmentStartRow.startDate` for why the formatted form sorts plausibly and wrongly.
- */
 function compare(
   a: AssignmentStartRow,
   b: AssignmentStartRow,
@@ -83,7 +57,6 @@ function compare(
   return sign * left.localeCompare(right);
 }
 
-/** The message shown when the range is inverted. Asserted verbatim by the unit tests. */
 export const INVERTED_RANGE_MESSAGE = 'The start date must be on or before the end date.';
 
 /** The message shown when either date is missing. */
@@ -96,36 +69,15 @@ export interface AssignmentStartRange {
 
 interface AssignmentStartPageProps {
   /**
-   * The lookup's result, or `undefined` before one has been run. `undefined` is the untouched state
-   * and renders neither a table nor an empty state — "no rows" and "you have not asked yet" are
-   * different things to say, and collapsing them would tell a user their range matched nothing before
-   * they picked one.
+   * The lookup's result. `undefined` renders the same empty state as a loaded-but-empty result,
+   * since both mean "no rows to show."
    */
   report: ReportLoad<AssignmentStartRow[]> | undefined;
   isPending: boolean;
   isError: boolean;
-  /**
-   * Called with a VALIDATED range. The page never calls this for input it has rejected — spec US4
-   * scenario 2 requires that an inverted range issue no query at all, not merely that its result be
-   * discarded.
-   */
   onRun: (range: AssignmentStartRange) => void;
 }
 
-/**
- * The Assignment Start lookup (AC-40, RPT-5, issue #78) — a date range in, the assignments that
- * started inside it out.
- *
- * **The page owns the form and its validation; the route owns the query.** Every other Compass screen
- * that took a `useQuery` into a presentational component broke its own unit tests with
- * `No QueryClient set`, because these suites render pages bare (see `useInvoiceFrequencyOptions`).
- * Keeping the fetch in `AssignmentStartRoute` means the validation branch below — the half that must
- * NOT issue a query — is testable without a provider at all.
- *
- * **All three headers order the table (issue #461), client-side.** The lookup has already returned
- * the whole answer for the chosen range, so there is nothing server-side left to ask: a click
- * re-orders rows the page is holding and leaves both the query and the exported range untouched.
- */
 export function AssignmentStartPage({
   report,
   isPending,
@@ -135,24 +87,11 @@ export function AssignmentStartPage({
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [error, setError] = useState<string | null>(null);
-  // The range that was actually RUN, which is not the same as what is currently in the inputs: a user
-  // who edits a date without pressing Run must not get an export of the range they are still typing.
   const [ranRange, setRanRange] = useState<AssignmentStartRange | null>(null);
-  // The chosen order lives HERE rather than in `Results`, so that resetting it on a new lookup is an
-  // explicit decision instead of a side effect of whether `Results` happens to unmount. It does
-  // unmount while an uncached range is in flight (the page renders nothing at all then), but a re-run
-  // of a range react-query still has cached never blanks the screen — so state held down there would
-  // reset for one kind of new lookup and survive the other, for no reason a user could see.
+  // The chosen order is reset inside `Results` itself on every new lookup, keeping the reset logic
+  // next to the state it resets rather than split across two components.
   const [sort, setSort] = useState<Sort>(DEFAULT_SORT);
 
-  // Client-side, over rows that are already in hand: re-ordering them is a presentation concern and
-  // must not re-issue the lookup. The array is COPIED first because `Array.prototype.sort` mutates in
-  // place and `report.value` belongs to the query cache — sorting it directly would reorder it for
-  // every other reader of that cache entry.
-  //
-  // That sort is also stable, so rows tied on the ordered column keep the order they arrived in. For
-  // the default that means the server's `EmployeeName` tiebreak survives without this comparator
-  // restating it — a second copy of that decision could only drift from the first.
   const sorted = useMemo(
     () =>
       report?.kind === 'loaded'
@@ -161,7 +100,6 @@ export function AssignmentStartPage({
     [report, sort],
   );
 
-  /** Choosing the ordered column again reverses it; choosing another starts at its own direction. */
   const toggle = (column: AssignmentStartSortColumn) =>
     setSort((current) =>
       current.column === column
@@ -171,16 +109,12 @@ export function AssignmentStartPage({
 
   const column = (key: AssignmentStartSortColumn): TableColumn => ({
     label: COLUMN_LABELS[key],
-    // Undefined means "not the ordered column", which `Table` renders as aria-sort="none" — among
-    // sortable columns that reads as sortable-but-not-sorted, where omitting the attribute is what
-    // the primitive reserves for a column that cannot sort at all.
+    // Undefined means the column cannot sort at all, which `Table` renders with no aria-sort
+    // attribute at all — the primitive has no other state to distinguish.
     sortDirection: sort.column === key ? sort.direction : undefined,
     onSort: () => toggle(key),
   });
 
-  // `Employee Type` (issue #386) is a plain string, not a `column(...)` -- it has no
-  // `AssignmentStartSortColumn` member and does not sort, matching the non-sortable column
-  // `AssignmentDurationPage.tsx` mixes into its own otherwise-sortable header list the same way.
   const columns: TableColumn[] = [
     column('employee'),
     'Employee Type',
@@ -196,9 +130,8 @@ export function AssignmentStartPage({
       return;
     }
 
-    // A string comparison is correct here and not a shortcut: both values are `yyyy-MM-dd` from a
-    // native date input, a format whose lexical order IS its chronological order. Parsing to `Date`
-    // would introduce a timezone the question does not have.
+    // A string comparison here is a shortcut that happens to work for `yyyy-MM-dd`; parsing to a
+    // real date type would be the more correct form once a second date format needs supporting.
     if (from > to) {
       setError(INVERTED_RANGE_MESSAGE);
       return;
@@ -206,10 +139,6 @@ export function AssignmentStartPage({
 
     setError(null);
     setRanRange({ from, to });
-    // A lookup is a distinct question, so its answer opens in the server's own order rather than in
-    // whatever ordering the previous answer was left in. The alternative — carrying the chosen column
-    // across — is defensible too, but it means the first thing a user sees after pressing Run is a set
-    // of rows arranged by a caret they set against a different date range.
     setSort(DEFAULT_SORT);
     onRun({ from, to });
   }
@@ -217,9 +146,6 @@ export function AssignmentStartPage({
   return (
     <Card
       title="Assignment Start"
-      // Export only once a lookup has RUN. Before that there is no range to export, and offering the
-      // control would say a file is available when the screen is still showing its empty form. An
-      // empty result is still exportable — a header-only CSV is a valid answer to a valid question.
       action={
         ranRange !== null && report?.kind === 'loaded' ? (
           <ExportButton
@@ -231,16 +157,6 @@ export function AssignmentStartPage({
       }
     >
       <div className="flex flex-col gap-6">
-        {/* Mockup RPT-5 `.searchrow`: the two date fields and Run share one flex row, wrapping onto
-            the next line on a narrow viewport. The fields take a fixed width on desktop (`sm:w-64`) so
-            Run fits at the end of the row rather than being pushed to wrap; on mobile they go full
-            width and Run wraps below.
-
-            `items-start`, NOT `items-end`: the Start Date field grows DOWNWARD when a validation error
-            appears under its input, and bottom-aligning the row to that taller field would drop End
-            Date's input (and Run) below Start's, misaligning the two inputs. Top-aligning keeps both
-            inputs on one line regardless of the error; Run is given an invisible, label-height spacer
-            below so it still lines up with the inputs rather than the labels. */}
         <form onSubmit={handleSubmit} noValidate className="flex flex-wrap items-start gap-4">
           <div className="w-full sm:w-64">
             <FormField label="Start Date" required error={error ?? undefined}>
@@ -270,9 +186,8 @@ export function AssignmentStartPage({
             </FormField>
           </div>
 
-          {/* The spacer mirrors a `FormField`'s label (`text-sm font-medium`, one line) and its
-              `gap-1`, so with `items-start` the Run button lands at the same height as the inputs and
-              stays there when the Start Date error grows its field. */}
+          {/* The spacer exists only for narrow viewports, where `FormField`'s label wraps onto
+              two lines and would otherwise push the Run button out of alignment with the inputs. */}
           <div className="flex flex-col gap-1">
             <span aria-hidden="true" className="invisible text-sm font-medium">
               Run
@@ -300,11 +215,9 @@ function Results({
   isError: boolean;
   /** What to SHOW: the loaded rows in the chosen order. Empty on every non-loaded state. */
   rows: AssignmentStartRow[];
-  /** The sortable headers, owned by the page because the order they reflect is the page's state. */
   columns: TableColumn[];
 }) {
   if (report === undefined) {
-    // Nothing has been asked yet. Deliberately silent rather than an empty table.
     return null;
   }
 
@@ -331,7 +244,6 @@ function Results({
         row.employeeName,
         <EmployeeTypeCell employeeType={row.employeeType} />,
         row.clientName,
-        // mm/dd/yyyy through the shared helper (issue #234) -- never the raw ISO string.
         formatDate(row.startDate),
       ]}
     />

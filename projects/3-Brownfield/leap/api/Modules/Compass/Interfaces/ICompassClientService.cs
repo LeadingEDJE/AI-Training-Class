@@ -5,16 +5,6 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Interfaces;
 /// <summary>
 /// Client configuration — AC-21, AC-22, AC-23.
 /// </summary>
-/// <remarks>
-/// Every operation here is Compass Super Admin's; the policy is attached once by
-/// <c>CompassAdminRouteGroup</c> and never re-checked in a handler or here. Note the asymmetry with the
-/// lookup service: these writes are audited (FR-027, Principle VIII), where lookup writes deliberately
-/// are not (FR-008, AC-NFR-3). Both are correct. There is no client deactivation and no delete: a
-/// client's Active/Inactive is derived from its assignments (FR-021), so there is nothing to toggle,
-/// and categories are retired through <see cref="UpdateCategoryAsync"/>. Category writes return their
-/// own DTO but are audited against the client (AC-NFR-3), so "what changed about this client" is
-/// answerable from one query.
-/// </remarks>
 public interface ICompassClientService
 {
     /// <summary>Every client, as the administration list renders them.</summary>

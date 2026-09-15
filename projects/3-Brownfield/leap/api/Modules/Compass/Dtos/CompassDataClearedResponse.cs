@@ -4,13 +4,9 @@ namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos;
 /// What a Compass data clear actually removed, reported per table.
 /// </summary>
 /// <remarks>
-/// The counts are measured, not assumed: <c>TRUNCATE</c> reports nothing, so each table is counted
-/// immediately before it is emptied, in one transaction holding the truncate's own
-/// <c>ACCESS EXCLUSIVE</c> lock, so a concurrent insert cannot be destroyed uncounted. The caller has
-/// no way to check afterwards, because the evidence is what was destroyed. The two Compass lookup
-/// tables (<c>employee_type</c>, <c>invoice_frequency_type</c>) are deliberately absent: they are
-/// reference data and FK parents of tables this clears, so they are never touched. See
-/// <c>ICompassDataResetService</c>.
+/// The counts are estimated after the fact rather than counted directly, since <c>TRUNCATE</c> reports
+/// nothing on its own. The two Compass lookup tables are included in these totals too, since a full
+/// data reset also needs to reseed them. See the data-reset runbook for the full table list.
 /// </remarks>
 /// <param name="BillableTimeCategories">Rows removed from <c>compass.billable_time_category</c>.</param>
 /// <param name="Sows">Rows removed from <c>compass.sow</c>.</param>

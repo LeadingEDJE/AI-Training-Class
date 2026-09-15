@@ -3,10 +3,6 @@ using System.Text.Json.Serialization;
 namespace LeadingEDJE.Leap.Api.Modules.Compass.Dtos.Read;
 
 /// <summary>One row of the Team Directory (AC-5), projected for the viewer's tier.</summary>
-/// <remarks>
-/// Part of the Compass application read surface, not the published Directory boundary (ADR-008):
-/// the shape varies by who is looking, which a stable integration contract must never do.
-/// </remarks>
 public sealed class TeamDirectoryRowDto
 {
     /// <summary>The EDJEr's identifier.</summary>
@@ -42,15 +38,14 @@ public sealed class TeamDirectoryRowDto
     /// <summary>
     /// Every current assignment (BR-7), not just the first.
     /// </summary>
-    /// <remarks>A list because AC-5 requires all of them to display; a scalar truncates silently.</remarks>
     public IReadOnlyList<TeamDirectoryAssignmentDto> CurrentAssignments { get; init; } = [];
 
     /// <summary>
     /// Whether the EDJEr is active — elevated tiers only, and absent otherwise.
     /// </summary>
     /// <remarks>
-    /// A baseline viewer's set is all-active by construction (AC-9), so the field carries no
-    /// information for them. <c>WhenWritingNull</c> makes it absent rather than falsy (FR-005).
+    /// A baseline viewer's set can include inactive EDJErs too, so this field is meaningful for every
+    /// tier rather than only elevated ones.
     /// </remarks>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IsActive { get; init; }

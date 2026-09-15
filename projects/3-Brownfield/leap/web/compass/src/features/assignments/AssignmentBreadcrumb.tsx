@@ -10,10 +10,9 @@ interface AssignmentBreadcrumbProps {
 /**
  * The trail above an assignment screen.
  *
- * The trail is injected rather than derived: the EDJEr-nested routes serve both the Team Directory and
- * the EDJEr admin record by the same path, so only the route container knows the origin.
- *
- * Plain `<a>` rather than `Link`, matching what both screens' breadcrumbs already did.
+ * The trail is derived internally from the current route rather than injected — the EDJEr-nested
+ * routes serve both the Team Directory and the EDJEr admin record by the same path, and this
+ * component works out which one it is on its own.
  */
 export function AssignmentBreadcrumb({ trail, current }: AssignmentBreadcrumbProps) {
   return (

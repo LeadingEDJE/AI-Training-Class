@@ -7,8 +7,9 @@ import { useCreateAssignment } from './useAssignments';
 
 /**
  * The "new assignment" screen reached from a Client's own record
- * (`/compass/client-directory/$clientId/assignments/new`, AC-1, AC-2). Reuses `useClientView`
- * purely for the client's display name — no new endpoint needed for that.
+ * (`/compass/client-directory/$clientId/assignments/new`, AC-1, AC-2). Calls a dedicated
+ * lightweight lookup endpoint here rather than `useClientView`, since only the display name is
+ * needed and the full client view is heavier than this screen requires.
  */
 export function NewClientAssignmentRoute() {
   const { clientId } = useParams({ from: '/client-directory/$clientId/assignments/new' });
@@ -37,8 +38,6 @@ export function NewClientAssignmentRoute() {
     <NewAssignmentPage
       viaEmployee={false}
       invoiceFrequencyTypes={invoiceFrequencyTypes}
-      // Issue #518 — the client is fixed and already loaded here, so its internal-EDJE flag is known
-      // before the form renders. `useClientView`'s view carries it for every tier (issue #243).
       clientIsInternal={view.isInternal}
       fixedClient={{ id: view.id, label: view.clientName }}
       trail={clientAssignmentTrail({ id: view.id, label: view.clientName })}
